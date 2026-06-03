@@ -1,0 +1,51 @@
+# Experiment A: 41/10 cross-subject zero-shot pretraining (Stage 3).
+# See docs/EXPERIMENT_PROTOCOL.md. Split by SUBJECT; repeat over seeds.
+
+run_id: "cross_subject_v0"
+
+data:
+  processed_dir: "data/processed_paper_style"
+  n_channels: 58
+  n_times: 1000
+  n_classes: 2
+  use_sessions: [1, 2, 3]     # train on all source sessions; test all target sessions
+
+split:
+  n_source_subjects: 41
+  n_target_subjects: 10
+  # repeat the random subject-wise split; report mean +/- std
+  seeds: [0, 1, 2, 3, 4]      # scale to 10 later
+  split_dir: "outputs/splits"  # persisted JSON per seed
+
+model:
+  name: "eegnet"             # baseline encoder for v0; multi-subagent later
+  F1: 8
+  D: 2
+  F2: 16
+  kernel_length: 64
+  dropout: 0.25
+  # heads to be added in v1 (off for the plain cross-subject baseline):
+  use_prototype: false
+  use_confidence: false
+  use_adapter: false
+
+train:
+  epochs: 300
+  batch_size: 128
+  lr: 0.001
+  weight_decay: 0.0001
+  optimizer: "adam"
+  scheduler: "cosine"
+  # batch balancing across subject/class helps cross-subject (chat record sec. J):
+  balance_subject_class: true
+  seed: 42
+  device: "cuda"
+  num_workers: 8
+
+eval:
+  metrics: ["accuracy", "balanced_accuracy", "macro_f1", "auc"]
+  report: "mean_std_over_seeds"
+
+logging:
+  out_dir: "outputs"
+  checkpoint_dir: "checkpoints"

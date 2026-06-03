@@ -1,0 +1,49 @@
+# ===== data (never commit; dataset is read from the shared read-only dir) =====
+/data/raw/*
+/data/processed_paper_style/*
+/data/processed_eog_ecg_clean/*
+
+# ===== run artifacts =====
+/outputs/*
+/logs/*
+/checkpoints/*
+wandb/
+runs/
+slog/
+
+# keep the directory structure (re-include placeholder files)
+!**/.gitkeep
+
+# ===== python =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ===== env =====
+.env
+.venv/
+env/
+venv/
+
+# ===== large / binary data files (anywhere) =====
+*.bdf
+*.mat
+*.npy
+*.npz
+*.pt
+*.pth
+*.ckpt
+*.h5
+*.hdf5
+*.rar
+*.zip
+*.pdf
+
+# ===== editor / OS =====
+.DS_Store
+*.swp
+.idea/

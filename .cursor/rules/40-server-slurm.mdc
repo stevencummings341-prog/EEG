@@ -1,0 +1,58 @@
+---
+description: Rules for running on the university Slurm GPU cluster safely.
+alwaysApply: true
+---
+
+# Server & Slurm Rules (READ BEFORE RUNNING ANYTHING HEAVY)
+
+This project runs on a shared university Slurm cluster. See `docs/SERVER_RUNBOOK.md`
+and `docs/ENVIRONMENT.md`. Violating these rules can crash the login node for
+everyone, so treat them as hard constraints.
+
+## Golden rule: never compute on the login node
+
+- The login node is for editing, `git`, file inspection, and submitting jobs ONLY.
+- NEVER run training, full-dataset preprocessing, or any GPU/heavy-CPU job directly
+  on the login node. Always submit via `sbatch`, or use `srun`/`salloc` for an
+  interactive compute-node session.
+- Quick, cheap, < ~30 s sanity checks (e.g. `import torch`, printing versions,
+  reading one file's header, listing dirs) are acceptable on the login node.
+- A single-session preprocessing smoke test may be run interactively via
+  `srun`, not on the login node.
+
+## Cluster facts (verified)
+
+- Partitions: `gpu2node` (default) and `gpu3node`. Each node: 8 GPUs (`gpu:8`),
+  128 CPUs, ~773 GB RAM. TIMELIMIT is effectively unlimited, so ALWAYS set a
+  sensible `-t` so jobs do not hog the queue.
+- Module stack: `module load cuda/11.8` and `module load anaconda3`.
+- Conda env for this project: `mi_torch` (python 3.10).
+- KNOWN ISSUE: as set up now, `mi_torch` has a CPU-only torch build
+  (`torch.version.cuda is None`). GPU jobs will NOT use CUDA until a CUDA-enabled
+  torch is installed. See `docs/ENVIRONMENT.md`. Do not silently train on CPU at
+  scale; flag this if a GPU run reports `cuda_avail=False`.
+
+## Submitting jobs
+
+- All batch scripts live in `scripts/slurm/*.sbatch`.
+- Request only what you need: GPU jobs use `--gres=gpu:1` unless told otherwise;
+  preprocessing is CPU-only (no `--gres`).
+- Logs go to `logs/slurm/<jobname>-<jobid>.out` and `.err` (create the dir first).
+- Activate the env inside the job:
+  ```bash
+  module purge
+  module load cuda/11.8 anaconda3
+  source "$(conda info --base)/etc/profile.d/conda.sh"
+  conda activate mi_torch
+  ```
+- `cd` to the project root (`/share/home/yuan/SYX/eeg-mi-online`) inside the job and
+  run scripts from there. Pass config paths as arguments.
+- Useful commands: `sbatch script.sbatch`, `squeue -u $USER`, `scancel <jobid>`,
+  `sinfo`, `sacct -j <jobid>`.
+
+## Storage discipline
+
+- Code/configs/outputs live under `/share/home/yuan/SYX/eeg-mi-online`.
+- The dataset `/share/workspace2/moto_imagination/WBCIC_SHU` is READ-ONLY; never
+  write into it. Write processed data into `data/` inside the project.
+- Never write outside `/share/home/yuan/SYX`.

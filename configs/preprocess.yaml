@@ -1,0 +1,65 @@
+# Preprocessing config (paper-style by default).
+# All knobs for raw BDF -> [trials, channels, time] processed tensors live here.
+# See docs/PREPROCESSING_SPEC.md. Values marked TODO must be confirmed by
+# scripts/check_raw_bdf.py on a real session before running the full dataset.
+
+# --- paths (dataset is READ-ONLY; write only under the project) ---
+paths:
+  dataset_root: "/share/workspace2/moto_imagination/WBCIC_SHU"
+  raw_subdir: "sourcedata/2C dataset"            # literal space is intentional
+  derivatives_subdir: "derivatives/2C dataset_processeddata"
+  out_dir: "data/processed_paper_style"          # relative to project root
+  summary_csv: "outputs/preprocess_summary.csv"
+
+# --- variant: "paper_style" (no ICA) or "eog_ecg_clean" ---
+variant: "paper_style"
+
+# --- channel handling (VERIFIED via scripts/check_raw_bdf.py on sub-001/ses-01) ---
+# Reality: 59 EEG + 1 ECG + 4 EOG. NOTE: task-motorimagery_eeg.json lists
+# "1 EOG, 4 ECG" which is SWAPPED vs the actual channel names — trust the names.
+channels:
+  n_eeg: 59
+  n_eog: 4                  # HEOR/HEOL/VEOU/VEOL
+  n_ecg: 1                  # "ECG"
+  reference: "Pz"           # re-reference to Pz, then drop it -> 58 EEG
+  drop_after_ref: ["Pz"]
+  expected_final_eeg: 58
+  eog_names: ["HEOR", "HEOL", "VEOU", "VEOL"]   # verified
+  ecg_names: ["ECG"]                              # verified
+  # caveat: on sub-001/ses-01 the ECG and VEOL channels were flat in the first 10s.
+  # The preprocessing step must check validity over the full recording before
+  # relying on any aux channel (esp. for the eog_ecg_clean variant).
+
+# --- filtering ---
+filter:
+  l_freq: 0.5               # band-pass low edge (Hz)
+  h_freq: 40.0              # band-pass high edge (Hz)
+  notch_freq: 50.0          # power line (Hz)
+
+# --- epoching ---
+# OPEN QUESTION (Task 2): reading evt.bdf via mne.read_raw_bdf annotations only
+# yielded {"7":1, "8":1} on sub-001/ses-01, NOT 200 trial triggers. The 200 MI
+# event markers (values 1/2) must be located another way (alternate evt.bdf parse,
+# or fall back to the labels in the paper .mat in derivatives/). Resolve before
+# running preprocess_all.
+epoch:
+  event_values: [1, 2]      # 1=left-hand, 2=right-hand (2C)
+  label_map: {1: 0, 2: 1}   # original trigger -> internal label
+  tmin: 0.0                 # TODO confirm window start relative to cue (s)
+  tmax: 4.0                 # 4 s MI segment -> 1000 samples @ 250 Hz
+  baseline: null            # TODO confirm baseline interval, e.g. [-0.5, 0.0]
+  expected_trials: 200
+  expected_per_class: 100
+
+# --- resampling ---
+resample:
+  raw_sfreq: 1000           # informational; read actual from the file
+  target_sfreq: 250
+
+# --- output expectations (assert, fail loudly on mismatch) ---
+expect_shape: [200, 58, 1000]   # [trials, channels, time]
+
+# --- misc ---
+seed: 42
+n_jobs: 1                   # MNE filtering parallelism; keep modest on shared nodes
+strict: true               # if true, raise on any shape/trial-count mismatch

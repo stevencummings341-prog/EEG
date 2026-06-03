@@ -1,0 +1,79 @@
+---
+description: Rules for raw EEG preprocessing in this project.
+globs:
+  - "src/preprocessing/**/*.py"
+  - "src/data/**/*.py"
+  - "scripts/preprocess_raw.py"
+  - "scripts/preprocess_all.py"
+  - "scripts/check_raw_bdf.py"
+  - "configs/preprocess.yaml"
+alwaysApply: false
+---
+
+# Raw EEG Preprocessing Rules
+
+Use Python + MNE for raw BDF preprocessing. See `docs/PREPROCESSING_SPEC.md`.
+
+## Input
+
+- Raw BDF path pattern (dataset is READ-ONLY):
+  `/share/workspace2/moto_imagination/WBCIC_SHU/sourcedata/2C dataset/sub-XXX/ses-YY/eeg/data.bdf`
+  `/share/workspace2/moto_imagination/WBCIC_SHU/sourcedata/2C dataset/sub-XXX/ses-YY/eeg/evt.bdf`
+- Note the literal space in the folder name `2C dataset`. Always build paths with
+  `os.path.join` / `pathlib`, never by naive string concatenation.
+
+## Expected output per subject/session
+
+- `X` shape: `[200, 58, 1000]`, dtype float32.
+- `y` shape: `[200]`, dtype int64, values in {0, 1}.
+- Internal labels mapped from original triggers: 1 (left) -> 0, 2 (right) -> 1.
+- Sampling rate after preprocessing: 250 Hz.
+- A `meta.json` recording every fact listed under "Always log" below.
+
+## Channel facts (VERIFIED via check_raw_bdf.py on sub-001/ses-01)
+
+- Raw file has 64 channels = **59 EEG + 1 ECG + 4 EOG**.
+  - EEG: names in `task-motorimagery_channels.tsv` (Fpz ... O2).
+  - ECG: a single channel named `ECG`.
+  - EOG: `HEOR, HEOL, VEOU, VEOL` (horizontal/vertical EOG; names do NOT contain
+    "eog", so match by H/V-EOG prefix).
+- WARNING: `task-motorimagery_eeg.json` lists "1 EOG, 4 ECG" — this is SWAPPED vs
+  the real channel names. Trust the names, not that JSON count.
+- Some aux channels may be flat/unused (ECG and VEOL were flat in the first 10 s on
+  sub-001/ses-01). Check validity over the full recording before using them.
+- After Pz re-referencing, Pz is dropped, leaving 58 EEG channels.
+- OPEN QUESTION: `evt.bdf` annotations via MNE gave only {"7","8"} on sub-001/ses-01,
+  not 200 trial triggers. Find the real MI markers before preprocessing all
+  sessions (or fall back to labels in the paper `.mat`).
+
+## Paper-style preprocessing (implement first, no ICA)
+
+1. Load raw data with MNE.
+2. Assign channel types by name: 59 EEG, 1 ECG (`ECG`), 4 EOG (`HEOR/HEOL/VEOU/VEOL`).
+3. Drop the 5 aux channels (1 ECG + 4 EOG), keeping 59 EEG.
+4. Re-reference to Pz, then drop Pz -> 58 EEG channels.
+5. Band-pass filter 0.5-40 Hz.
+6. 50 Hz notch filter (PowerLineFrequency = 50).
+7. Read events from `evt.bdf` / annotations; keep MI event values {1, 2}.
+8. Epoch the MI segment (target 4 s window) per the spec; verify 200 trials.
+9. Baseline correction.
+10. Downsample to 250 Hz so each trial is 1000 samples.
+11. Save as `[trials, channels, time] = [200, 58, 1000]`.
+
+## EOG/ECG-clean preprocessing (second variant)
+
+1. Load all 64 channels.
+2. Set correct channel types: eeg / ecg / eog.
+3. Check whether the ECG/EOG channels carry valid (non-flat) signal.
+4. Use ECG/EOG only for artifact detection/removal if valid.
+5. After cleaning, drop ECG/EOG channels.
+6. Continue with Pz reference, epoching, baseline correction, downsampling.
+
+## Discipline
+
+- Never silently drop a failed session. If the `[200, 58, 1000]` shape cannot be
+  produced, raise an error and record the reason in `meta.json` + the summary CSV.
+- Always log: `subject_id`, `session_id`, raw sampling rate, original channel
+  count, final channel count, number of events, number of extracted trials,
+  per-class label counts, output shape, and any rejected/failed trials.
+- Validate against the existing paper `.mat` in `derivatives/` when sanity-checking.

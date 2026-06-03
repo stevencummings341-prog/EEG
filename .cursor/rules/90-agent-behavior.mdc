@@ -1,0 +1,32 @@
+---
+description: Rules for Cursor AI behavior in this project.
+alwaysApply: true
+---
+
+# AI Assistant Behavior
+
+When helping with this repository:
+
+1. Prefer simple, runnable code over over-engineered research code.
+2. Do NOT invent dataset paths, event ids, or channel names. If something is
+   unknown, write an inspection script first and verify against the real data.
+3. Always preserve the tensor convention `[trials, channels, time]` for saved data.
+4. Before implementing a model, check existing configs and the real data shapes.
+5. Before modifying training logic, re-read the experiment protocol.
+6. For EEG preprocessing, avoid silent assumptions: add logs and sanity checks.
+7. For online learning, enforce test-then-update.
+8. Never mix source and target subjects in cross-subject experiments.
+9. Expose key parameters through YAML configs; keep scripts runnable from the
+   project root.
+10. Save metrics as CSV/JSON; use clear, descriptive filenames and `run_id`s.
+11. Comment the code. Every script/module needs a docstring, and EEG-specific or
+    non-obvious choices need an explanatory comment (this project requires comments).
+    Comments and docstrings may be in Chinese or English.
+12. If a requirement is ambiguous, write a small diagnostic script rather than guess.
+13. Respect the server rules: never start heavy/GPU work on the login node; submit
+    via Slurm. Never write outside `/share/home/yuan/SYX`; the dataset is read-only.
+14. Keep `docs/PROGRESS.md` updated: when you finish a meaningful step or make a
+    design decision, append a dated entry. This file is the project's memory.
+15. Work in the staged rhythm in `docs/PROJECT_BRIEF.md` (inspect -> preprocess one
+    -> validate shape -> preprocess all -> baseline -> 41/10 -> prototype/confidence
+    -> fine-tune -> online). Do not jump ahead and build a giant model first.
