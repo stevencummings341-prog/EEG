@@ -51,7 +51,9 @@ Master brief: `docs/PROJECT_BRIEF.md`. Memory/journal: `docs/PROGRESS.md`.
 - Raw: `sourcedata/2C dataset/sub-XXX/ses-YY/eeg/{data.bdf,evt.bdf}`, 1000 Hz,
   64 ch = 59 EEG + 1 ECG(`ECG`) + 4 EOG(`HEOR/HEOL/VEOU/VEOL`) [VERIFIED; note the
   `eeg.json` EOG/ECG counts are swapped]. Re-ref to Pz, drop Pz -> 58 EEG.
-  4 s @ 250 Hz = 1000 samples. ⚠ evt.bdf trigger parsing is an open question (Task 2).
+  4 s @ 250 Hz = 1000 samples. evt.bdf triggers are in the TAL channel (parse via
+  `src/preprocessing/neuracle_events.py`; MNE misses them). Data unit is µV (don't ×1e6).
+- Paper-style preprocessing is implemented & validated (`src/preprocessing/shu_preprocess.py`).
 - Paper `.mat` (derivatives): `data [58,1000,200]`, `labels [1,200]` in {1,2}.
 - Slurm: partitions `gpu2node`(default)/`gpu3node`, `gpu:8`, modules `cuda/11.8`,`anaconda3`.
 

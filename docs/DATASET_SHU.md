@@ -80,15 +80,18 @@ Notes:
 - `Pz` is used as the re-reference and then dropped, giving **58 EEG** channels in
   processed data.
 
-## Events / triggers — OPEN QUESTION
+## Events / triggers — RESOLVED
 
-- Reading `evt.bdf` with `mne.io.read_raw_bdf(...).annotations` returned only
-  `{"7": 1, "8": 1}` (channel labelled "Empty Event Data") on sub-001/ses-01 — NOT
-  the 200 MI trial markers. The real per-trial triggers (values 1/2) must be located
-  another way before from-raw preprocessing (alternate evt parse, Neuracle-specific
-  reader, or use the labels already stored in the paper `.mat`).
-- Session duration is 2250 s (~37.5 min) for 200 trials (~11.25 s/trial), consistent
-  with cue + 4 s MI + rest.
+- `evt.bdf` is a Neuracle **BDF+C** file with 2 signals: `Empty Event Data` (all
+  zeros) and `BDF Annotations` (TAL text). The 200 MI triggers live in the TAL
+  channel. MNE's `read_raw_bdf` only surfaces the block markers `{7, 8}` — it does
+  NOT recover the trial triggers from this file.
+- We parse the BDF header + TAL bytes directly in `src/preprocessing/neuracle_events.py`.
+  On sub-001/ses-01 this recovers **100x`1` (left) + 100x`2` (right)** plus markers
+  `7`,`8`,`9x4`. Onsets are ~8 s apart (one big gap = inter-block break).
+- Map trigger 1->label 0 (left), 2->1 (right). Validated: our labels match the paper
+  `.mat` labels exactly.
+- Session duration is 2250 s (~37.5 min) for 200 trials, consistent with the cadence.
 
 ## Events (`task-motorimagery_events.json`)
 

@@ -42,9 +42,11 @@ Use Python + MNE for raw BDF preprocessing. See `docs/PREPROCESSING_SPEC.md`.
 - Some aux channels may be flat/unused (ECG and VEOL were flat in the first 10 s on
   sub-001/ses-01). Check validity over the full recording before using them.
 - After Pz re-referencing, Pz is dropped, leaving 58 EEG channels.
-- OPEN QUESTION: `evt.bdf` annotations via MNE gave only {"7","8"} on sub-001/ses-01,
-  not 200 trial triggers. Find the real MI markers before preprocessing all
-  sessions (or fall back to labels in the paper `.mat`).
+- Events: `evt.bdf` is a Neuracle BDF+C file; the 200 MI triggers are in the TAL
+  (`BDF Annotations`) channel, which MNE does NOT parse (it only shows {7,8}). Use
+  `src/preprocessing/neuracle_events.py` (RESOLVED & validated). Trigger 1->0, 2->1.
+- Unit quirk: BDF dim is `?V` (µV); MNE returns µV-magnitude values — store µV as-is,
+  do NOT multiply by 1e6.
 
 ## Paper-style preprocessing (implement first, no ICA)
 

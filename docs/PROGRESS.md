@@ -7,6 +7,39 @@ Format per entry: date, what was done, decisions made, open questions, next step
 
 ---
 
+## 2026-06-04 — Task 2: raw preprocessing implemented & validated (sub-001/ses-01)
+
+**Done**
+- Cracked the evt.bdf event parsing (was the #1 blocker). The 200 MI triggers live
+  in the `BDF Annotations` TAL channel of the Neuracle BDF+C file; MNE only surfaces
+  the block markers {7,8}. Wrote `src/preprocessing/neuracle_events.py` to parse the
+  BDF header + TAL bytes directly -> recovers 100x'1'(left) + 100x'2'(right), ~8s apart.
+- Implemented `src/preprocessing/shu_preprocess.py` (paper-style), faithful to the
+  authors' `code/pre-processed/preprocessed.m`:
+  drop {ECG,HEOR,HEOL,VEOU,VEOL} -> reref Pz & drop Pz (58 EEG) -> 0.5-40 bandpass
+  -> 50 notch -> epoch [0,4)s (baseline = whole-epoch demean) -> resample 250 -> [200,58,1000].
+- Wired `scripts/preprocess_raw.py`; ran on a COMPUTE NODE via `srun` (not login node).
+
+**Validated vs paper .mat (derivatives/)**
+- Shape [200,58,1000], labels match **exactly** (element-wise, all 200 trials).
+- Signal correlation 0.988-1.000 (mean 0.994). After fixing a unit bug, scale matches:
+  our std 11.283 vs paper 11.263 (ratio 1.0017), RMSE 0.876 uV (~7.8% of std). The
+  residual is expected from EEGLAB-vs-MNE filter implementation differences.
+
+**Decisions / gotchas**
+- UNIT QUIRK: BDF physical dim is the garbled `?V` (meant µV), so MNE does NOT apply
+  µV->V scaling; `get_data()` already returns µV-magnitude values. We store as-is
+  (µV) and do NOT multiply by 1e6 (doing so was a bug, fixed).
+- reref target Pz = EEGLAB channel index 43 (confirmed by counting the EEG montage).
+- Epoch window [0,4)s at 1000Hz (4000 samples) then resample -> 1000 samples.
+
+**Next step**
+- Generalize to all 51x3 via `scripts/preprocess_all.py` + `scripts/slurm/preprocess_cpu.sbatch`
+  (collect per-session status into outputs/preprocess_summary.csv; don't silently skip
+  failures). Then start the EEGNet baseline.
+
+---
+
 ## 2026-06-04 — Project scaffold created
 
 **Done**

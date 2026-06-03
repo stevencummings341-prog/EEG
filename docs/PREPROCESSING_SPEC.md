@@ -8,10 +8,15 @@ Outputs:
 - paper-style -> `data/processed_paper_style/sub-XXX/ses-YY/{X.npy, y.npy, meta.json}`
 - eog/ecg-clean -> `data/processed_eog_ecg_clean/sub-XXX/ses-YY/{X.npy, y.npy, meta.json}`
 
-> Some details (exact epoch window relative to cue, baseline interval, filter
-> order) are not fully pinned down yet. `check_raw_bdf.py` and a single-session
-> dry run must confirm them before running all 51x3. Until confirmed, the script
-> must FAIL LOUDLY if it cannot produce `[200, 58, 1000]`, never silently pad/crop.
+> STATUS: paper-style is IMPLEMENTED (`src/preprocessing/shu_preprocess.py`) and
+> VALIDATED on sub-001/ses-01 against the paper `.mat` (labels match exactly, signal
+> corr ~0.994, scale within 0.2%). It faithfully follows the authors' MATLAB recipe
+> `code/pre-processed/preprocessed.m`. The script FAILS LOUDLY (in strict mode) if it
+> cannot produce `[200, 58, 1000]` — it never silently pads/crops.
+>
+> UNIT NOTE: the BDF physical dimension is the garbled `?V` (meant µV); MNE does not
+> rescale it, so `get_data()` returns µV-magnitude values. We store µV as-is (do NOT
+> multiply by 1e6). Verified: our std 11.28 ≈ paper 11.26.
 
 ## Channel roles (VERIFIED on sub-001/ses-01)
 
@@ -32,13 +37,12 @@ Outputs:
    drop `Pz` -> 58 EEG channels.
 5. **Band-pass** filter 0.5-40 Hz.
 6. **Notch** filter at 50 Hz (PowerLineFrequency).
-7. **Events**: read from `evt.bdf` / annotations; map triggers, keep MI {1, 2}.
-   ⚠ OPEN: the naive `read_raw_bdf(evt.bdf).annotations` gave only `{"7","8"}`,
-   not 200 markers — resolve the real trigger source first (see DATASET_SHU.md), or
-   use the labels from the paper `.mat`.
-8. **Epoch** the 4 s MI segment (window relative to cue — confirm exact onset/offset
-   with `check_raw_bdf.py`); expect 200 epochs.
-9. **Baseline correction**.
+7. **Events**: parse `evt.bdf` TAL via `src/preprocessing/neuracle_events.py`
+   (MNE's reader misses them). Keep MI codes {1, 2}; onset_seconds * sfreq -> sample.
+8. **Epoch** `[0, 4)` s relative to each trigger (tmin=0, tmax=4-1/sfreq -> 4000
+   samples @1000Hz); expect 200 epochs.
+9. **Baseline correction**: whole-epoch demean (MNE `baseline=(None, None)`, matching
+   EEGLAB `pop_rmbase`).
 10. **Resample** to 250 Hz (1000 Hz -> 250 Hz) so each trial has 1000 samples.
 11. **Save** `X = [200, 58, 1000]` float32, `y = [200]` int64 in {0, 1}, `meta.json`.
 

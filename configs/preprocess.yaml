@@ -37,19 +37,18 @@ filter:
   notch_freq: 50.0          # power line (Hz)
 
 # --- epoching ---
-# OPEN QUESTION (Task 2): reading evt.bdf via mne.read_raw_bdf annotations only
-# yielded {"7":1, "8":1} on sub-001/ses-01, NOT 200 trial triggers. The 200 MI
-# event markers (values 1/2) must be located another way (alternate evt.bdf parse,
-# or fall back to the labels in the paper .mat in derivatives/). Resolve before
-# running preprocess_all.
+# Events RESOLVED: the 200 MI triggers are in evt.bdf's TAL channel, parsed by
+# src/preprocessing/neuracle_events.py (MNE's reader misses them). Window/baseline
+# confirmed from the authors' preprocessed.m and validated against the paper .mat.
 epoch:
   event_values: [1, 2]      # 1=left-hand, 2=right-hand (2C)
   label_map: {1: 0, 2: 1}   # original trigger -> internal label
-  tmin: 0.0                 # TODO confirm window start relative to cue (s)
-  tmax: 4.0                 # 4 s MI segment -> 1000 samples @ 250 Hz
-  baseline: null            # TODO confirm baseline interval, e.g. [-0.5, 0.0]
+  tmin: 0.0                 # window start at the trigger
+  tmax: 4.0                 # 4 s MI segment (code uses tmax-1/sfreq -> 4000 samples @1000Hz)
+  baseline: null            # code uses whole-epoch demean (None, None), per preprocessed.m
   expected_trials: 200
   expected_per_class: 100
+  units: uV                 # MNE returns µV-magnitude (BDF dim '?V' not rescaled); store as-is
 
 # --- resampling ---
 resample:
