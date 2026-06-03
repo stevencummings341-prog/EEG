@@ -1,6 +1,8 @@
-"""模型子包：编码器骨架 + 各种 head。
+"""模型子包。
 
-v0 基线：eegnet / deepconvnet / fbcnet。
-v1 主模型：EEGNet 编码器 + 分类头 + prototype 记忆 + confidence 头 + adapter。
-详见 docs/MODEL_PLAN.md。
+本项目主模型：CAP-EEGNet（Confidence-aware Prototype EEGNet）
+  = EEGNet Encoder + Adapter + Classification Head + Prototype Head + Confidence Head。
+见 cap_eegnet.py 与 docs/MODEL_PLAN.md。
+
+baseline（eegnet/deepconvnet/fbcnet）为可选项，非当前优先级。
 """

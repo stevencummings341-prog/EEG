@@ -1,7 +1,7 @@
 #!/bin/bash
 # =====================================================================
 # 在线 test-then-update 适应（GPU 作业）。从 run_test.sh 改写，适配 mi_torch。
-# 提交： sbatch scripts/slurm/online_adapt_gpu.sbatch [configs/online.yaml]
+# 提交： sbatch scripts/slurm/online_adapt_gpu.sbatch [configs/online_adaptation.yaml]
 # =====================================================================
 #SBATCH -J mi_online
 #SBATCH -o logs/slurm/%x-%j.out
@@ -17,7 +17,7 @@
 set -euo pipefail
 
 PROJECT_ROOT="/share/home/yuan/SYX/eeg-mi-online"
-CONFIG_PATH="${1:-configs/online.yaml}"
+CONFIG_PATH="${1:-configs/online_adaptation.yaml}"
 
 cd "$PROJECT_ROOT"
 echo "========================================================"

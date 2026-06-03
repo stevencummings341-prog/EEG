@@ -1,15 +1,18 @@
-# ===== data (never commit; dataset is read from the shared read-only dir) =====
-/data/raw/*
-/data/processed_paper_style/*
-/data/processed_eog_ecg_clean/*
+# ===== raw data: NEVER in this repo (external, path from configs/paths.yaml) =====
+/data/
 
-# ===== run artifacts =====
+# ===== run artifacts & processed data (processed_* lives under outputs/) =====
 /outputs/*
 /logs/*
 /checkpoints/*
 wandb/
 runs/
 slog/
+
+# ===== generated manifests & splits (contain absolute server paths) =====
+/manifests/*.csv
+/manifests/*.json
+/splits/*.json
 
 # keep the directory structure (re-include placeholder files)
 !**/.gitkeep

@@ -7,6 +7,41 @@ Format per entry: date, what was done, decisions made, open questions, next step
 
 ---
 
+## 2026-06-04 — Architecture refactor: external paths + manifests + CAP-EEGNet
+
+**Why**: new direction — drop the baseline-first plan; main model is **CAP-EEGNet**;
+raw data live OUTSIDE the repo and all paths come from `configs/paths.yaml`; MATLAB is
+reference-only; everything Python/PyTorch. Current stage stays data/paths/preprocessing.
+
+**Done**
+- Dirs: added `manifests/`, `splits/`, `outputs/processed_*`; removed `data/`, `notebooks/`.
+- Rules renamed/rewritten: `00-project-context` (new content), `10-data-paths` (NEW),
+  `20-preprocessing`, `30-model-experiments`, `40-online-learning`, `50-server-slurm`
+  (+ updated `90-agent-behavior`). Deleted old 10/20/30/40.
+- `src/utils/paths.py` refactored: no hardcoded dataset root; `load_paths()` reads
+  `configs/paths.yaml` (env `SHU_2C_ROOT` overrides), validates, returns a `Paths` object.
+- `configs/`: NEW `paths.yaml`; `preprocess.yaml` slimmed to params only; renamed
+  cross_subject→`train_cross_subject.yaml`, online→`online_adaptation.yaml` (CAP-EEGNet).
+- `scripts/build_manifest.py` + `src/data/manifest.py`: scan external raw root →
+  `manifests/shu_2c_raw_manifest.csv`. Verified: **51 subjects, 153 sessions, 0 missing**.
+- `check_raw_bdf.py` + `preprocess_raw.py` now read `configs/paths.yaml`; preprocess
+  writes to the configured processed dir, writes `manifest_row.json`, and (optional)
+  cross-checks labels vs the paper `.mat`.
+- Skeletons (no complex code yet): `src/models/cap_eegnet.py` (encoder+adapter+
+  prototype+confidence+cls), `src/data/splits.py`, `src/data/shu_dataset.py`.
+- Re-validated end-to-end on a compute node (srun): sub-001/ses-01 →
+  `outputs/processed_paper_style/...`, shape [200,58,1000], **mat labels_match=True**,
+  std 11.28 vs 11.26.
+
+**Decision**: `configs/paths.yaml` ships with the verified real raw root
+(`/share/workspace2/moto_imagination/WBCIC_SHU`) since it's known; loader still
+validates + supports `SHU_2C_ROOT` override. Change the YAML if data moves.
+
+**Next step**: when ready, implement `src/data` (dataset + subject-wise split),
+then CAP-EEGNet encoder. Still NO full 51×3 preprocessing / GPU jobs in this stage.
+
+---
+
 ## 2026-06-04 — Task 2: raw preprocessing implemented & validated (sub-001/ses-01)
 
 **Done**

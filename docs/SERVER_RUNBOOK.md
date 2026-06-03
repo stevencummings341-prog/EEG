@@ -52,8 +52,8 @@ Submit:
 cd /share/home/yuan/SYX/eeg-mi-online
 sbatch scripts/slurm/preprocess_cpu.sbatch                 # uses default config
 sbatch scripts/slurm/train_baseline_gpu.sbatch configs/eegnet_baseline.yaml
-sbatch scripts/slurm/train_cross_subject_gpu.sbatch configs/cross_subject.yaml
-sbatch scripts/slurm/online_adapt_gpu.sbatch configs/online.yaml
+sbatch scripts/slurm/train_cross_subject_gpu.sbatch configs/train_cross_subject.yaml
+sbatch scripts/slurm/online_adapt_gpu.sbatch configs/online_adaptation.yaml
 ```
 
 Each sbatch script: sets `#SBATCH` resources, writes logs to `logs/slurm/%x-%j.out`

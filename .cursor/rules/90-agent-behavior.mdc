@@ -7,26 +7,24 @@ alwaysApply: true
 
 When helping with this repository:
 
-1. Prefer simple, runnable code over over-engineered research code.
-2. Do NOT invent dataset paths, event ids, or channel names. If something is
-   unknown, write an inspection script first and verify against the real data.
-3. Always preserve the tensor convention `[trials, channels, time]` for saved data.
-4. Before implementing a model, check existing configs and the real data shapes.
-5. Before modifying training logic, re-read the experiment protocol.
-6. For EEG preprocessing, avoid silent assumptions: add logs and sanity checks.
-7. For online learning, enforce test-then-update.
-8. Never mix source and target subjects in cross-subject experiments.
-9. Expose key parameters through YAML configs; keep scripts runnable from the
-   project root.
-10. Save metrics as CSV/JSON; use clear, descriptive filenames and `run_id`s.
-11. Comment the code. Every script/module needs a docstring, and EEG-specific or
-    non-obvious choices need an explanatory comment (this project requires comments).
-    Comments and docstrings may be in Chinese or English.
-12. If a requirement is ambiguous, write a small diagnostic script rather than guess.
-13. Respect the server rules: never start heavy/GPU work on the login node; submit
-    via Slurm. Never write outside `/share/home/yuan/SYX`; the dataset is read-only.
-14. Keep `docs/PROGRESS.md` updated: when you finish a meaningful step or make a
-    design decision, append a dated entry. This file is the project's memory.
-15. Work in the staged rhythm in `docs/PROJECT_BRIEF.md` (inspect -> preprocess one
-    -> validate shape -> preprocess all -> baseline -> 41/10 -> prototype/confidence
-    -> fine-tune -> online). Do not jump ahead and build a giant model first.
+1. Prefer simple, runnable Python over over-engineered research code. Everything
+   (preprocessing, training, online) is Python/PyTorch; MATLAB/Neuracle is reference only.
+2. Never hard-code data paths. Load them from `configs/paths.yaml` via
+   `src/utils/paths.load_paths()` (env `SHU_2C_ROOT` overrides). If a path is unknown
+   or missing, raise a clear error and ask the user to fill `configs/paths.yaml`.
+3. Do NOT invent channel order/event ids. Inspect first (`scripts/check_raw_bdf.py`)
+   and cross-check labels against the paper `.mat` (truth only, not the data entry).
+4. Preserve the tensor convention `[trials, channels, time]`, target `[200, 58, 1000]`.
+5. Split by subject, never by trial. No target leakage into source training.
+6. Online learning is test-then-update.
+7. Comment your code (project requirement): docstrings on every module/script;
+   explain EEG-specific / non-obvious choices. Chinese or English is fine.
+8. Respect the staged plan: current stage is data/paths/manifest/preprocessing. Do NOT
+   build the full CAP-EEGNet, training loop, or online loop yet; keep them as skeletons.
+9. Do NOT preprocess all 51x3 or submit GPU jobs yet. Heavy/GPU work via Slurm only,
+   never on the login node.
+10. Expose parameters via YAML configs; keep scripts runnable from the project root;
+    save metrics as CSV/JSON with clear `run_id`s.
+11. If a requirement is ambiguous, write a small diagnostic script rather than guess.
+12. Keep `docs/PROGRESS.md` updated: append a dated entry after each meaningful step
+    or decision. It is the project's memory.

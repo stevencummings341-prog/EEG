@@ -4,7 +4,7 @@
 run_id: "eegnet_baseline_v0"
 
 data:
-  processed_dir: "data/processed_paper_style"
+  variant: "paper_style"        # processed dir comes from configs/paths.yaml
   n_channels: 58
   n_times: 1000
   sfreq: 250

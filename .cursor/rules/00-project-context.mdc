@@ -1,60 +1,60 @@
 ---
-description: Project-wide research context for SHU MI-EEG cross-subject pretraining and online adaptation.
+description: Project context for SHU MI-EEG cross-subject pretraining and online adaptation.
 alwaysApply: true
 ---
 
 # Project Context
 
-This project studies motor-imagery (MI) EEG decoding on the Shanghai University
-WBCIC-SHU MI-EEG dataset (2019 World Robot Conference BCI contest data).
-The long-term goal is a *confidence-aware, online-adaptive, multi-subagent*
-pretraining framework for cross-subject MI decoding. See `docs/PROJECT_BRIEF.md`
-and `docs/references/ChatGPT-EEG-MI-pretraining.md` (the senior's chat record,
-which is the source of the project's core idea).
+This project studies cross-subject and online adaptive motor imagery EEG decoding on the Shanghai University WBCIC-SHU 2C dataset.
 
-## Core dataset (verified on this server)
+Important current decision:
+- The current main workflow does NOT prioritize reproducing EEGNet/DeepConvNet/FBCNet baselines.
+- Baseline code can remain optional.
+- The main workflow starts from raw BDF preprocessing and directly proceeds to our own experiments.
 
-- Focus on the **2C dataset** (two-class) first.
-- Dataset root (READ-ONLY): `/share/workspace2/moto_imagination/WBCIC_SHU`.
-- Raw BDF per session: `sourcedata/2C dataset/sub-XXX/ses-YY/eeg/{data.bdf, evt.bdf}`.
-- Paper-processed `.mat` per session: `derivatives/2C dataset_processeddata/sub-XXX/ses-YY/eeg/sub-XXX_ses-YY_task-motorimagery_eeg.mat`.
-- **51** subject folders exist on disk (note: `participants_2C.tsv` lists 52 ids,
-  the README mentions 53 two-class participants). **Always enumerate subjects from
-  disk; never hardcode the count.**
-- **3 sessions** per subject.
-- **2 classes**: left-hand grasping MI (event value 1) vs right-hand grasping MI
-  (event value 2). Map to internal labels {1->0, 2->1}.
-- **200 trials per session**, 100 per class.
-- Raw sampling rate **1000 Hz**; preprocessing target **250 Hz**.
-- Raw channel layout (VERIFIED via `scripts/check_raw_bdf.py` on sub-001/ses-01):
-  **64 channels = 59 EEG + 1 ECG + 4 EOG**. EEG names (Fpz ... O2) are in
-  `task-motorimagery_channels.tsv`; ECG is `ECG`; EOG are `HEOR, HEOL, VEOU, VEOL`.
-  NOTE: `task-motorimagery_eeg.json` says "1 EOG, 4 ECG" — that count is **swapped**
-  vs the actual channel names; trust the names. Some aux channels can be flat
-  (ECG and VEOL were flat in the first 10 s on sub-001/ses-01) — verify validity.
-- Target processed tensor per session: `[trials, channels, time] = [200, 58, 1000]`
-  (58 = 59 EEG minus Pz after Pz re-referencing; 1000 = 4 s @ 250 Hz).
-- The paper `.mat` stores `data` as `[channels, time, trials] = [58, 1000, 200]`
-  and `labels` as `[1, 200]` with values {1, 2}. Our convention transposes to
-  `[trials, channels, time]`.
+Dataset:
+- Use the 2C dataset first.
+- 51 subjects.
+- 3 sessions per subject.
+- 2 classes: left-hand grasping MI and right-hand grasping MI.
+- Each session has 200 trials, 100 per class.
+- Raw data are stored outside this project directory.
+- Raw files are data.bdf and evt.bdf.
+- Final processed shape per session must be [trials, channels, time] = [200, 58, 1000].
 
-## Main research pipeline
+Main model:
+- CAP-EEGNet: Confidence-aware Prototype EEGNet.
+- Components:
+  - EEGNet encoder
+  - Adapter
+  - Classification head
+  - Prototype head
+  - Confidence head
 
-1. Load raw BDF data with Python + MNE.
-2. Preprocess raw EEG, optionally using ECG/EOG channels for artifact cleaning.
-3. Save processed trials as `.npy`/`.npz` in `[trials, channels, time]`.
-4. Reproduce baseline models: EEGNet, DeepConvNet, FBCNet.
-5. Run repeated 41/10 subject-wise cross-subject pretraining.
-6. Fine-tune on target-subject Session 1.
-7. Online test-then-update adaptation on target Session 2 and Session 3.
+Main experiments:
+1. Build manifest from external raw data path.
+2. Preprocess raw BDF data.
+3. Create 41/10 subject-wise splits.
+4. Train CAP-EEGNet on 41 source subjects.
+5. Zero-shot evaluate on 10 target subjects.
+6. Fine-tune on target Session 1.
+7. Online test-then-update on target Session 2 and Session 3.
+8. Run ablation studies for prototype, confidence, adapter, and online update.
 
-## Hard invariants (never violate)
+Critical constraints:
+- Never split cross-subject experiments by trial.
+- Never leak target subject data into source training.
+- Online learning must be test-then-update.
+- Do not hard-code dataset paths.
 
-- Do NOT modify, write to, or delete anything outside `/share/home/yuan/SYX`.
-  The dataset directory is strictly read-only.
-- Saved processed data is always `[trials, channels, time]`.
-- Split by **subject**, never by trial, for cross-subject experiments.
-- Target subjects must never leak into source-subject training.
-- Online learning is **test-then-update**: predict first, record metrics, then update.
-- Development happens in the conda env `mi_torch`.
-- Never launch training on the Slurm login node (see `40-server-slurm`).
+Implementation language:
+- All main pipelines (preprocessing, training, cross-subject, fine-tuning, online) MUST be Python/PyTorch.
+- The dataset authors' MATLAB script (preprocessed.m) and the Neuracle toolbox are a
+  REFERENCE RECIPE ONLY. They must NOT be a runtime dependency.
+- The paper-processed `.mat` files in `derivatives/` may be used as an event/label
+  ground-truth CROSS-CHECK, but are NOT the main training data entry point.
+
+Current stage:
+- We are in the raw-data inspector / Python-preprocessing stage.
+- Do NOT yet preprocess all 51x3, submit GPU jobs, or build complex model/training code.
+- Immediate goal: from raw, in Python, produce X=[200,58,1000], y=[200] for sub-001/ses-01.

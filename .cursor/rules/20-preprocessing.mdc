@@ -1,0 +1,62 @@
+---
+description: Rules for Python raw EEG preprocessing (paper-style, reproduced from preprocessed.m).
+globs:
+  - "src/preprocessing/**/*.py"
+  - "src/data/**/*.py"
+  - "scripts/build_manifest.py"
+  - "scripts/preprocess_raw.py"
+  - "scripts/preprocess_all.py"
+  - "scripts/check_raw_bdf.py"
+  - "configs/preprocess.yaml"
+---
+
+# Preprocessing Rules (Python only)
+
+Preprocessing MUST be implemented in Python + MNE. The MATLAB `preprocessed.m` is a
+reference recipe only; reproduce its steps faithfully but never call MATLAB. See
+`docs/PREPROCESSING_SPEC.md`.
+
+## Paths
+
+- Raw root, processed output dir, and manifest paths all come from `configs/paths.yaml`
+  via `src/utils/paths.load_paths()`. Never hard-code them.
+- Raw layout under the root: `sourcedata/2C dataset/sub-XXX/ses-YY/eeg/{data.bdf, evt.bdf}`
+  (note the literal space in `2C dataset`; always build paths with pathlib).
+- Write processed data only under the configured processed dir (e.g.
+  `outputs/processed_paper_style/...`). Never write into the raw dataset directory.
+
+## Verified channel facts (sub-001/ses-01)
+
+- 64 raw channels = 59 EEG + 1 ECG (`ECG`) + 4 EOG (`HEOR/HEOL/VEOU/VEOL`).
+  (`task-motorimagery_eeg.json` says 1 EOG + 4 ECG — SWAPPED; trust the names.)
+- Re-reference to `Pz` (EEGLAB channel 43), then drop Pz -> 58 EEG channels.
+- Unit quirk: BDF physical dim is the garbled `?V` (meant µV); MNE returns
+  µV-magnitude values — store µV as-is, do NOT multiply by 1e6.
+
+## Events (RESOLVED — keep verifying labels, do not blindly trust)
+
+- The 200 MI triggers live in `evt.bdf`'s `BDF Annotations` (TAL) channel. MNE's
+  `read_raw_bdf` does NOT recover them (it only shows block markers {7,8}).
+- Parse via `src/preprocessing/neuracle_events.py`. Map trigger 1->0 (left), 2->1 (right).
+- Cross-check labels/trial-count against the paper `.mat` in `derivatives/` for every
+  session you validate. Treat the `.mat` as ground truth for the label sequence only.
+
+## Paper-style pipeline (no ICA)
+
+1. Read `data.bdf` with MNE (preload).
+2. Parse events from `evt.bdf` TAL; build the MNE events array (onset*sfreq).
+3. Drop the 5 aux channels {ECG, HEOR, HEOL, VEOU, VEOL} -> 59 EEG.
+4. Re-reference to Pz, drop Pz -> 58 EEG.
+5. Band-pass 0.5-40 Hz; 50 Hz notch.
+6. Epoch [0, 4) s relative to each trigger (tmax = 4 - 1/sfreq -> 4000 samples @1000Hz).
+7. Baseline correction = whole-epoch demean (`baseline=(None, None)`).
+8. Resample to 250 Hz -> 1000 samples per trial.
+9. Output `X=[200,58,1000]` float32 (µV), `y=[200]` int64 in {0,1}, plus `meta.json`.
+
+## Discipline
+
+- FAIL LOUDLY (strict mode) if `[200, 58, 1000]` cannot be produced; never silently
+  pad/crop/drop. Record the failure reason in `meta.json` and the processed manifest.
+- Always log: subject/session, raw sfreq, orig/final channel counts, n_events,
+  n_trials, per-class counts, output shape, units, status.
+- After preprocessing, append/update `manifests/shu_2c_processed_manifest.csv`.

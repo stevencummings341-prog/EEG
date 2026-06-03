@@ -7,7 +7,7 @@
 多 seed 重复，报告 mean ± std。GPU 作业，经 Slurm 提交。
 
 用法：
-  python scripts/train_cross_subject.py --config configs/cross_subject.yaml
+  python scripts/train_cross_subject.py --config configs/train_cross_subject.yaml
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ logger = get_logger("train_cross_subject")
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="41/10 cross-subject pretraining.")
-    ap.add_argument("--config", default="configs/cross_subject.yaml")
+    ap.add_argument("--config", default="configs/train_cross_subject.yaml")
     args = ap.parse_args()
 
     cfg = load_config(PROJECT_ROOT / args.config)

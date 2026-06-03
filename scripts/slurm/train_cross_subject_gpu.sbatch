@@ -1,7 +1,7 @@
 #!/bin/bash
 # =====================================================================
 # 41/10 跨被试预训练（GPU 作业）。从 run_test.sh 改写，适配 mi_torch 环境。
-# 提交： sbatch scripts/slurm/train_cross_subject_gpu.sbatch [configs/cross_subject.yaml]
+# 提交： sbatch scripts/slurm/train_cross_subject_gpu.sbatch [configs/train_cross_subject.yaml]
 # =====================================================================
 #SBATCH -J mi_cross_subj
 #SBATCH -o logs/slurm/%x-%j.out
@@ -17,7 +17,7 @@
 set -euo pipefail
 
 PROJECT_ROOT="/share/home/yuan/SYX/eeg-mi-online"
-CONFIG_PATH="${1:-configs/cross_subject.yaml}"
+CONFIG_PATH="${1:-configs/train_cross_subject.yaml}"
 
 cd "$PROJECT_ROOT"
 echo "========================================================"

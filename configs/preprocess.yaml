@@ -1,64 +1,52 @@
-# Preprocessing config (paper-style by default).
-# All knobs for raw BDF -> [trials, channels, time] processed tensors live here.
-# See docs/PREPROCESSING_SPEC.md. Values marked TODO must be confirmed by
-# scripts/check_raw_bdf.py on a real session before running the full dataset.
+# Preprocessing PARAMETERS only. Filesystem paths live in configs/paths.yaml.
+# Paper-style by default; reproduces the authors' preprocessed.m in Python.
+# See docs/PREPROCESSING_SPEC.md. Validated on sub-001/ses-01 vs the paper .mat.
 
-# --- paths (dataset is READ-ONLY; write only under the project) ---
-paths:
-  dataset_root: "/share/workspace2/moto_imagination/WBCIC_SHU"
-  raw_subdir: "sourcedata/2C dataset"            # literal space is intentional
-  derivatives_subdir: "derivatives/2C dataset_processeddata"
-  out_dir: "data/processed_paper_style"          # relative to project root
-  summary_csv: "outputs/preprocess_summary.csv"
-
-# --- variant: "paper_style" (no ICA) or "eog_ecg_clean" ---
+# variant: "paper_style" (no ICA) or "eog_ecg_clean"
 variant: "paper_style"
 
-# --- channel handling (VERIFIED via scripts/check_raw_bdf.py on sub-001/ses-01) ---
-# Reality: 59 EEG + 1 ECG + 4 EOG. NOTE: task-motorimagery_eeg.json lists
-# "1 EOG, 4 ECG" which is SWAPPED vs the actual channel names — trust the names.
+# --- channel handling (VERIFIED via scripts/check_raw_bdf.py) ---
+# Reality: 59 EEG + 1 ECG + 4 EOG. (task-motorimagery_eeg.json's EOG/ECG counts are
+# SWAPPED vs the real names; trust the names.)
 channels:
   n_eeg: 59
   n_eog: 4                  # HEOR/HEOL/VEOU/VEOL
-  n_ecg: 1                  # "ECG"
-  reference: "Pz"           # re-reference to Pz, then drop it -> 58 EEG
+  n_ecg: 1                  # ECG
+  reference: "Pz"           # re-reference to Pz (EEGLAB ch 43), then drop it -> 58 EEG
   drop_after_ref: ["Pz"]
   expected_final_eeg: 58
-  eog_names: ["HEOR", "HEOL", "VEOU", "VEOL"]   # verified
-  ecg_names: ["ECG"]                              # verified
-  # caveat: on sub-001/ses-01 the ECG and VEOL channels were flat in the first 10s.
-  # The preprocessing step must check validity over the full recording before
-  # relying on any aux channel (esp. for the eog_ecg_clean variant).
+  eog_names: ["HEOR", "HEOL", "VEOU", "VEOL"]
+  ecg_names: ["ECG"]
 
 # --- filtering ---
 filter:
-  l_freq: 0.5               # band-pass low edge (Hz)
-  h_freq: 40.0              # band-pass high edge (Hz)
-  notch_freq: 50.0          # power line (Hz)
+  l_freq: 0.5
+  h_freq: 40.0
+  notch_freq: 50.0
 
-# --- epoching ---
-# Events RESOLVED: the 200 MI triggers are in evt.bdf's TAL channel, parsed by
-# src/preprocessing/neuracle_events.py (MNE's reader misses them). Window/baseline
-# confirmed from the authors' preprocessed.m and validated against the paper .mat.
+# --- epoching (window/baseline confirmed from preprocessed.m) ---
 epoch:
   event_values: [1, 2]      # 1=left-hand, 2=right-hand (2C)
   label_map: {1: 0, 2: 1}   # original trigger -> internal label
-  tmin: 0.0                 # window start at the trigger
-  tmax: 4.0                 # 4 s MI segment (code uses tmax-1/sfreq -> 4000 samples @1000Hz)
-  baseline: null            # code uses whole-epoch demean (None, None), per preprocessed.m
+  tmin: 0.0                 # window starts at the trigger
+  tmax: 4.0                 # 4 s (code uses tmax-1/sfreq -> 4000 samples @1000Hz)
+  baseline: null            # code uses whole-epoch demean (None, None)
   expected_trials: 200
   expected_per_class: 100
   units: uV                 # MNE returns µV-magnitude (BDF dim '?V' not rescaled); store as-is
 
 # --- resampling ---
 resample:
-  raw_sfreq: 1000           # informational; read actual from the file
+  raw_sfreq: 1000           # informational; actual read from the file
   target_sfreq: 250
 
-# --- output expectations (assert, fail loudly on mismatch) ---
+# --- output expectation (assert; fail loudly on mismatch) ---
 expect_shape: [200, 58, 1000]   # [trials, channels, time]
 
 # --- misc ---
 seed: 42
-n_jobs: 1                   # MNE filtering parallelism; keep modest on shared nodes
-strict: true               # if true, raise on any shape/trial-count mismatch
+strict: true               # raise on any shape/trial-count mismatch
+
+# --- cross-check (optional) ---
+# Compare produced labels/trials against the paper .mat in derivatives/.
+validate_against_mat: true

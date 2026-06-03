@@ -8,7 +8,7 @@
 默认冻结 backbone。GPU 作业，经 Slurm 提交。
 
 用法：
-  python scripts/run_online_adaptation.py --config configs/online.yaml
+  python scripts/run_online_adaptation.py --config configs/online_adaptation.yaml
 """
 
 from __future__ import annotations
@@ -28,8 +28,8 @@ logger = get_logger("run_online_adaptation")
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Online test-then-update adaptation.")
-    ap.add_argument("--config", default="configs/online.yaml")
+    ap = argparse.ArgumentParser(description="Online test-then-update adaptation (CAP-EEGNet).")
+    ap.add_argument("--config", default="configs/online_adaptation.yaml")
     args = ap.parse_args()
 
     cfg = load_config(PROJECT_ROOT / args.config)

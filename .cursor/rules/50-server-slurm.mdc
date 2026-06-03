@@ -1,0 +1,52 @@
+---
+description: Rules for running on the university Slurm GPU cluster safely.
+alwaysApply: true
+---
+
+# Server & Slurm Rules (READ BEFORE RUNNING ANYTHING HEAVY)
+
+This project runs on a shared university Slurm cluster. See `docs/SERVER_RUNBOOK.md`
+and `docs/ENVIRONMENT.md`. Violating these can crash the login node for everyone.
+
+## Golden rule: never compute on the login node
+
+- The login node is for editing, `git`, file inspection, and submitting jobs ONLY.
+- NEVER run training, full-dataset preprocessing, or any GPU/heavy-CPU job on the
+  login node. Submit via `sbatch`, or use `srun`/`salloc` for an interactive session.
+- Quick, cheap, < ~30 s sanity checks (versions, reading one file header, listing
+  dirs, building the manifest) are acceptable on the login node.
+- A SINGLE-session preprocessing smoke test runs via `srun`, not on the login node.
+
+## Cluster facts (verified)
+
+- Partitions: `gpu2node` (default) and `gpu3node`. Each node: 8 GPUs (`gpu:8`),
+  128 CPUs, ~773 GB RAM. TIMELIMIT is effectively unlimited -> ALWAYS set `-t`.
+- Modules: `cuda/11.8`, `anaconda3`. Conda env: `mi_torch` (python 3.10).
+- KNOWN ISSUE: `mi_torch`'s torch is CPU-only (`torch.version.cuda is None`). GPU jobs
+  will not use CUDA until a CUDA-enabled torch is installed (see `docs/ENVIRONMENT.md`).
+  Flag this if a GPU run reports `cuda_avail=False`.
+
+## Submitting jobs
+
+- Batch scripts live in `scripts/slurm/*.sbatch`. Run from the project root.
+- Logs go to `logs/slurm/%x-%j.out` and `.err` (create `logs/slurm` first).
+- Request only what you need (`--gres=gpu:1`, `-c`, `--mem`). Preprocessing is CPU-only
+  (no `--gres`).
+- Activate inside the job:
+  ```bash
+  module purge && module load cuda/11.8 anaconda3
+  source "$(conda info --base)/etc/profile.d/conda.sh" && conda activate mi_torch
+  cd /share/home/yuan/SYX/eeg-mi-online
+  ```
+- Pass config paths as arguments. Useful: `sbatch`, `squeue -u $USER`, `scancel`,
+  `sinfo`, `sacct -j <jobid>`.
+
+## Storage
+
+- Code/configs/manifests/splits/outputs live under the project root.
+- Raw dataset (path from `configs/paths.yaml`) is READ-ONLY; never write into it.
+- Never write outside `/share/home/yuan/SYX`.
+
+## Stage note
+
+Per the current stage: do NOT submit GPU jobs or full 51x3 preprocessing yet.

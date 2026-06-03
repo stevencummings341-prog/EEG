@@ -18,10 +18,12 @@ set -euo pipefail
 
 PROJECT_ROOT="/share/home/yuan/SYX/eeg-mi-online"
 CONFIG_PATH="${1:-configs/preprocess.yaml}"
+PATHS_PATH="${2:-configs/paths.yaml}"
 
 cd "$PROJECT_ROOT"
 echo "========================================================"
 echo "Project : $PROJECT_ROOT"
+echo "Paths   : $PATHS_PATH"
 echo "Config  : $CONFIG_PATH"
 echo "Node    : $(hostname)  |  Start: $(date)"
 echo "========================================================"
@@ -31,8 +33,8 @@ module load anaconda3
 source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate mi_torch
 
-# -u 关闭缓冲，日志实时可见。
-python -u scripts/preprocess_all.py --config "$CONFIG_PATH"
+# -u 关闭缓冲，日志实时可见。（注意：当前阶段暂不运行全量 51x3。）
+python -u scripts/preprocess_all.py --paths "$PATHS_PATH" --config "$CONFIG_PATH"
 
 echo "--------------------------------------------------------"
 echo "Done: $(date)"

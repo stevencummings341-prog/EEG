@@ -1,23 +1,23 @@
-# Experiment B: target-subject fine-tuning (Stage 4).
-# Start from a cross-subject pretrained checkpoint; fine-tune on target Session 1;
-# test on Session 2 + 3. See docs/EXPERIMENT_PROTOCOL.md.
+# Target-subject fine-tuning of CAP-EEGNet (Stage: later). Paths from configs/paths.yaml.
+# Fine-tune on target Session 1, test on Session 2 + 3. See docs/EXPERIMENT_PROTOCOL.md.
+# NOTE: not implemented yet (current stage = data/paths/preprocessing).
 
-run_id: "finetune_v0"
+run_id: "cap_eegnet_finetune_v0"
 
 data:
-  processed_dir: "data/processed_paper_style"
+  variant: "paper_style"
   n_channels: 58
   n_times: 1000
   n_classes: 2
-  finetune_sessions: [1]      # Session 1 for calibration/fine-tuning
-  test_sessions: [2, 3]       # held-out test
+  finetune_sessions: [1]        # Session 1 for calibration/fine-tuning
+  test_sessions: [2, 3]
 
 pretrained:
-  checkpoint: ""              # path to a cross_subject checkpoint (required)
+  checkpoint: ""                # cross-subject CAP-EEGNet checkpoint (required)
 
 # strategy: which parameters to adapt
-strategy: "adapter"           # zero_shot | classifier_only | adapter | prototype | full
-data_budget: "full_session1"  # full_session1 | first_20pct | fewshot_5 | fewshot_10 | fewshot_20 | unsupervised
+strategy: "adapter"             # zero_shot | classifier_only | adapter | prototype | full
+data_budget: "full_session1"    # full_session1 | first_20pct | fewshot_5 | fewshot_10 | fewshot_20 | unsupervised
 
 train:
   epochs: 50
@@ -25,14 +25,13 @@ train:
   lr: 0.0005
   weight_decay: 0.0001
   optimizer: "adam"
-  freeze_backbone: true       # adapter/classifier/prototype strategies freeze it
+  freeze_backbone: true         # adapter/classifier/prototype strategies freeze it
   seed: 42
   device: "cuda"
   num_workers: 4
 
 eval:
   metrics: ["accuracy", "balanced_accuracy", "macro_f1", "auc"]
-  # confidence metrics once the confidence head exists:
   calibration_metrics: ["ece", "nll", "brier"]
   per_target_subject: true
 

@@ -1,0 +1,52 @@
+---
+description: Rules for online test-then-update adaptation.
+globs:
+  - "src/online/**/*.py"
+  - "scripts/run_online_adaptation.py"
+  - "configs/online_adaptation.yaml"
+---
+
+# Online Learning Rules
+
+Python/PyTorch. See `docs/EXPERIMENT_PROTOCOL.md` (Experiment C) and the senior's
+chat record (`docs/references/ChatGPT-EEG-MI-pretraining.md`, sec. 7-12).
+
+## Setup
+
+- Start from the pretrained CAP-EEGNet, optionally after target Session-1 fine-tuning.
+- Run on target Session 2, then Session 3, in temporal trial order.
+
+## Iron rule: test-then-update (prequential)
+
+For each trial, strictly in this order:
+1. Input the EEG trial.
+2. Predict the MI class.
+3. Output a confidence score.
+4. Record prediction, confidence, correctness.
+5. ONLY THEN update the model.
+
+Never train on a trial before evaluating it. Never update on a whole session and then
+test the same session.
+
+## What may update online
+
+- Allowed: prototype memory, adapter, confidence calibration head, BN statistics
+  (causal), classifier head (only if supervised labels available).
+- Frozen by default: the EEGNet backbone.
+- Unlabeled regime: pseudo-label updates must be confidence-gated
+  (`if confidence > threshold: update; else: skip / only update norm stats`).
+
+## Stability safeguards
+
+confidence threshold, EMA teacher, replay memory, prototype momentum, entropy
+regularization, feature distillation, class-balanced memory, learning-rate decay.
+
+## Outputs
+
+- `outputs/<run_id>/per_trial.csv` (trial, pred, confidence, correct, updated?).
+- pre-online vs post-online metrics, performance-vs-trial curve, risk-coverage curve.
+
+## Stage note
+
+Do NOT implement the online loop yet — current stage is data/paths/preprocessing.
+Keep `src/online/` as documented skeletons.

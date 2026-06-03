@@ -5,8 +5,9 @@ Two preprocessing variants. Implement **paper-style** first (no ICA). The
 [200, 58, 1000]` float32 and `y` in {0, 1}.
 
 Outputs:
-- paper-style -> `data/processed_paper_style/sub-XXX/ses-YY/{X.npy, y.npy, meta.json}`
-- eog/ecg-clean -> `data/processed_eog_ecg_clean/sub-XXX/ses-YY/{X.npy, y.npy, meta.json}`
+Output dirs come from `configs/paths.yaml` (`processed_data.*`); defaults:
+- paper-style -> `outputs/processed_paper_style/sub-XXX/ses-YY/{X.npy, y.npy, meta.json}`
+- eog/ecg-clean -> `outputs/processed_eog_ecg_clean/sub-XXX/ses-YY/{X.npy, y.npy, meta.json}`
 
 > STATUS: paper-style is IMPLEMENTED (`src/preprocessing/shu_preprocess.py`) and
 > VALIDATED on sub-001/ses-01 against the paper `.mat` (labels match exactly, signal

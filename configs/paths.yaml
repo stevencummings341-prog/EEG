@@ -1,0 +1,28 @@
+# Central path configuration. ALL filesystem paths come from here (or env vars).
+# Never hard-code data paths in Python. Loaded by src/utils/paths.load_paths().
+# Env override: SHU_2C_ROOT overrides raw_data.shu_2c_root.
+#
+# NOTE: shu_2c_root below is the VERIFIED external location on this server. If you
+# move the data or run elsewhere, change it here (or set SHU_2C_ROOT). The loader
+# raises a clear error if it is missing, a placeholder, or does not exist.
+
+raw_data:
+  # External, READ-ONLY SHU 2C dataset root (BIDS). Outside this project.
+  shu_2c_root: "/share/workspace2/moto_imagination/WBCIC_SHU"
+  # Subdirs under the root (the literal space in "2C dataset" is intentional).
+  raw_subdir: "sourcedata/2C dataset"
+  # Paper-processed .mat — used ONLY as a label/event cross-check, not as data entry.
+  derivatives_subdir: "derivatives/2C dataset_processeddata"
+
+processed_data:
+  # Where Python preprocessing writes [200,58,1000] tensors. Relative paths resolve
+  # against the project root; use an absolute scratch path for large-scale runs.
+  paper_style_dir: "outputs/processed_paper_style"
+  eog_ecg_clean_dir: "outputs/processed_eog_ecg_clean"
+
+manifests:
+  raw_manifest: "manifests/shu_2c_raw_manifest.csv"
+  processed_manifest: "manifests/shu_2c_processed_manifest.csv"
+
+splits:
+  dir: "splits"

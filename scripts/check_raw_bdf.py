@@ -146,11 +146,11 @@ def signal_activity(raw, picks: list[str], seconds: float = 10.0) -> dict:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Inspect one raw BDF session (no training).")
-    ap.add_argument("--dataset-root", default=str(paths.DATASET_ROOT),
-                    help="数据集根目录（只读）。")
+    ap.add_argument("--config", default="configs/paths.yaml",
+                    help="路径配置文件（含外部 raw 数据根）。")
     ap.add_argument("--subject", default=None, help="被试，如 1 或 sub-001。")
     ap.add_argument("--session", default=None, help="session，如 1 或 ses-01。")
-    ap.add_argument("--data-bdf", default=None, help="直接指定 data.bdf 路径。")
+    ap.add_argument("--data-bdf", default=None, help="直接指定 data.bdf 路径（绕过 paths.yaml）。")
     ap.add_argument("--evt-bdf", default=None, help="直接指定 evt.bdf 路径。")
     ap.add_argument("--seconds", type=float, default=10.0,
                     help="检查 ECG/EOG 活动时载入的秒数（默认 10s，登录节点安全）。")
@@ -159,20 +159,26 @@ def main() -> None:
 
     import mne
 
-    root = Path(args.dataset_root)
-
-    # 解析 data.bdf / evt.bdf 路径：优先显式路径，否则用 subject/session 构造。
+    # 解析 data.bdf / evt.bdf 路径：优先显式路径，否则从 configs/paths.yaml 构造。
+    root = None
     if args.data_bdf:
         data_bdf = Path(args.data_bdf)
         evt_bdf = Path(args.evt_bdf) if args.evt_bdf else data_bdf.with_name("evt.bdf")
         subj = args.subject or data_bdf.parent.parent.parent.name
         sess = args.session or data_bdf.parent.parent.name
+        # 尝试拿到 raw 根，仅用于定位 channels.tsv（拿不到也能跑，通道分类退化为启发式）。
+        try:
+            root = paths.load_paths(PROJECT_ROOT / args.config, require_raw=False).raw_root
+        except Exception:  # noqa: BLE001
+            root = None
     else:
         if args.subject is None or args.session is None:
             ap.error("需要 --subject 与 --session，或直接给 --data-bdf。")
+        P = paths.load_paths(PROJECT_ROOT / args.config, require_raw=True)
+        root = P.raw_root
         subj = paths.sub_id(args.subject)
         sess = paths.ses_id(args.session)
-        data_bdf, evt_bdf = paths.raw_bdf_paths(subj, sess, root=root)
+        data_bdf, evt_bdf = P.raw_bdf_paths(subj, sess)
 
     logger.info("data.bdf = %s", data_bdf)
     logger.info("evt.bdf  = %s", evt_bdf)
@@ -184,7 +190,7 @@ def main() -> None:
     sfreq = float(raw.info["sfreq"])
     duration_s = float(raw.n_times) / sfreq
 
-    eeg_names = load_eeg_channel_names(root)
+    eeg_names = load_eeg_channel_names(root) if root is not None else []
     roles = classify_channels(raw.ch_names, eeg_names)
 
     # 仅对疑似 ECG/EOG/other 通道做活动检查（这些是我们要确认是否可用的辅助通道）。

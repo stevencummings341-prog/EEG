@@ -1,0 +1,63 @@
+---
+description: Rules for CAP-EEGNet model and the cross-subject / fine-tuning experiments.
+globs:
+  - "src/models/**/*.py"
+  - "src/training/**/*.py"
+  - "src/evaluation/**/*.py"
+  - "scripts/train_cross_subject.py"
+  - "scripts/finetune_target.py"
+  - "scripts/train_baseline.py"
+  - "configs/train_cross_subject.yaml"
+  - "configs/finetune.yaml"
+  - "configs/eegnet_baseline.yaml"
+---
+
+# Model & Experiment Rules
+
+All models and training are Python/PyTorch. See `docs/MODEL_PLAN.md` and
+`docs/EXPERIMENT_PROTOCOL.md`.
+
+## Main model: CAP-EEGNet (Confidence-aware Prototype EEGNet)
+
+Components:
+- EEGNet encoder (backbone).
+- Adapter (lightweight, for target fine-tuning + online adaptation).
+- Classification head.
+- Prototype head (global + subject + session prototypes; distance/margin).
+- Confidence head (multi-source: predictive entropy, prototype margin, consistency,
+  calibration — NOT just softmax max prob).
+
+Baselines (EEGNet/DeepConvNet/FBCNet) are OPTIONAL and not the current priority.
+
+## Tensor convention
+
+- Dataset returns `X` as `[channels, time]` (58 x 1000), `y` scalar in {0,1}.
+- DataLoader batches `[batch, channels, time]`; the model adds the singleton
+  `[batch, 1, channels, time]` internally.
+
+## Main experiment: 41/10 cross-subject pretraining
+
+- Split by SUBJECT (41 source / 10 target). Never trial-wise. No target leakage.
+- Train CAP-EEGNet on all 3 sessions of the 41 source subjects.
+- Zero-shot test on all 3 sessions of the 10 target subjects.
+- Persist each split to `splits/<name>.json`; repeat over seeds; report mean +/- std.
+
+## Fine-tuning
+
+- From the pretrained model, per target subject: fine-tune on Session 1, test on
+  Session 2 + 3. Compare zero-shot / classifier-only / adapter / prototype / full.
+
+## Losses & metrics
+
+- Classification (CE) + prototype margin + confidence calibration (+ optional
+  consistency / domain).
+- Report Accuracy, Balanced Accuracy, Macro-F1, AUC; plus ECE/NLL/Brier and
+  risk-coverage for the confidence head.
+
+## Run hygiene
+
+- Fixed seeds. Every run saves resolved config + split + checkpoint + metrics + logs
+  under a unique `run_id` in `outputs/` and `checkpoints/`. Never overwrite without a
+  new `run_id`. All hyperparameters via YAML configs. GPU work via Slurm only.
+- Do NOT build the full CAP-EEGNet / training loop yet — current stage is data/paths.
+  Keep model code as documented skeletons until preprocessing is finalized.

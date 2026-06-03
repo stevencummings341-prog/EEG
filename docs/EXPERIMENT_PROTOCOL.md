@@ -1,18 +1,22 @@
 # Experiment Protocol
 
 Derived from the senior's chat record (`docs/references/ChatGPT-EEG-MI-pretraining.md`,
-sections 14-16). Dataset: 2C, 51 subjects on disk, 3 sessions each, 200 trials/session.
+sections 14-16). Dataset: 2C, 51 subjects (enumerate from disk), 3 sessions each,
+200 trials/session. All experiments are Python/PyTorch; the model is **CAP-EEGNet**.
 
 ## Global rules
 
+- Data entry = our Python-preprocessed `.npy` (the configured `processed_*` dir);
+  NOT the paper `.mat` (that is a label cross-check only).
 - **Split by subject, never by trial.** Target subjects must not appear in training.
-- Persist every split to JSON (`outputs/splits/<name>.json`) for reproducibility.
+- Persist every split to JSON in the configured splits dir (`splits/<run_id>_seed<k>.json`).
 - Fixed seeds; repeated runs report **mean +/- std**.
 - Metrics (all experiments): Accuracy, Balanced Accuracy, Macro-F1, AUC.
 - Confidence metrics (when a confidence head exists): ECE, NLL, Brier score,
   confidence-accuracy curve, risk-coverage curve.
+- Current stage builds these as configs + skeletons only; no GPU runs yet.
 
-## Experiment 1 — Cross-subject zero-shot (Stage 3)
+## Experiment 1 — CAP-EEGNet cross-subject zero-shot
 
 - Randomly choose 41 source subjects; the other 10 are targets.
 - Train on **all 3 sessions** of the 41 source subjects.

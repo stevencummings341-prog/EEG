@@ -1,0 +1,47 @@
+---
+description: Rules for external data paths and storage.
+alwaysApply: true
+---
+
+# Data Path Rules
+
+Raw EEG data are NOT stored inside this repository.
+
+All data paths must be loaded from:
+- configs/paths.yaml
+or
+- environment variables
+
+Never hard-code raw data paths in Python scripts.
+
+The raw SHU 2C dataset root should be defined as:
+
+configs/paths.yaml:
+raw_data:
+  shu_2c_root: /absolute/path/to/external/SHU_2C_dataset
+
+If the path is unknown or does not exist:
+- Do not guess.
+- Raise a clear error.
+- Ask the user to fill in configs/paths.yaml.
+
+Use manifests:
+- scripts/build_manifest.py scans the external raw data root.
+- It generates manifests/shu_2c_raw_manifest.csv.
+- The manifest must contain:
+  - subject_id
+  - session_id
+  - data_bdf_path
+  - evt_bdf_path
+
+Processed data:
+- Processed data path must also come from configs/paths.yaml.
+- Processed data can be stored under outputs/processed_* or a scratch directory.
+- Never write into the external raw data directory.
+
+Implementation notes for this repo:
+- `src/utils/paths.py` exposes `load_paths()` which reads `configs/paths.yaml`
+  (env var `SHU_2C_ROOT` overrides `raw_data.shu_2c_root`) and validates existence.
+- Pass the loaded `Paths` object around; do not reconstruct dataset roots elsewhere.
+- Relative paths in `paths.yaml` (e.g. `outputs/processed_paper_style`) resolve
+  against the project root; absolute paths (e.g. a scratch dir) are used as-is.

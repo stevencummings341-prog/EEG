@@ -1,103 +1,76 @@
 # Project Brief: SHU MI-EEG Cross-subject Pretraining and Online Adaptation
 
-> 本项目的核心思想来源于学长的聊天记录
-> `docs/references/ChatGPT-EEG-MI-pretraining.md`，请把它当作"项目宗旨"。
-> 本文件是给 Cursor 和开发者看的总说明书，比 `.cursor/rules` 更详细。
+> 核心思想来源：`docs/references/ChatGPT-EEG-MI-pretraining.md`（学长聊天记录）。
+> 本文件是总说明书；固定约束见 `.cursor/rules/`。
 
 ## Goal
 
-Build a Python pipeline for the Shanghai University **WBCIC-SHU** motor-imagery
-(MI) EEG dataset. Start from raw BDF data, do preprocessing in Python, reproduce
-baseline decoding models, then study **cross-subject pretraining**,
-**target-subject fine-tuning**, and **online adaptation** — with explicit
-**sample confidence prediction** throughout.
+A fully **Python/PyTorch** pipeline for the Shanghai University **WBCIC-SHU 2C**
+motor-imagery EEG dataset: from raw BDF → Python preprocessing → **41/10
+cross-subject pretraining of CAP-EEGNet** → target-subject fine-tuning →
+online test-then-update — with explicit **sample confidence** throughout.
 
-The eventual system (the senior's vision) is:
+## Current decision (important)
 
-> **Confidence-aware Online Adaptive Multi-Subagent Pretraining Framework for
-> Cross-subject MI EEG Decoding**
-> 置信度感知的在线自适应多子模块运动想象 EEG 预训练框架
+- The current main workflow does **NOT** prioritize reproducing EEGNet/DeepConvNet/
+  FBCNet baselines. Baselines are **optional**, not the priority.
+- The main workflow starts from raw BDF preprocessing and proceeds directly to our
+  own model (**CAP-EEGNet**) and experiments.
+- MATLAB (`preprocessed.m`) and the Neuracle toolbox are a **reference recipe only** —
+  never a runtime dependency. The paper `.mat` in `derivatives/` is a label/event
+  **cross-check truth only**, not the training data entry point.
+- Current stage = **raw-data inspector / Python preprocessing**. Do NOT yet build the
+  full model/training/online loops, preprocess all 51×3, or submit GPU jobs.
 
-## Environment & server (verified)
+## Storage model (see docs/PATHS_AND_STORAGE.md)
 
-- Dataset root (READ-ONLY): `/share/workspace2/moto_imagination/WBCIC_SHU`.
-- Project root: `/share/home/yuan/SYX/eeg-mi-online`. Never write outside `/share/home/yuan/SYX`.
-- Conda env: `mi_torch` (python 3.10, torch 2.6, mne 1.10). NOTE: torch is currently
-  a **CPU-only** build — see `docs/ENVIRONMENT.md`.
-- Slurm cluster, partitions `gpu2node`/`gpu3node`. Never train on the login node.
-  See `docs/SERVER_RUNBOOK.md`.
+- Raw data live **outside** this repo. The repo never stores raw BDF.
+- All paths come from `configs/paths.yaml` (or env `SHU_2C_ROOT`) — never hard-coded.
+- `scripts/build_manifest.py` scans the external raw root → `manifests/shu_2c_raw_manifest.csv`.
+- Python preprocessing writes `[200,58,1000]` tensors to the configured processed dir
+  (default `outputs/processed_paper_style/`).
 
-## Dataset (focus: 2C dataset)
+## Dataset (2C)
 
-- 51 subjects on disk (tsv lists 52, README says 53 — enumerate from disk).
-- 3 sessions per subject.
-- 2 classes: left-hand grasping MI (trigger 1) vs right-hand grasping MI (trigger 2).
-- 200 trials per session, 100 per class.
-- Raw files: `data.bdf` + `evt.bdf`; raw 1000 Hz, 64 ch (59 EEG + 1 EOG + 4 ECG).
-- Final processed shape per session: `[trials, channels, time] = [200, 58, 1000]`
-  (58 EEG after dropping ECG/EOG and Pz; 1000 = 4 s @ 250 Hz).
+51 subjects (enumerate from disk), 3 sessions each, 200 trials/session (100/class),
+classes left(1)/right(2). Raw 1000 Hz, 64 ch = 59 EEG + 1 ECG + 4 EOG. Processed
+per session: `[trials, channels, time] = [200, 58, 1000]`. Detail: `docs/DATASET_SHU.md`.
 
-Full detail: `docs/DATASET_SHU.md`.
+## Main model: CAP-EEGNet (Confidence-aware Prototype EEGNet)
 
-## Main stages
+EEGNet encoder + Adapter + Classification head + Prototype head + Confidence head.
+Detail/roadmap: `docs/MODEL_PLAN.md`.
 
-### Stage 1: Raw data preprocessing
-- Read raw BDF (MNE), inspect ECG/EOG quality.
-- Paper-style preprocessing (no ICA first).
-- Optional ECG/EOG-assisted artifact cleaning (second variant).
-- Save processed trials to `data/processed_paper_style/`.
-- Spec: `docs/PREPROCESSING_SPEC.md`.
+## Main experiments (Python/PyTorch)
 
-### Stage 2: Baseline reproduction
-- Train EEGNet, DeepConvNet, FBCNet.
-- Purpose: verify preprocessing correctness and establish baseline numbers.
+1. Build manifest from the external raw path.
+2. Preprocess raw BDF → `[200,58,1000]`.
+3. Create 41/10 **subject-wise** splits (persisted to `splits/`).
+4. Train CAP-EEGNet on the 41 source subjects.
+5. Zero-shot evaluate on the 10 target subjects.
+6. Fine-tune on target Session 1.
+7. Online test-then-update on target Session 2 and 3.
+8. Ablations: prototype, confidence, adapter, online update.
 
-### Stage 3: 41/10 cross-subject pretraining
-- 41 source subjects vs 10 target subjects, split by subject.
-- Train on all source sessions; zero-shot test on all target sessions.
-- Repeated random subject-wise splits; report mean +/- std.
+Detail: `docs/EXPERIMENT_PROTOCOL.md`.
 
-### Stage 4: Target-subject fine-tuning
-- For each target subject: fine-tune on Session 1, test on Session 2 + 3.
-- Compare zero-shot / classifier-only / adapter / prototype / full-model.
+## Hard invariants
 
-### Stage 5: Online learning
-- Initialize from the pretrained model (optionally after Session 1 fine-tuning).
-- Online test-then-update on Session 2 then Session 3.
-- Per trial: predict -> output confidence -> record -> update lightweight modules.
-
-Full detail: `docs/EXPERIMENT_PROTOCOL.md`.
-
-## First main model
-
-First version (keep it minimal, expand later):
-- EEGNet-style encoder backbone.
-- Classification head.
-- Prototype memory (global / subject / session prototypes).
-- Confidence head (multi-source, not just softmax max).
-- Adapter for fine-tuning / online adaptation.
-
-Design and roadmap: `docs/MODEL_PLAN.md`.
-
-## Research logic (paper framing)
-
-- Paper 1 candidate: cross-subject MI-EEG pretraining with prototype + confidence learning.
-- Paper 2 candidate: confidence-guided online adaptation for multi-session MI-EEG decoding.
+- Split by subject, never by trial. No target leakage into source training.
+- Online learning is test-then-update (predict+record, THEN update).
+- Never hard-code data paths; never write into the external raw dir.
+- Never run heavy/GPU work on the Slurm login node.
 
 ## Working rhythm (do NOT skip ahead)
 
 ```
-rules + docs scaffold (this commit)
-  -> scripts/check_raw_bdf.py runs on one subject/session
-  -> scripts/preprocess_raw.py runs on one subject/session
-  -> confirm X == [200, 58, 1000]
-  -> scripts/preprocess_all.py over 51 x 3 (via Slurm CPU job)
-  -> EEGNet baseline (single session, then subject-wise)
-  -> 41/10 split pretraining
-  -> prototype + confidence
-  -> Session 1 fine-tuning
-  -> Session 2/3 online learning
+rules + path config + manifest (done)
+  -> Python preprocess one session, confirm [200,58,1000] (done: sub-001/ses-01)
+  -> finalize preprocessing across more sessions (via Slurm CPU) when ready
+  -> 41/10 subject-wise splits
+  -> CAP-EEGNet (encoder -> +prototype -> +confidence -> +adapter)
+  -> cross-subject pretraining -> zero-shot
+  -> Session-1 fine-tuning
+  -> Session-2/3 online test-then-update
+  -> ablations
 ```
-
-The single most important constraint: **let Cursor understand the project
-boundaries first; otherwise it will jump straight to building a giant model.**
