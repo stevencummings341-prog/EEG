@@ -5,7 +5,8 @@
 > Step 1 深度报告 `docs/MULTISOURCE_STEP1_REPORT.md`；下一步计划 `docs/NEXT_EXPERIMENT_PLAN.md` +
 > `docs/ADAPTATION_BASELINE_PLAN.md`；P10 整合 `docs/P10_INTEGRATION_SUMMARY.md`。
 >
-> 最后更新：2026-06-08（Step 1 完成）；2026-06-09 文档系统性修复。
+> 最后更新：2026-06-08（Step 1 完成）；2026-06-09 文档系统性修复 + **Step 2 alignment baseline
+> 代码实现 / smoke 通过 / full run 已提交（结果待跑完）**。
 
 ---
 
@@ -13,7 +14,8 @@
 
 项目主线 = **EEG MI 跨 session 域泛化（cross-session domain generalization）**。
 已完成：漂移诊断 → 静态 baseline（within / 单源 cross / **多源 cross**）。
-**下一步 = Step 2 no-learning adaptation baseline（未运行）**。online / 41-10 / fine-tuning /
+**Step 2 no-learning adaptation baseline = 代码已实现、smoke 已过、full run 已提交（75 GPU jobs
+`21261-21335` + summarizer `21336`），结果待跑完（PENDING，未完成）。** online / 41-10 / fine-tuning /
 CAP-EEGNet full / multi-agent / prototype / memory 均为 future，未运行、未验证。
 
 ---
@@ -25,7 +27,7 @@ CAP-EEGNet full / multi-agent / prototype / memory 均为 future，未运行、�
 | A | Session drift 诊断（144 pairs / 50 subjects，9 指标） | ✅ 已完成 |
 | B | 静态 baseline：within-session 10-fold CV + 单源有向 cross-session（EEGNet/DeepConvNet/FBCNet，5 seeds，26 520 trainings，30/30 cells，无泄漏/NaN） | ✅ 已完成 |
 | Step 1 / C | 静态 baseline 补齐：**multi-source `ses-01+ses-02 → ses-03`**（47 被试，4 跳过，705 rows） | ✅ 已完成 |
-| Step 2 / D | **no-learning adaptation baseline**（none / session_zscore / Euclidean Alignment / Riemannian Alignment / target BN-stats / filter-bank reweighting） | 🔜 下一步，**未运行** |
+| Step 2 / D | **no-learning adaptation baseline**（none_reference / session_zscore / Euclidean / Riemannian(log-Euclidean) / target BN-stats / filter-bank reweighting） | 🟡 代码实现 + smoke 通过 + **full run 已提交（jobs `21261-21335`，summarizer `21336`），结果 PENDING** |
 | Step 3+ | online / adapter / prototype / memory / CAP-EEGNet full / 41-10 / fine-tuning / LOSO | 🚧 future，未运行/未验证 |
 
 ---
@@ -66,11 +68,20 @@ MMD 0.238、CSP 相似度 0.420、ERD-μ corr 0.419、ERD-β 0.482、μ-KS 0.246
 
 ---
 
-## 3. 下一步（Step 2，未运行）
+## 3. Step 2（代码实现 + smoke 通过 + full run 已提交；结果 PENDING）
 
-no-learning adaptation baseline（不更新模型权重）：`none` / `session_zscore` / Euclidean Alignment /
-Riemannian Alignment / target BN statistics adaptation / filter-bank reweighting。
-细节与无泄漏规则见 `docs/ADAPTATION_BASELINE_PLAN.md`，代码落点见 `docs/CODE_INTEGRATION_NOTES.md`。
+no-learning adaptation baseline（不更新模型权重）：`none_reference`（取自 baseline_v1，不重跑）/
+`session_zscore` / Euclidean Alignment / Riemannian Alignment（log-Euclidean SPD mean，numpy/scipy
+自实现，不依赖 pyriemann）/ target BN statistics adaptation / filter-bank reweighting。
+模型 EEGNet/DeepConvNet/FBCNet，seeds 0-4，协议 = 单源 6 有向对（288）+ 多源 `ses-01+02→ses-03`（47）。
+代码：`src/adaptation/`、`src/evaluation/session_alignment_protocols.py`、
+`scripts/{train_session_alignment,summarize_alignment_results,build_alignment_baseline_outputs}.py`、
+`configs/session_alignment_compare.yaml`、`scripts/slurm/*alignment*`。
+输出：`outputs/experiments/alignment_baseline_v1/`（结果待 summarizer `21336` 跑完）。
+
+**关机后回来先看**：`sacct -j 21261-21336`、
+`outputs/experiments/alignment_baseline_v1/RUN_STATUS.md`、
+`.../cross_session/tables/results_alignment_all.csv`、`.../ALIGNMENT_BASELINE_REPORT.md`。
 
 **Step 2 铁律**：对齐统计量只能用 train 的数据或 test 的**无标签** X；**绝不用 test session 的 label**。
 
@@ -78,7 +89,7 @@ Riemannian Alignment / target BN statistics adaptation / filter-bank reweighting
 
 ## 4. 明确没做 / 不跑
 
-- ❌ Step 2 adaptation 未运行。
+- 🟡 Step 2 adaptation：代码已实现、smoke 已过、full run 已提交，**结果未跑完**（不要当成已完成）。
 - ❌ online / test-then-update 未运行、未实现。
 - ❌ 41/10 跨被试预训练、target fine-tuning、LOSO 未运行。
 - ❌ CAP-EEGNet full / multi-agent / prototype / memory 未实现（启用 `NotImplementedError`）、未运行。
@@ -94,4 +105,4 @@ Riemannian Alignment / target BN statistics adaptation / filter-bank reweighting
   **绝不用 test session 的 label**。
 - 重任务只走 Slurm（GPU 用 `mi_torch_cu118`），登录节点只做 < ~30s 轻量操作。
 
-> ⚠️ git：HEAD 仍是 2026-06-04 scaffold，之后工作均未提交。建议尽快 commit（见 `docs/PROGRESS.md` 2026-06-09）。
+> git：之前的工作已提交（HEAD `a239b43` baseline_v1 架构整理）。Step 2 alignment 代码 + 文档在本轮提交。

@@ -3,6 +3,32 @@
 Newest entries on top. Auto + manual entries. Full narrative + decisions live in
 `docs/PROGRESS.md`; consolidated results in `docs/RESULTS_SUMMARY.md`.
 
+## 2026-06-09 — Step 2 no-learning alignment baseline: code + smoke + full run SUBMITTED (results PENDING)
+
+- **Status: code implemented, smoke passed, full run submitted, summarizer dependency submitted,
+  results PENDING (jobs not yet finished). NOT complete.**
+- Methods (trained): `session_zscore`, `euclidean_alignment`, `riemannian_alignment` (log-Euclidean
+  SPD mean, numpy/scipy only — no pyriemann), `bn_statistics_adaptation` (target BN running-stat
+  refresh only), `filterbank_reweighting` (θ/μ/β/low-γ FIR band-power reweight). `none_reference`
+  is the no-alignment baseline pulled from baseline_v1 (not re-run).
+- Models EEGNet/DeepConvNet/FBCNet; seeds 0–4; protocols = single-source directed pairs (288) +
+  multi-source ses-01+02→ses-03 (47 subjects). Est. 25,125 trainings.
+- Fairness enforced in code: source-trained model; target used ONLY via unlabeled X; `y_test` only
+  for final eval; no `optimizer.step` on target (BN running-stat only). Every row records
+  `used_target_x_for_stats` (True for trained methods) + `used_target_y_for_training` (always False).
+- Unit checks (CPU): zscore finite, EA/RA matrices 58×58, aligned X shape unchanged, BN adapt leaves
+  trainable weights unchanged (no optimizer.step) but changes running_mean, all 3 models forward
+  aligned X. Smoke (GPU, subjects 1,2, eegnet, seed 0, 3 epochs, all 5 methods, both protocols):
+  70/70 rows ok, 0 NaN, n=160/40/200 & 320/80/200, 70 checkpoints, leakage columns correct.
+- Slurm: 75 GPU training jobs `21261–21335` (method × model × seed; both protocol groups each) +
+  CPU summarizer `21336` (`--dependency=afterany`). Ids in
+  `outputs/experiments/alignment_baseline_v1/full_job_ids.txt`.
+- Outputs (pending): `outputs/experiments/alignment_baseline_v1/` (cross_session/{runs,splits,
+  tables,figures}, ALIGNMENT_BASELINE_REPORT.md, RUN_STATUS.md). Checkpoints
+  `checkpoints/alignment_baseline_v1/`. Logs `logs/slurm/`.
+- online / 41-10 / LOSO / fine-tuning / CAP-EEGNet full / multi-agent / prototype / memory remain
+  future work — NOT run. No new deps, no raw/workspace2 writes, baseline_v1 untouched.
+
 ## 2026-06-08 — Step 1 multi-source static baseline COMPLETE (`ses-01+02 → ses-03`)
 
 - Protocol: same-subject `train = ses-01 + ses-02`, `test = ses-03`; val carved only from the

@@ -29,6 +29,63 @@ Format per entry: date, what was done, decisions made, open questions, next step
 
 <!-- AUTORUN_STATUS_BELOW: baseline_report.py inserts entries here -->
 
+## 2026-06-09 — Step 2 no-learning alignment baseline: implemented + smoke + FULL RUN SUBMITTED (results PENDING)
+
+**Status (do NOT read as complete):** Step 2 **code implemented**, **smoke passed**, **full run
+submitted**, **summarizer dependency submitted**, **results PENDING until the 75 GPU jobs finish.**
+Will be marked complete only after the summarizer writes `results_alignment_all.csv`.
+
+**Scope (per user): ONLY Step 2 alignment baseline.** No online, no 41/10, no LOSO, no fine-tuning,
+no CAP-EEGNet full, no multi-agent/prototype/memory. No new deps, no shared-env changes, no
+raw/workspace2 writes, baseline_v1 not overwritten.
+
+**A — pre-checks (all pass):** baseline_v1 exists with within+cross standard tables; processed
+manifest + `eog_ecg_clean` present; env `mi_torch_cu118` = torch 2.7.1+cu118, CUDA available on the
+GPU node (RTX 4090 D); git working tree clean (HEAD `a239b43`).
+
+**B — new code (nothing existing overwritten; reuses trainer / registry / session_splits / metrics
+/ baseline split logic):**
+- `src/adaptation/{__init__,session_alignment,bn_adaptation}.py` — fit/transform alignment
+  transforms (ChannelZScore, EuclideanAlignment, RiemannianAlignment = log-Euclidean SPD mean via
+  eigh, FilterBankReweight) + BN running-stat adaptation (no grad/backward/optimizer). EA/RA use
+  eps ridge + diagonal shrinkage; inverse-sqrt/logm via symmetric eigh with eigenvalue clipping.
+- `src/evaluation/session_alignment_protocols.py` — single-source + multi-source tasks; source
+  transform fit on SOURCE TRAIN only (applied to source train+val); target aligned from target X
+  (filterbank reweights target→source profile); BN method trains plain then refreshes BN from
+  target X; per-run leakage asserts; 26-column result rows.
+- `scripts/train_session_alignment.py`, `scripts/summarize_alignment_results.py` (pulls
+  `none_reference` from baseline_v1 + drift levels), `scripts/build_alignment_baseline_outputs.py`
+  (scaffold). `configs/session_alignment_compare.yaml`. Slurm:
+  `scripts/slurm/{train_session_alignment_gpu,summarize_alignment_results_cpu}.sbatch`.
+
+**C — unit checks (CPU, synthetic):** zscore finite + ~N(0,1); EA matrix 58×58; RA matrix 58×58 +
+spd_mean=log_euclidean; aligned X shape unchanged; EA finite on near-singular cov; BN adapt leaves
+all trainable weights UNCHANGED (no optimizer.step) but changes running_mean; eval mode after; all 3
+models forward aligned X → logits [B,2]. ALL PASS.
+
+**D — smoke (GPU srun, mi_torch_cu118):** subjects 1,2, eegnet, seed 0, 3 epochs, all 5 trained
+methods, both protocol groups → 70/70 rows ok, 0 NaN/Inf, n_train/val/test = 160/40/200 (single) &
+320/80/200 (multi), 70 checkpoints, split JSON sessions correct, `used_target_y_for_training`=False
+& `used_target_x_for_stats`=True for all rows. Summarizer ran cleanly on the smoke rows. Smoke
+artifacts removed afterward.
+
+**E — full run (GPU Slurm):** **75 jobs `21261–21335`** = method × model × seed (each job runs both
+single-source + multi-source). Per job = 335 trainings; total ≈ **25,125 trainings**. Partition
+gpu2node, gpu:1, env mi_torch_cu118, fail-fast if no CUDA, logs → `logs/slurm/`. Job ids →
+`outputs/experiments/alignment_baseline_v1/full_job_ids.txt`. (Some pending under
+QOSMaxCpuPerUserLimit; drain as capacity frees.) Estimates + layout in
+`outputs/experiments/alignment_baseline_v1/RUN_PLAN.md`.
+
+**F — dependent summarizer:** CPU job **`21336`** with `--dependency=afterany:<all 75>` →
+`scripts/summarize_alignment_results.py` → `cross_session/tables/*` (results_alignment_all.csv,
+alignment_by_method/model/direction/protocol/subject.csv, alignment_vs_baseline.csv,
+alignment_gain_by_drift_level.csv, run_status.csv) + `cross_session/figures/*` (6 figs) +
+`ALIGNMENT_BASELINE_REPORT.md` + `RUN_STATUS.md` + `manifest_sources.json`.
+
+**Next (after jobs finish):** check `sacct -j 21261-21336`, read `RUN_STATUS.md`, confirm
+`results_alignment_all.csv` exists, then read `ALIGNMENT_BASELINE_REPORT.md`. Only then mark Step 2
+complete. Step 3 (online / adapter / prototype) stays gated on these results.
+
 ## 2026-06-09 — Systematic documentation repair (no experiments)
 
 **Why**: git HEAD is the 2026-06-04 scaffold commit; all work since (drift, baseline, P10

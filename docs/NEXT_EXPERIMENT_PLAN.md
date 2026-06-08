@@ -26,27 +26,34 @@
 - 核心发现：multi-source 对三模型都优于最强单源 `ses-02→03`；平均 +0.0281；
   失败案例集中在两 source 质量差异大的被试 → 动机 Step 2。完整分析 `docs/MULTISOURCE_STEP1_REPORT.md`。
 
-## Step 2 — 下一步：no-learning adaptation baseline（**未运行**）
+## Step 2 — no-learning adaptation baseline（代码实现 + smoke 通过 + **full run 已提交，结果 PENDING**，2026-06-09）
 
 在 cross-session 协议上做**不更新模型权重**的对齐，量化"零学习成本能挽回多少漂移掉点"。
 
 方法（各跑、互为对照）：
-- `none`（对照）
+- `none_reference`（对照，取自 baseline_v1，不重跑）
 - `session_zscore`
 - Euclidean Alignment
-- Riemannian Alignment
-- target BN statistics adaptation
-- filter-bank reweighting
+- Riemannian Alignment（**log-Euclidean SPD mean**，numpy/scipy 自实现，不依赖 pyriemann）
+- target BN statistics adaptation（仅刷新 BN running stats，无 backward/optimizer）
+- filter-bank reweighting（θ/μ/β/low-γ FIR 频带功率重加权，保守标量版）
 
-要点：
-- models EEGNet/DeepConvNet/FBCNet；seeds 0-4；与 baseline 同配方，单源 cross + 多源都可套用。
-- 按 `drift_level`（high/moderate/stable）分组看（Step 1 已发现高漂移被试更需 alignment）。
-- **无泄漏铁律**：对齐统计量只能用 train 的数据，或 test 的**无标签** X；**绝不用 test session 的 label**。
-- 成功标准：平均 cross Acc 比 `none` ≥ +2pp 且最差方向回升 → 方向对；否则记录"无学习对齐不足"，作为启动 Step 3 依据。
-- 代码落点（实现时建）：`src/adaptation/{session_alignment,bn_adaptation}.py`、
-  `src/evaluation/session_adaptation_protocols.py`、`scripts/train_session_adaptation.py`、
-  `scripts/summarize_adaptation_results.py`、`configs/session_adaptation_compare.yaml`。
-  详见 `docs/ADAPTATION_BASELINE_PLAN.md`、`docs/CODE_INTEGRATION_NOTES.md`。
+进度：
+- models EEGNet/DeepConvNet/FBCNet；seeds 0-4；与 baseline 同配方。协议 = 单源 6 有向对（288）+
+  多源 `ses-01+02→ses-03`（47）。Est. 25,125 trainings。
+- Slurm：75 GPU train jobs `21261-21335`（method × model × seed）+ summarizer `21336`
+  （`afterany`）。job ids 见 `outputs/experiments/alignment_baseline_v1/full_job_ids.txt`。
+- **无泄漏铁律**：对齐统计量只能用 train 数据或 test 的**无标签** X；**绝不用 test session 的 label**；
+  每行记录 `used_target_x_for_stats`（trained 方法 True）+ `used_target_y_for_training`（恒 False）。
+- 成功标准：平均 cross Acc 比 `none_reference` ≥ +2pp 且最差方向回升 → 方向对；否则记录"无学习对齐不足"，
+  作为启动 Step 3 依据。按 `drift_level`(high/moderate/stable) 分层分析（summarizer 已实现）。
+- 代码落点（已建）：`src/adaptation/{session_alignment,bn_adaptation}.py`、
+  `src/evaluation/session_alignment_protocols.py`、`scripts/{train_session_alignment,
+  summarize_alignment_results,build_alignment_baseline_outputs}.py`、
+  `configs/session_alignment_compare.yaml`、`scripts/slurm/*alignment*`。
+- **结果待跑完**：回来看 `sacct -j 21261-21336`、`.../alignment_baseline_v1/RUN_STATUS.md`、
+  `.../cross_session/tables/results_alignment_all.csv`、`.../ALIGNMENT_BASELINE_REPORT.md`。
+  summarizer 写出 `results_alignment_all.csv` 后才算 Step 2 完成。
 
 ## Step 3 — Future（Step 2 结果出来后才讨论）
 
