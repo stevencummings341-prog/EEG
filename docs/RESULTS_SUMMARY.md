@@ -5,10 +5,10 @@
 > Step 1 multi-source `ses-01+02 -> ses-03`** 下的 5-seed 评估，并**重点分析"为什么比论文低"**。
 > 数据入口：`eog_ecg_clean` 的 `status=ok` session（148 ok / 5 failed）。
 >
-> **图集（全部 18 张放一起）+ 静态 baseline 总报告**：`outputs/experiments/static_baseline_v1/`
-> （`figures/` + `STATIC_BASELINE_REPORT.md`）。
-> 原始详表：`outputs/experiments/session_model_compare_v1/summaries/`（within+cross）、
-> `outputs/experiments/session_multisource_v1/summaries/`（Step 1）、
+> **图集（全部 21 张放一起）+ 静态 baseline 总报告**：`outputs/experiments/baseline_v1/`
+> （`figures/` + `BASELINE_REPORT.md`）。
+> 原始详表：`outputs/experiments/baseline_v1/provenance/session_model_compare_v1/summaries/`（within+cross）、
+> `outputs/experiments/baseline_v1/provenance/session_multisource_v1/summaries/`（Step 1）、
 > `outputs/analysis/session_drift_v1/`（drift）。
 > Step 1 深度分析（per-subject / drift-level）见 `docs/MULTISOURCE_STEP1_REPORT.md`。
 > **Step 2 no-learning adaptation 未运行**（`docs/ADAPTATION_BASELINE_PLAN.md`）。
@@ -175,14 +175,17 @@ val 只从 `ses-01+02` carve，`ses-03` label 仅用于 final evaluation。
 
 | 内容 | 路径 |
 |---|---|
-| **整合图集（全部 18 张）** | `outputs/experiments/static_baseline_v1/figures/`（`drift_*` / `within_*` / `cross_session_*`） |
-| **静态 baseline 总报告** | `outputs/experiments/static_baseline_v1/STATIC_BASELINE_REPORT.md` |
-| Baseline 主报告 | `outputs/experiments/session_model_compare_v1/summaries/SESSION_MODEL_COMPARE_REPORT.md` |
+| **整合图集（全部 21 张）** | `outputs/experiments/baseline_v1/figures/`（`drift_*` / `within_*` / `cross_session_*`） |
+| **静态 baseline 总报告** | `outputs/experiments/baseline_v1/BASELINE_REPORT.md` |
+| **within 规范表** | `outputs/experiments/baseline_v1/within_session/tables/{results_within_session,within_by_seed,within_session_wise,within_by_subject,summary_within_by_model}.csv` |
+| **cross 规范总表** | `outputs/experiments/baseline_v1/cross_session/tables/results_cross_session_all.csv` |
+| **cross 关键汇总表** | `outputs/experiments/baseline_v1/cross_session/tables/{cross_by_training_scope,cross_protocol_comparison,cross_gap_recovery,cross_by_subject}.csv` |
+| Baseline 主报告 | `outputs/experiments/baseline_v1/provenance/session_model_compare_v1/summaries/SESSION_MODEL_COMPARE_REPORT.md` |
 | Baseline 汇总表 | `.../summaries/summary_by_model_protocol.csv`、`within_by_seed.csv`、`cross_by_seed.csv`、`within_session_wise.csv`、`cross_by_direction.csv` |
 | Baseline 原始行 | `.../summaries/results_within_session.csv`、`results_cross_session.csv` |
 | Baseline 图 | `.../summaries/{within_session_accuracy_boxplot,cross_session_accuracy_matrix_by_model,protocol_comparison}.png` |
-| Step 1 multi-source 报告 | `docs/MULTISOURCE_STEP1_REPORT.md`、`outputs/experiments/session_multisource_v1/summaries/MULTISOURCE_STEP1_REPORT.md` |
-| Step 1 multi-source 表/图 | `outputs/experiments/session_multisource_v1/summaries/{results_multisource_0102_to_03,multisource_by_seed,multisource_by_model,summary_by_model_protocol}.csv`、`outputs/experiments/session_multisource_v1/figures/multisource_vs_singlesource_acc.png` |
+| Step 1 multi-source 报告 | `docs/MULTISOURCE_STEP1_REPORT.md`、`outputs/experiments/baseline_v1/provenance/session_multisource_v1/summaries/MULTISOURCE_STEP1_REPORT.md` |
+| Step 1 multi-source 表/图 | `outputs/experiments/baseline_v1/provenance/session_multisource_v1/summaries/{results_multisource_0102_to_03,multisource_by_seed,multisource_by_model,summary_by_model_protocol}.csv`、`outputs/experiments/baseline_v1/provenance/session_multisource_v1/figures/multisource_vs_singlesource_acc.png` |
 | 运行状态 | `.../summaries/RUN_STATUS.md` |
 | 漂移报告 | `outputs/analysis/session_drift_v1/SESSION_DRIFT_REPORT.md`（+ `SESSION_DRIFT_SUMMARY_CN.md`） |
 | 漂移表/图 | `.../session_drift_v1/{session_pair_summary,per_subject_drift_summary}.csv`、`figures/` |

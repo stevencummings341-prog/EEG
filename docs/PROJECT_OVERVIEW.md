@@ -117,9 +117,7 @@ docs/   PROJECT_OVERVIEW.md · PROJECT_STATUS_CURRENT.md · EXPERIMENT_PROTOCOL.
         NEXT_EXPERIMENT_PLAN.md · ADAPTATION_BASELINE_PLAN.md · CODE_INTEGRATION_NOTES.md ·
         P10_INTEGRATION_SUMMARY.md · PROGRESS.md · EXPERIMENT_LOG.md · references/
 outputs/   analysis/session_drift_v1/ ·
-           experiments/static_baseline_v1/{within_session,cross_session,figures,STATIC_BASELINE_REPORT.md} ·
-           experiments/session_model_compare_v1/{runs,splits,summaries} ·
-           experiments/session_multisource_v1/{runs,splits,summaries,figures}
+           experiments/baseline_v1/{within_session,cross_session,provenance,figures,BASELINE_REPORT.md}
 checkpoints/ session_model_compare_v1/{eegnet,deepconvnet,fbcnet}/ ·
              session_multisource_v1/{eegnet,deepconvnet,fbcnet}/
 ```
@@ -240,7 +238,8 @@ sbatch scripts/slurm/session_drift_cpu.sbatch          # 全量
 sbatch scripts/slurm/train_session_models_gpu.sbatch \
     --config configs/session_model_compare.yaml --models eegnet,deepconvnet,fbcnet --protocol both
 sbatch scripts/slurm/summarize_session_results_cpu.sbatch
-# -> outputs/experiments/session_model_compare_v1/summaries/
+# 原始 run 归档到 outputs/experiments/baseline_v1/provenance/session_model_compare_v1/
+# 规范阅读入口：outputs/experiments/baseline_v1/{within_session,cross_session}/
 ```
 
 ### Step 1 多源 cross（ses-01+02→ses-03）✅ 已完成（GPU）
@@ -253,7 +252,8 @@ python scripts/train_session_multisource.py --config configs/session_multisource
 sbatch scripts/slurm/train_session_multisource_gpu.sbatch \
     --config configs/session_multisource_compare.yaml --models eegnet,deepconvnet,fbcnet --seeds 0,1,2,3,4
 sbatch scripts/slurm/summarize_multisource_results_cpu.sbatch
-# -> outputs/experiments/session_multisource_v1/summaries/
+# 原始 run 归档到 outputs/experiments/baseline_v1/provenance/session_multisource_v1/
+# 规范阅读入口：outputs/experiments/baseline_v1/cross_session/
 ```
 
 ### Step 2 no-learning adaptation baseline 🔜 下一步（未实现/未跑）

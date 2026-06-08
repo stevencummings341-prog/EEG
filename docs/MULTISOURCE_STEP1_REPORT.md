@@ -1,7 +1,7 @@
 # Step 1 报告 — Multi-source 静态 baseline：ses-01 + ses-02 → ses-03
 
 > **状态：✅ 已完成（2026-06-08）。** 这是 cross-session 静态 baseline 的补齐项（Step 1）。
-> 机器生成的简版报告：`outputs/experiments/session_multisource_v1/summaries/MULTISOURCE_STEP1_REPORT.md`。
+> 机器生成的简版报告：`outputs/experiments/baseline_v1/provenance/session_multisource_v1/summaries/MULTISOURCE_STEP1_REPORT.md`。
 > 本文件是带深入分析（per-subject / drift-level / 上界对比）的完整版。
 > 数据入口：`eog_ecg_clean` 的 `status=ok` session；与单源 cross baseline 完全同配方，可直接对比。
 
@@ -92,7 +92,8 @@ multi-source 把"单源 cross → 同 session 上界"的差距回收了约 **30%
 
 ## 5. Per-subject 深入分析（EEGNet 为主）
 
-per-subject 表：`outputs/experiments/session_multisource_v1/summaries/multisource_by_subject.csv`。
+per-subject 表：`outputs/experiments/baseline_v1/cross_session/tables/cross_by_subject.csv`
+（原始 Step 1 版本归档在 `baseline_v1/provenance/session_multisource_v1/summaries/`）。
 
 ### 5.1 提升 / 变差分布（Δ vs per-subject best single）
 
@@ -151,7 +152,7 @@ EEGNet / FBCNet 跨 seed 极稳（std ≤ 0.003）；DeepConvNet seed0 略低（
 - Slurm：train `21240–21244` + summarize `21245`，全部 `COMPLETED`，exit `0:0`。
 - 705 rows ok / 0 failed / 0 NaN。
 - `n_train=320`、`n_val=80`、`n_test=200`（全被试一致）。
-- split JSON（`outputs/experiments/session_multisource_v1/splits/`）记录每个 (subject, seed) 的 train/val 索引；train/val 互斥；val 全部来自 ses-01+02。
+- split JSON（`outputs/experiments/baseline_v1/provenance/session_multisource_v1/splits/`）记录每个 (subject, seed) 的 train/val 索引；train/val 互斥；val 全部来自 ses-01+02。
 - `ses-03` label 仅用于最终评测。
 
 ---
@@ -179,10 +180,10 @@ EEGNet / FBCNet 跨 seed 极稳（std ≤ 0.003）；DeepConvNet seed0 略低（
 
 | 内容 | 路径 |
 |---|---|
-| 机器版报告 | `outputs/experiments/session_multisource_v1/summaries/MULTISOURCE_STEP1_REPORT.md` |
+| 机器版报告 | `outputs/experiments/baseline_v1/provenance/session_multisource_v1/summaries/MULTISOURCE_STEP1_REPORT.md` |
 | 原始结果行 | `.../summaries/results_multisource_0102_to_03.csv` |
 | per-seed / per-model | `.../summaries/multisource_by_seed.csv`、`multisource_by_model.csv` |
-| per-subject 增益 | `.../summaries/multisource_by_subject.csv` |
+| per-subject 增益 | `outputs/experiments/baseline_v1/cross_session/tables/cross_by_subject.csv` |
 | 汇总（schema 对齐） | `.../summaries/summary_by_model_protocol.csv` |
 | 图 | `.../figures/multisource_vs_singlesource_acc.png` |
 | split JSON | `.../splits/multisource_<subject>_seed<k>.json` |

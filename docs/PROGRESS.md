@@ -94,7 +94,7 @@ written. Smoke output dir removed afterward.
 - per-subject: EEGNet improved 33/47; failures concentrate where the two source sessions differ
   a lot (e.g. sub-029 ses-01 0.441 vs ses-02 0.935) → motivates Step-2 alignment/weighting.
 - Full analysis: `docs/MULTISOURCE_STEP1_REPORT.md`; machine report + CSVs under
-  `outputs/experiments/session_multisource_v1/summaries/`; checkpoints
+  `outputs/experiments/baseline_v1/provenance/session_multisource_v1/summaries/`; checkpoints
   `checkpoints/session_multisource_v1/{eegnet,deepconvnet,fbcnet}/`.
 
 **Note (doc loss + recovery):** during this work the (uncommitted) working tree lost several
@@ -171,7 +171,7 @@ so there is no collision. Checkpoints were already seed-namespaced.
 - `21162` cross s0, `21163` within s1, `21164` cross s1, `21165` within s2, `21166` cross s2,
   `21167` within s3, `21168` cross s3, `21169` within s4, `21170` cross s4
   (job names `mi_base_{protocol}_s{seed}`, logs `logs/slurm/mi_base_{protocol}_s{seed}-<jobid>.out/.err`)
-- job-id list: `outputs/experiments/session_model_compare_v1/overnight_job_ids.txt`
+- job-id list: `outputs/experiments/baseline_v1/provenance/session_model_compare_v1/overnight_job_ids.txt`
 
 **Expected trainings** (1 model × 1 protocol × 1 seed): within = 148 sessions × 10 folds =
 1480; cross = 288 directed pairs. Per seed (3 models): within 4440, cross 864. 5-seed total:
@@ -179,13 +179,13 @@ within 22 200 + cross 4320 = **26 520 trainings**.
 
 **Dependent report job** (`mi_base_report`, CPU, `--dependency=afterany:` all 10 IDs): runs
 `scripts/baseline_report.py` → sacct check + `scripts/summarize_session_results.py` →
-`outputs/experiments/session_model_compare_v1/summaries/` (results_within/cross_session.csv,
+`outputs/experiments/baseline_v1/provenance/session_model_compare_v1/summaries/` (results_within/cross_session.csv,
 within_by_seed/cross_by_seed/within_session_wise/cross_by_direction.csv,
 summary_by_model_protocol.csv, model_ranking.md, SESSION_MODEL_COMPARE_REPORT.md, RUN_STATUS.md,
 3 figures) and appends auto status entries here + to `docs/EXPERIMENT_LOG.md`. Marks the
 report INCOMPLETE if any training job is not COMPLETED or any output is missing.
 
-Outputs: `outputs/experiments/session_model_compare_v1/`; checkpoints
+Outputs: `outputs/experiments/baseline_v1/provenance/session_model_compare_v1/`; checkpoints
 `checkpoints/session_model_compare_v1/<model>/{within_<subj>_<ses>_seed<k>.pt,
 cross_<subj>_<tr>-to-<te>_seed<k>.pt}`; slurm logs `logs/slurm/`.
 
@@ -280,7 +280,7 @@ protocol/filter/metrics + no-leakage), `AGENTS.md` (constraint 9).
   early stopping.
 - Cross full = **288** directed pairs × 4 models = **1152** trainings; ~**1–2 h wall**
   parallel. Seeds multiply linearly.
-- Outputs: `outputs/analysis/session_drift_v1/`, `outputs/experiments/session_model_compare_v1/`
+- Outputs: `outputs/analysis/session_drift_v1/`, `outputs/experiments/baseline_v1/provenance/session_model_compare_v1/`
   (`runs/`, `splits/`, `summaries/`); checkpoints `checkpoints/session_model_compare_v1/`;
   slurm logs `logs/slurm/`.
 

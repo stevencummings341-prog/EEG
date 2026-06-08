@@ -59,9 +59,9 @@ MMD 0.238、CSP 相似度 0.420、ERD-μ corr 0.419、ERD-β 0.482、μ-KS 0.246
 
 数据/报告路径：
 - **整合看这里**：`docs/RESULTS_SUMMARY.md`（文字版整合报告）+
-  `outputs/experiments/static_baseline_v1/`（`figures/` 全部 18 张图集 + `STATIC_BASELINE_REPORT.md` 带图报告）
-- `outputs/experiments/session_model_compare_v1/summaries/`（within + single-source cross 原始）
-- `outputs/experiments/session_multisource_v1/summaries/`（Step 1 原始 + `multisource_by_subject.csv`）
+  `outputs/experiments/baseline_v1/`（`figures/` 全部 21 张图集 + `BASELINE_REPORT.md` 带图报告）
+- `outputs/experiments/baseline_v1/provenance/session_model_compare_v1/summaries/`（within + single-source cross 原始）
+- `outputs/experiments/baseline_v1/provenance/session_multisource_v1/summaries/`（Step 1 原始 + `multisource_by_subject.csv`）
 - `outputs/analysis/session_drift_v1/`（drift 原始）
 
 ---

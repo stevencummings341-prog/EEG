@@ -23,7 +23,7 @@ Newest entries on top. Auto + manual entries. Full narrative + decisions live in
 - Multi-source beats the best single source for all 3 models (mean Δ +0.0281); beats even a
   per-subject oracle single source; recovers ~30–53% of the cross→within-ses-03 gap.
 - Full analysis: `docs/MULTISOURCE_STEP1_REPORT.md`; outputs in
-  `outputs/experiments/session_multisource_v1/summaries/`.
+  `outputs/experiments/baseline_v1/provenance/session_multisource_v1/summaries/`.
 - Step 2 no-learning adaptation remains next and was **NOT run**. online / 41-10 / fine-tuning /
   CAP-EEGNet full / multi-agent / prototype / memory remain future work.
 
@@ -41,7 +41,7 @@ no raw/workspace2 writes.
   Cross-session drop 11.9 / 11.1 / 12.8%.
 - vs paper within: −4.65 / −7.84 / −6.37 pp (training-recipe/data-budget gap, not architecture bug).
 - Jobs 21161–21171. Full analysis: `docs/RESULTS_SUMMARY.md`; report in
-  `outputs/experiments/session_model_compare_v1/summaries/`.
+  `outputs/experiments/baseline_v1/provenance/session_model_compare_v1/summaries/`.
 
 ## 2026-06-06 — Session drift diagnostic COMPLETE
 

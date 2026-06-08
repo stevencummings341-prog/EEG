@@ -11,7 +11,7 @@
 ## 2. P10 与主项目的关系
 
 - P10 **Phase 0 drift** = 主项目 `outputs/analysis/session_drift_v1/`。
-- P10 **Phase 1 baseline** = 主项目 `outputs/experiments/session_model_compare_v1/`。
+- P10 **Phase 1 baseline** = 主项目 `outputs/experiments/baseline_v1/provenance/session_model_compare_v1/`。
 - 数字一致，是**同一研究的不同整理版本**（P10 是对外交接版）。
 - P10 **Phase 2 online code** 是**草稿 / 设计，未在服务器验证** → 主项目归为 future。
 

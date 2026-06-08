@@ -40,7 +40,7 @@
 | 整合说明 | `docs/P10_INTEGRATION_SUMMARY.md` |
 | 代码对照 | `docs/CODE_INTEGRATION_NOTES.md` |
 | Phase 0 drift | `outputs/analysis/session_drift_v1/` |
-| Phase 1 baseline | `outputs/experiments/session_model_compare_v1/` |
-| (Step 1 多源，主项目新增) | `outputs/experiments/session_multisource_v1/` |
+| Phase 1 baseline | `outputs/experiments/baseline_v1/provenance/session_model_compare_v1/` |
+| (Step 1 多源，主项目新增) | `outputs/experiments/baseline_v1/provenance/session_multisource_v1/` |
 
 > 它的作用就是"索引"，不是实验报告。

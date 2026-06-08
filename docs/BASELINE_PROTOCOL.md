@@ -59,26 +59,28 @@
 
 | 协议 | 结果目录 | checkpoints | 报告 |
 |---|---|---|---|
-| within + single-source cross | `outputs/experiments/session_model_compare_v1/` | `checkpoints/session_model_compare_v1/{eegnet,deepconvnet,fbcnet}/` | `.../summaries/SESSION_MODEL_COMPARE_REPORT.md` |
-| multi-source Step 1 | `outputs/experiments/session_multisource_v1/` | `checkpoints/session_multisource_v1/{eegnet,deepconvnet,fbcnet}/` | `.../summaries/MULTISOURCE_STEP1_REPORT.md` |
+| within + single-source cross | `outputs/experiments/baseline_v1/provenance/session_model_compare_v1/` | `checkpoints/session_model_compare_v1/{eegnet,deepconvnet,fbcnet}/` | `.../summaries/SESSION_MODEL_COMPARE_REPORT.md` |
+| multi-source Step 1 | `outputs/experiments/baseline_v1/provenance/session_multisource_v1/` | `checkpoints/session_multisource_v1/{eegnet,deepconvnet,fbcnet}/` | `.../summaries/MULTISOURCE_STEP1_REPORT.md` |
 | 漂移诊断 | `outputs/analysis/session_drift_v1/` | — | `.../SESSION_DRIFT_REPORT.md` |
 
 每个原始 `summaries/` 含 `runs/*.csv`（原始行）、汇总 CSV、图、报告；`splits/` 含 split JSON。
 
-**规范阅读入口（不要再按旧 run_id 理解分类）**：`outputs/experiments/static_baseline_v1/`
+**规范阅读入口（不要再按旧 run_id 理解分类）**：`outputs/experiments/baseline_v1/`
 
 ```text
-static_baseline_v1/
+baseline_v1/
 ├── within_session/                 # within-session CV
 ├── cross_session/
 │   ├── single_source/              # train one source session, test another session
 │   └── multi_source/               # train ses-01+ses-02, test ses-03
 ├── figures/                        # 全部图放一起
-└── STATIC_BASELINE_REPORT.md       # 带图总报告
+└── BASELINE_REPORT.md       # 带图总报告
 ```
 
-`session_model_compare_v1` 是旧 run id，意思是“模型比较运行”，不是一个实验类别；它里面同时包含
-within-session 和 single-source cross-session 的原始结果。`session_multisource_v1` 是 Step 1 的原始运行目录。
+`session_model_compare_v1` 是旧 raw run id，意思是“模型比较运行”，不是一个实验类别；它里面同时包含
+within-session 和 single-source cross-session 的原始结果，现归档到
+`baseline_v1/provenance/session_model_compare_v1/`。`session_multisource_v1` 是 Step 1 原始运行目录，
+现归档到 `baseline_v1/provenance/session_multisource_v1/`。
 **文字版整合报告**：`docs/RESULTS_SUMMARY.md`。
 
 ## 7. 无泄漏铁律
