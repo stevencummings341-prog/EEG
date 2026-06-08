@@ -22,14 +22,22 @@ raw_data:
   raw_subdir: "sourcedata/2C dataset"
   derivatives_subdir: "derivatives/2C dataset_processeddata"
 processed_data:
-  paper_style_dir: "outputs/processed_paper_style"
-  eog_ecg_clean_dir: "outputs/processed_eog_ecg_clean"
+  # paper_style_root: legacy single-session sanity check only (X.npy/y.npy).
+  paper_style_root: "outputs/processed_paper_style"
+  # eog_ecg_clean_root: FORMAL output of the current stage (one .npz per session).
+  # External, outside the repo — never under sourcedata/ or derivatives/.
+  eog_ecg_clean_root: "/share/workspace2/moto_imagination/WBCIC_SHU/processed/eog_ecg_clean"
 manifests:
   raw_manifest: "manifests/shu_2c_raw_manifest.csv"
-  processed_manifest: "manifests/shu_2c_processed_manifest.csv"
+  # Formal processed manifest sits NEXT TO the npz outputs (records npz_path).
+  processed_manifest: "/share/workspace2/moto_imagination/WBCIC_SHU/processed/eog_ecg_clean/processed_manifest.csv"
 splits:
   dir: "splits"
 ```
+
+> Config keys are `*_root` (the old `*_dir` keys are still accepted by the loader for
+> back-compat). Relative paths resolve against the project root; absolute paths (e.g.
+> the external `processed/` subtree above) are used as-is.
 
 Rules:
 - Never hard-code raw paths in Python. Load via `src/utils/paths.load_paths()`.
@@ -55,15 +63,28 @@ Verified on this server: 51 subjects, 153 sessions, 0 missing BDFs.
 
 ## Processed Data
 
-Python preprocessing writes to the configured processed dir (default
-`outputs/processed_paper_style/sub-XXX/ses-YY/{X.npy, y.npy, meta.json}`), and a
-`manifest_row.json` per session. `scripts/preprocess_all.py` will aggregate into
-`manifests/shu_2c_processed_manifest.csv`. For large-scale runs, point
-`processed_data.*` at a scratch directory.
+The **formal** output (`mode: eog_ecg_clean`) is ONE `.npz` per session written under
+`eog_ecg_clean_root` (an external `processed/` subtree, NOT under the repo):
+
+```
+<eog_ecg_clean_root>/sub-XXX/ses-YY/
+  sub-XXX_ses-YY_task-motorimagery_eeg.npz   # X[200,58,1000] f32 µV, y[200] i64,
+                                             # subject_id, session_id, sfreq, channel_names
+  meta.json
+  preprocess_report.json
+  manifest_row.json
+<eog_ecg_clean_root>/processed_manifest.csv    # one row per session (records npz_path)
+<eog_ecg_clean_root>/preprocess_summary.csv    # per-session status / shape / aux info
+```
+
+`scripts/preprocess_all.py` aggregates `processed_manifest.csv` + `preprocess_summary.csv`
+**beside the npz tree** (NOT under `manifests/`). Debug `X.npy`/`y.npy` are written only
+when `output.save_debug_npy: true`. The legacy `paper_style` mode still writes
+`{X.npy, y.npy, meta.json}` under `paper_style_root` for single-session sanity checks.
+For large-scale runs, point `processed_data.*_root` at a roomy scratch/workspace dir.
 
 The paper-processed `.mat` in `derivatives/` is used ONLY as a label/event
-cross-check (see `preprocess_raw.py --config ... validate_against_mat: true`), never
-as the training data entry point.
+cross-check (`validate_against_mat: true`), never as the training data entry point.
 
 ## Splits
 

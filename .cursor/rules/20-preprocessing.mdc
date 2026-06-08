@@ -1,5 +1,5 @@
 ---
-description: Rules for Python raw EEG preprocessing (paper-style, reproduced from preprocessed.m).
+description: Rules for Python raw EEG preprocessing (formal = eog_ecg_clean; paper-style is a legacy sanity-check reproduced from preprocessed.m).
 globs:
   - "src/preprocessing/**/*.py"
   - "src/data/**/*.py"
@@ -16,14 +16,29 @@ Preprocessing MUST be implemented in Python + MNE. The MATLAB `preprocessed.m` i
 reference recipe only; reproduce its steps faithfully but never call MATLAB. See
 `docs/PREPROCESSING_SPEC.md`.
 
+## Pipelines (chosen by `mode` in configs/preprocess.yaml)
+
+- **FORMAL = `eog_ecg_clean`** (`src/preprocessing/eog_ecg_clean.py` +
+  `src/preprocessing/pipeline.py`): EOG/ECG-assisted MNE ICA cleaning, then the
+  paper-style second half. Writes ONE `.npz` per session. This is the formal output
+  of the current stage. `scripts/preprocess_all.py` is IMPLEMENTED (manifest-driven;
+  per-session try/except → `status`+`error_message`; supports `--subjects/--sessions/
+  --limit/--tag`). Dry-run on sub-001/002/003 (9 sessions) = 9/9 ok.
+- **legacy = `paper_style`** (`src/preprocessing/shu_preprocess.py`): no ICA, writes
+  `X.npy`/`y.npy`. Retained for the single-session sanity check only.
+
 ## Paths
 
-- Raw root, processed output dir, and manifest paths all come from `configs/paths.yaml`
-  via `src/utils/paths.load_paths()`. Never hard-code them.
+- Raw root, processed output roots, and manifest paths all come from `configs/paths.yaml`
+  via `src/utils/paths.load_paths()`. Never hard-code them. Keys are `*_root`
+  (`paper_style_root`, `eog_ecg_clean_root`).
 - Raw layout under the root: `sourcedata/2C dataset/sub-XXX/ses-YY/eeg/{data.bdf, evt.bdf}`
   (note the literal space in `2C dataset`; always build paths with pathlib).
-- Write processed data only under the configured processed dir (e.g.
-  `outputs/processed_paper_style/...`). Never write into the raw dataset directory.
+- Write processed data only under the configured processed root. The formal
+  `eog_ecg_clean_root` is an EXTERNAL dir (e.g.
+  `<raw_root>/processed/eog_ecg_clean`); `assert_safe_output_dir()` refuses any path
+  under `sourcedata/`/`derivatives/`/`code/` or the raw root itself. Never write into
+  the raw dataset directory.
 
 ## Verified channel facts (sub-001/ses-01)
 
@@ -41,7 +56,7 @@ reference recipe only; reproduce its steps faithfully but never call MATLAB. See
 - Cross-check labels/trial-count against the paper `.mat` in `derivatives/` for every
   session you validate. Treat the `.mat` as ground truth for the label sequence only.
 
-## Paper-style pipeline (no ICA)
+## Paper-style steps (legacy `paper_style`; also the second half of `eog_ecg_clean`)
 
 1. Read `data.bdf` with MNE (preload).
 2. Parse events from `evt.bdf` TAL; build the MNE events array (onset*sfreq).
@@ -55,8 +70,14 @@ reference recipe only; reproduce its steps faithfully but never call MATLAB. See
 
 ## Discipline
 
-- FAIL LOUDLY (strict mode) if `[200, 58, 1000]` cannot be produced; never silently
-  pad/crop/drop. Record the failure reason in `meta.json` and the processed manifest.
+- FAIL LOUDLY (strict mode) / mark `status=failed` if `[200, 58, 1000]` cannot be
+  produced; never silently pad/crop/drop. Record the reason in `meta.json` /
+  `preprocess_report.json` and the processed manifest. In `preprocess_all.py`, a
+  per-session failure must NOT abort the run (try/except → `status`+`error_message`).
 - Always log: subject/session, raw sfreq, orig/final channel counts, n_events,
-  n_trials, per-class counts, output shape, units, status.
-- After preprocessing, append/update `manifests/shu_2c_processed_manifest.csv`.
+  n_trials, per-class counts, output shape, units, aux-cleaning info, status.
+- For `eog_ecg_clean`, the formal output is ONE `.npz` per session
+  (`sub-XXX_ses-YY_task-motorimagery_eeg.npz`) plus `meta.json` +
+  `preprocess_report.json` (+ `manifest_row.json`); debug `X.npy`/`y.npy` only when
+  `output.save_debug_npy: true`. `preprocess_all.py` writes `processed_manifest.csv`
+  + `preprocess_summary.csv` **beside the npz tree** (under `eog_ecg_clean_root`).

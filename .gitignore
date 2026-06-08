@@ -45,6 +45,8 @@ venv/
 *.rar
 *.zip
 *.pdf
+*.pptx
+*.ppt
 
 # ===== editor / OS =====
 .DS_Store

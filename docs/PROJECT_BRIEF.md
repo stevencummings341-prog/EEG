@@ -19,16 +19,19 @@ online test-then-update — with explicit **sample confidence** throughout.
 - MATLAB (`preprocessed.m`) and the Neuracle toolbox are a **reference recipe only** —
   never a runtime dependency. The paper `.mat` in `derivatives/` is a label/event
   **cross-check truth only**, not the training data entry point.
-- Current stage = **raw-data inspector / Python preprocessing**. Do NOT yet build the
-  full model/training/online loops, preprocess all 51×3, or submit GPU jobs.
+- Current stage = **Python preprocessing**. The formal `eog_ecg_clean` pipeline +
+  `preprocess_all.py` are implemented and dry-run-validated (sub-001/002/003, 9/9 ok).
+  Do NOT yet run the full 51×3 (awaits go-ahead), build the model/training/online
+  loops, or submit GPU jobs.
 
 ## Storage model (see docs/PATHS_AND_STORAGE.md)
 
 - Raw data live **outside** this repo. The repo never stores raw BDF.
 - All paths come from `configs/paths.yaml` (or env `SHU_2C_ROOT`) — never hard-coded.
 - `scripts/build_manifest.py` scans the external raw root → `manifests/shu_2c_raw_manifest.csv`.
-- Python preprocessing writes `[200,58,1000]` tensors to the configured processed dir
-  (default `outputs/processed_paper_style/`).
+- Python preprocessing writes `[200,58,1000]` tensors to the configured processed root.
+  The formal `eog_ecg_clean` output is ONE `.npz` per session under `eog_ecg_clean_root`
+  (an external `processed/` subtree); `paper_style_root` holds the legacy sanity check.
 
 ## Dataset (2C)
 

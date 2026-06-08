@@ -22,6 +22,80 @@ RAW_MANIFEST_FIELDS = [
     "data_bdf_size_bytes",
 ]
 
+# 正式（eog_ecg_clean）processed manifest 字段：每行一个 session，记录 npz_path（不再
+# 记录 X_path/y_path）。详细分数等在 preprocess_report.json 里。
+PROCESSED_MANIFEST_FIELDS = [
+    "subject_id",
+    "session_id",
+    "npz_path",
+    "meta_path",
+    "report_path",
+    "status",
+    "n_trials",
+    "n_channels",
+    "n_times",
+    "sfreq",
+    "label_0_count",
+    "label_1_count",
+    "labels_match_mat",
+    "labels_multiset_match",
+    "n_labels_agree",
+    "aux_cleaning_used",
+    "valid_eog_channels",
+    "valid_ecg_channels",
+    "ica_excluded_components",
+    "error_message",
+]
+
+
+def _join_list(xs: Any) -> str:
+    """把列表压成 CSV 友好的 '|' 串（None/空 -> ''）。"""
+    if not xs:
+        return ""
+    return "|".join(str(x) for x in xs)
+
+
+def build_processed_manifest_row(
+    *,
+    subject_id: str,
+    session_id: str,
+    npz_path: Any = "",
+    meta_path: Any = "",
+    report_path: Any = "",
+    meta: Dict[str, Any] | None = None,
+    report: Dict[str, Any] | None = None,
+    status: str | None = None,
+    error_message: str = "",
+) -> Dict[str, Any]:
+    """从 meta/report 组装一行 processed manifest（成功/失败都能用）。"""
+    meta = meta or {}
+    report = report or {}
+    qc = report.get("quality_checks", {}) or {}
+    aux = report.get("aux_cleaning", {}) or {}
+    shape = qc.get("shape") or meta.get("output_shape") or []
+    return {
+        "subject_id": subject_id,
+        "session_id": session_id,
+        "npz_path": str(npz_path) if npz_path else "",
+        "meta_path": str(meta_path) if meta_path else "",
+        "report_path": str(report_path) if report_path else "",
+        "status": status or report.get("status") or meta.get("status") or "",
+        "n_trials": meta.get("n_trials", shape[0] if shape else ""),
+        "n_channels": qc.get("n_channels", shape[1] if len(shape) > 1 else ""),
+        "n_times": qc.get("n_times", shape[2] if len(shape) > 2 else ""),
+        "sfreq": qc.get("sfreq", meta.get("target_sfreq", "")),
+        "label_0_count": qc.get("label_0_count", ""),
+        "label_1_count": qc.get("label_1_count", ""),
+        "labels_match_mat": report.get("labels_match_mat", ""),
+        "labels_multiset_match": report.get("labels_multiset_match", ""),
+        "n_labels_agree": report.get("n_labels_agree", ""),
+        "aux_cleaning_used": aux.get("aux_cleaning_used", meta.get("aux_cleaning_used", "")),
+        "valid_eog_channels": _join_list(aux.get("valid_eog_channels")),
+        "valid_ecg_channels": _join_list(aux.get("valid_ecg_channels")),
+        "ica_excluded_components": _join_list(aux.get("ica_excluded_components")),
+        "error_message": error_message,
+    }
+
 
 def build_raw_manifest(paths: Paths) -> List[Dict[str, Any]]:
     """扫描外部原始数据根，枚举所有 subject/session，返回 manifest 行。

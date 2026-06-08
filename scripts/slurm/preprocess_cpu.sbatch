@@ -12,7 +12,7 @@
 #SBATCH --mem=64G
 #SBATCH -t 12:00:00
 #SBATCH --mail-type=FAIL,END
-#SBATCH --mail-user=b23020028@njupt.edu.cn   # 来自 run_test.sh，按需修改
+#SBATCH --mail-user=125090599@link.cuhk.edu.cn
 
 set -euo pipefail
 
@@ -33,7 +33,8 @@ module load anaconda3
 source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate mi_torch
 
-# -u 关闭缓冲，日志实时可见。（注意：当前阶段暂不运行全量 51x3。）
+# -u 关闭缓冲，日志实时可见。跑全量 51x3（mode=eog_ecg_clean，每 session 一个 .npz）。
+# 小规模可加 --subjects/--sessions/--limit/--tag（见 preprocess_all.py）。
 python -u scripts/preprocess_all.py --paths "$PATHS_PATH" --config "$CONFIG_PATH"
 
 echo "--------------------------------------------------------"

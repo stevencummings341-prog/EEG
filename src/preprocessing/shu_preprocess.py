@@ -123,7 +123,7 @@ def preprocess_one_session(
     meta = {
         "subject_id": subject,
         "session_id": session,
-        "variant": config.get("variant", "paper_style"),
+        "variant": config.get("mode", config.get("variant", "paper_style")),
         "data_bdf": str(data_bdf),
         "evt_bdf": str(evt_bdf),
         "raw_sfreq": raw_sfreq,

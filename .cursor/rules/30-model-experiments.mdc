@@ -1,12 +1,19 @@
 ---
-description: Rules for CAP-EEGNet model and the cross-subject / fine-tuning experiments.
+description: Rules for models + the cross-session DG comparison (current mainline) and the cross-subject experiments (future).
 globs:
   - "src/models/**/*.py"
   - "src/training/**/*.py"
   - "src/evaluation/**/*.py"
+  - "src/analysis/**/*.py"
+  - "src/data/session_splits.py"
+  - "scripts/train_session_models.py"
+  - "scripts/summarize_session_results.py"
+  - "scripts/analysis/run_session_drift.py"
   - "scripts/train_cross_subject.py"
   - "scripts/finetune_target.py"
   - "scripts/train_baseline.py"
+  - "configs/session_model_compare.yaml"
+  - "configs/session_drift.yaml"
   - "configs/train_cross_subject.yaml"
   - "configs/finetune.yaml"
   - "configs/eegnet_baseline.yaml"
@@ -14,8 +21,47 @@ globs:
 
 # Model & Experiment Rules
 
-All models and training are Python/PyTorch. See `docs/MODEL_PLAN.md` and
-`docs/EXPERIMENT_PROTOCOL.md`.
+All models and training are Python/PyTorch. See `docs/BASELINE_PROTOCOL.md` +
+`docs/SESSION_DRIFT_ANALYSIS.md` (current mainline) and `docs/ROADMAP.md` /
+`docs/MODEL_PLAN.md` / `docs/EXPERIMENT_PROTOCOL.md` (future full CAP-EEGNet).
+
+## CURRENT MAINLINE: fair within/cross-session comparison (do not weaken)
+
+- **One protocol, one data filter, one metric set for ALL models.** Baselines
+  (EEGNet/DeepConvNet/FBCNet) and CAP-EEGNet MUST use the same `src/training/trainer.py`,
+  the same `src/evaluation/session_protocols.py`, the same `status=ok` filter, and the
+  same metrics. Never give one model an advantage (different epochs, data, or eval).
+- **No data leakage**, enforced in `session_protocols.py`:
+  - within-session: StratifiedKFold; test fold disjoint from train; the early-stopping
+    val slice is carved from train only.
+  - cross-session: train and test are DIFFERENT sessions (directed pairs, same subject).
+  - never mix within (no drift) and cross (drift); the derivatives `.mat` is never used.
+- All four models share the forward contract `{"logits", "features", "confidence"}`
+  (confidence is `None` for baselines, a learned scalar for CAP-EEGNet v1).
+- Metrics: Accuracy, Balanced Accuracy, Macro-F1, AUC, NLL, Brier, ECE; report
+  cross-session drop and relative drop. Smoke-test (subjects 1,2) before any full run.
+- **CAP-EEGNet is v1** (encoder + classifier + learned confidence head). Prototype,
+  multi-source confidence, adapter, domain alignment, neural subagents, and online update
+  are future work and must raise `NotImplementedError` if enabled — never silently ship
+  v1 as the full method.
+- LOSO, 41/10 cross-subject pretraining, fine-tuning, and online learning are FUTURE WORK
+  right now (see `docs/EXPERIMENT_PROTOCOL.md`); do not run them in the current mainline.
+
+## Direction (future full model — do not weaken)
+
+## Direction (do not weaken)
+
+- Final goal = **Confidence-aware Online Adaptive Multi-Subagent Pretraining Framework**
+  (full CAP-EEGNet), NOT a plain EEGNet classifier.
+- **The minimal CAP-EEGNet (EEGNet encoder + classifier) is a Stage 0 pipeline-validation
+  baseline only. NEVER treat it as the final method / paper result.** Full components
+  (subagents, multi-source confidence, prototype memory, adapter, domain align, online)
+  are required for the final model; their flags currently raise NotImplementedError.
+- **Formal experiments MUST use repeated subject-wise splits** (seeds 2026–2030, one model
+  per seed, report mean ± std). A single split/seed is not a valid result.
+- **Target leakage is forbidden**: no target subject (or target trial) ever enters source
+  training; split by subject, never by trial/session.
+- Training entry = `status==ok` `.npz` only; derivatives `.mat` is never a training entry.
 
 ## Main model: CAP-EEGNet (Confidence-aware Prototype EEGNet)
 
@@ -59,5 +105,10 @@ Baselines (EEGNet/DeepConvNet/FBCNet) are OPTIONAL and not the current priority.
 - Fixed seeds. Every run saves resolved config + split + checkpoint + metrics + logs
   under a unique `run_id` in `outputs/` and `checkpoints/`. Never overwrite without a
   new `run_id`. All hyperparameters via YAML configs. GPU work via Slurm only.
-- Do NOT build the full CAP-EEGNet / training loop yet — current stage is data/paths.
-  Keep model code as documented skeletons until preprocessing is finalized.
+
+## Stage note (2026-06-05)
+
+- Stage 0 DONE: 41/10 splits (5 seeds), `SHUTrialDataset`, minimal CAP-EEGNet + sanity.
+- The cross-subject training loop (Stage 1) and full CAP-EEGNet components (Stage 2+) are
+  still documented skeletons (NotImplementedError). Do NOT start formal training or submit
+  GPU jobs until the CPU-only torch is fixed AND the user confirms. See `docs/ROADMAP.md`.

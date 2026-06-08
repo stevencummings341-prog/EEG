@@ -8,8 +8,18 @@ globs:
 
 # Online Learning Rules
 
-Python/PyTorch. See `docs/EXPERIMENT_PROTOCOL.md` (Experiment C) and the senior's
-chat record (`docs/references/ChatGPT-EEG-MI-pretraining.md`, sec. 7-12).
+Python/PyTorch. See `docs/ROADMAP.md` (Stage 4), `docs/EXPERIMENT_PROTOCOL.md`
+(Experiment 3) and the senior's chat record
+(`docs/references/ChatGPT-EEG-MI-pretraining.md`, sec. 7-12).
+
+## Non-negotiables
+
+- **Online MUST be test-then-update (prequential).** Predict + record BEFORE any update.
+- **Default-forbid updating the full backbone online.** Backbone stays frozen; full-backbone
+  online update is only an ablation to show it is worse, never the default path.
+- **Confidence gate + prototype memory + adapter are the CORE of online adaptation.** The
+  confidence used for gating/weighting is multi-source (not max-softmax). Low-confidence
+  trials must not drive pseudo-label updates.
 
 ## Setup
 
@@ -46,7 +56,7 @@ regularization, feature distillation, class-balanced memory, learning-rate decay
 - `outputs/<run_id>/per_trial.csv` (trial, pred, confidence, correct, updated?).
 - pre-online vs post-online metrics, performance-vs-trial curve, risk-coverage curve.
 
-## Stage note
+## Stage note (2026-06-05)
 
-Do NOT implement the online loop yet — current stage is data/paths/preprocessing.
-Keep `src/online/` as documented skeletons.
+Online is Stage 4 (see `docs/ROADMAP.md`); not started. Keep `src/online/` as documented
+skeletons. Do NOT implement a flow that silently full-backbone-updates online.

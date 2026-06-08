@@ -5,4 +5,4 @@
 见 docs/EXPERIMENT_PROTOCOL.md。
 """
 
-from . import metrics  # noqa: F401
+from . import data_quality, metrics  # noqa: F401

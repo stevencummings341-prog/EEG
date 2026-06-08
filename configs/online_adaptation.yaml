@@ -6,7 +6,8 @@
 run_id: "cap_eegnet_online_v0"
 
 data:
-  variant: "paper_style"
+  variant: "eog_ecg_clean"      # formal entry = status=ok .npz (NOT derivatives .mat)
+  statuses: ["ok"]
   n_channels: 58
   n_times: 1000
   n_classes: 2

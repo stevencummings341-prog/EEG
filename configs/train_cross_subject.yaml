@@ -3,20 +3,25 @@
 # See docs/EXPERIMENT_PROTOCOL.md and docs/MODEL_PLAN.md.
 # NOTE: training is NOT implemented yet (current stage = data/paths/preprocessing).
 
-run_id: "cap_eegnet_cross_subject_v0"
+run_id: "cap_eegnet_4110"       # split files: splits/cap_eegnet_4110_seed<k>.json
 
 data:
-  variant: "paper_style"        # which processed_* dir to read (from paths.yaml)
+  variant: "eog_ecg_clean"      # formal entry = status=ok .npz under eog_ecg_clean_root
   n_channels: 58
   n_times: 1000
   n_classes: 2
-  use_sessions: [1, 2, 3]       # train on all source sessions; test all target sessions
+  use_sessions: [1, 2, 3]       # train on all source ok sessions; test all target sessions
+  statuses: ["ok"]              # only status==ok sessions; failed sessions are excluded
 
 split:
   n_source_subjects: 41
   n_target_subjects: 10
-  seeds: [0, 1, 2, 3, 4]        # repeated subject-wise splits; report mean +/- std
-  # splits are persisted to <paths.splits.dir>/<run_id>_seed<k>.json
+  # subject-wise (NEVER trial/session-wise). target subjects need all 3 sessions ok.
+  seeds: [2026, 2027, 2028, 2029, 2030]   # repeated splits; report mean +/- std
+  # generate via: python scripts/make_splits.py --seeds 2026 2027 2028 2029 2030
+  # persisted to <paths.splits.dir>/<run_id>_seed<k>.json
+  target_finetune_sessions: [1]           # Session 1 fine-tuning (Experiment 2)
+  target_online_sessions: [2, 3]          # Session 2/3 online test-then-update (Experiment 3)
 
 model:
   name: "cap_eegnet"            # Confidence-aware Prototype EEGNet

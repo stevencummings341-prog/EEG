@@ -12,7 +12,7 @@
 #SBATCH --mem=16G
 #SBATCH -t 1-00:00:00
 #SBATCH --mail-type=FAIL,END
-#SBATCH --mail-user=b23020028@njupt.edu.cn   # 来自 run_test.sh，按需修改
+#SBATCH --mail-user=125090599@link.cuhk.edu.cn
 
 set -euo pipefail
 

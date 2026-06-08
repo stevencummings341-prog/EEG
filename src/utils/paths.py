@@ -59,8 +59,8 @@ class Paths:
     raw_root: Path
     raw_subdir: str
     deriv_subdir: str
-    paper_style_dir: Path
-    eog_ecg_clean_dir: Path
+    paper_style_root: Path
+    eog_ecg_clean_root: Path
     raw_manifest: Path
     processed_manifest: Path
     splits_dir: Path
@@ -102,16 +102,21 @@ class Paths:
 
     # --- 处理后数据（可写）---
     def processed_dir(self, variant: str) -> Path:
-        """按变体返回处理后数据根目录。"""
+        """按模式/变体返回处理后数据根目录。"""
         if variant == "paper_style":
-            return self.paper_style_dir
+            return self.paper_style_root
         if variant == "eog_ecg_clean":
-            return self.eog_ecg_clean_dir
+            return self.eog_ecg_clean_root
         # 其他变体：在 paper_style 同级新建
-        return self.paper_style_dir.parent / f"processed_{variant}"
+        return self.paper_style_root.parent / f"processed_{variant}"
 
     def processed_session_dir(self, variant: str, subject, session) -> Path:
         return self.processed_dir(variant) / sub_id(subject) / ses_id(session)
+
+    def session_npz_path(self, variant: str, subject, session) -> Path:
+        """正式输出的 per-session .npz 路径（命名遵循 BIDS-like 习惯）。"""
+        s, ss = sub_id(subject), ses_id(session)
+        return self.processed_session_dir(variant, s, ss) / f"{s}_{ss}_task-motorimagery_eeg.npz"
 
 
 def load_paths(config_path: str | Path | None = None, require_raw: bool = True) -> Paths:
@@ -145,13 +150,62 @@ def load_paths(config_path: str | Path | None = None, require_raw: bool = True) 
             f"原始数据根不存在: {raw_root}。请修正 configs/paths.yaml 中的 raw_data.shu_2c_root。"
         )
 
+    # 处理后输出键：优先用新的 *_root；向后兼容旧的 *_dir 键。
+    paper_style_root = proc.get("paper_style_root", proc.get("paper_style_dir",
+                                                             "outputs/processed_paper_style"))
+    eog_ecg_clean_root = proc.get("eog_ecg_clean_root", proc.get("eog_ecg_clean_dir",
+                                                                 "outputs/processed_eog_ecg_clean"))
+
     return Paths(
         raw_root=raw_root,
         raw_subdir=raw.get("raw_subdir", "sourcedata/2C dataset"),
         deriv_subdir=raw.get("derivatives_subdir", "derivatives/2C dataset_processeddata"),
-        paper_style_dir=_resolve(proc.get("paper_style_dir", "outputs/processed_paper_style")),
-        eog_ecg_clean_dir=_resolve(proc.get("eog_ecg_clean_dir", "outputs/processed_eog_ecg_clean")),
+        paper_style_root=_resolve(paper_style_root),
+        eog_ecg_clean_root=_resolve(eog_ecg_clean_root),
         raw_manifest=_resolve(man.get("raw_manifest", "manifests/shu_2c_raw_manifest.csv")),
         processed_manifest=_resolve(man.get("processed_manifest", "manifests/shu_2c_processed_manifest.csv")),
         splits_dir=_resolve(spl.get("dir", "splits")),
     )
+
+
+def assert_safe_output_dir(out_dir: str | Path, P: "Paths") -> Path:
+    """确保 out_dir 是安全的写入位置：绝不写入 raw 的 sourcedata/derivatives/code，
+    也不写入 raw 数据根本身。返回解析后的绝对路径；不安全则抛错。
+
+    允许的位置例如 <raw_root>/processed/... 或项目内 outputs/...。
+    """
+    out = Path(out_dir).resolve()
+    raw_root = P.raw_root.resolve()
+    forbidden = [
+        (raw_root / P.raw_subdir).resolve(),                 # sourcedata/2C dataset
+        (raw_root / P.deriv_subdir).resolve(),               # derivatives/...
+        (raw_root / "sourcedata").resolve(),
+        (raw_root / "derivatives").resolve(),
+        (raw_root / "code").resolve(),
+    ]
+    for fb in forbidden:
+        # out 等于禁区、在禁区之内、或是禁区的祖先（例如直接写 raw_root）都拒绝。
+        if out == fb or fb in out.parents or out in fb.parents:
+            raise ValueError(
+                f"拒绝写入受保护的原始数据区域：out={out} 与禁区 {fb} 冲突。"
+                " 正式预处理只能写入 processed/ 子目录（见 configs/paths.yaml）。"
+            )
+    if out == raw_root:
+        raise ValueError(f"拒绝直接写入原始数据根 {raw_root}。")
+    return out
+
+
+def ensure_writable_dir(path: str | Path) -> Path:
+    """目录不存在则创建；随后做一次写测试。不可写直接抛错（不继续）。"""
+    p = Path(path)
+    try:
+        p.mkdir(parents=True, exist_ok=True)
+    except OSError as e:
+        raise PermissionError(f"无法创建输出目录 {p}: {e}") from e
+    probe = p / f".write_test_{os.getpid()}"
+    try:
+        probe.write_text("ok", encoding="utf-8")
+        probe.unlink()
+    except OSError as e:
+        raise PermissionError(f"输出目录不可写: {p} ({e})") from e
+    return p

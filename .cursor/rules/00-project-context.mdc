@@ -7,6 +7,12 @@ alwaysApply: true
 
 This project studies cross-subject and online adaptive motor imagery EEG decoding on the Shanghai University WBCIC-SHU 2C dataset.
 
+This project follows the senior's chat record
+(`docs/references/ChatGPT-EEG-MI-pretraining.md`). The final goal is a
+**Confidence-aware Online Adaptive Multi-Subagent Pretraining Framework** (full
+CAP-EEGNet) — NOT a plain EEGNet/DeepConvNet baseline. The minimal EEGNet+classifier is a
+Stage 0 pipeline-validation baseline only. See `docs/ROADMAP.md`.
+
 Important current decision:
 - The current main workflow does NOT prioritize reproducing EEGNet/DeepConvNet/FBCNet baselines.
 - Baseline code can remain optional.
@@ -54,7 +60,12 @@ Implementation language:
 - The paper-processed `.mat` files in `derivatives/` may be used as an event/label
   ground-truth CROSS-CHECK, but are NOT the main training data entry point.
 
-Current stage:
-- We are in the raw-data inspector / Python-preprocessing stage.
-- Do NOT yet preprocess all 51x3, submit GPU jobs, or build complex model/training code.
-- Immediate goal: from raw, in Python, produce X=[200,58,1000], y=[200] for sub-001/ses-01.
+Current stage (2026-06-05):
+- DONE: full 51x3 eog_ecg_clean preprocessing + QC (148 ok / 5 failed, QC PASS);
+  41/10 subject-wise splits (seeds 2026-2030); SHUTrialDataset; minimal CAP-EEGNet
+  (EEGNet encoder + classifier) + sanity training (loss down, no shape errors).
+- NOT done: full CAP-EEGNet components (subagents/confidence/prototype/adapter/domain/
+  online), the cross-subject training loop, and any formal training.
+- BLOCKER: `mi_torch` torch is CPU-only; fix via a dedicated cu118 env (do NOT mutate the
+  shared env). Do NOT start formal training, submit GPU training jobs, or install GPU torch
+  until the user confirms. See `docs/ROADMAP.md` and `docs/ENVIRONMENT.md`.
