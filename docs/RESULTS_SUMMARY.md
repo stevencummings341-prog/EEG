@@ -5,8 +5,8 @@
 > Step 1 multi-source `ses-01+02 -> ses-03`** 下的 5-seed 评估，并**重点分析"为什么比论文低"**。
 > 数据入口：`eog_ecg_clean` 的 `status=ok` session（148 ok / 5 failed）。
 >
-> **图集（全部 18 张放一起）+ 带图整合报告**：`outputs/experiments/cross_session_baseline_v1/`
-> （`figures/` + `INTEGRATED_REPORT.md`）。
+> **图集（全部 18 张放一起）+ 静态 baseline 总报告**：`outputs/experiments/static_baseline_v1/`
+> （`figures/` + `STATIC_BASELINE_REPORT.md`）。
 > 原始详表：`outputs/experiments/session_model_compare_v1/summaries/`（within+cross）、
 > `outputs/experiments/session_multisource_v1/summaries/`（Step 1）、
 > `outputs/analysis/session_drift_v1/`（drift）。
@@ -175,8 +175,8 @@ val 只从 `ses-01+02` carve，`ses-03` label 仅用于 final evaluation。
 
 | 内容 | 路径 |
 |---|---|
-| **整合图集（全部 18 张）** | `outputs/experiments/cross_session_baseline_v1/figures/`（`drift_*` / `baseline_*` / `step1_*`） |
-| **带图整合报告** | `outputs/experiments/cross_session_baseline_v1/INTEGRATED_REPORT.md` |
+| **整合图集（全部 18 张）** | `outputs/experiments/static_baseline_v1/figures/`（`drift_*` / `within_*` / `cross_session_*`） |
+| **静态 baseline 总报告** | `outputs/experiments/static_baseline_v1/STATIC_BASELINE_REPORT.md` |
 | Baseline 主报告 | `outputs/experiments/session_model_compare_v1/summaries/SESSION_MODEL_COMPARE_REPORT.md` |
 | Baseline 汇总表 | `.../summaries/summary_by_model_protocol.csv`、`within_by_seed.csv`、`cross_by_seed.csv`、`within_session_wise.csv`、`cross_by_direction.csv` |
 | Baseline 原始行 | `.../summaries/results_within_session.csv`、`results_cross_session.csv` |

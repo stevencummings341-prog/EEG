@@ -117,6 +117,7 @@ docs/   PROJECT_OVERVIEW.md · PROJECT_STATUS_CURRENT.md · EXPERIMENT_PROTOCOL.
         NEXT_EXPERIMENT_PLAN.md · ADAPTATION_BASELINE_PLAN.md · CODE_INTEGRATION_NOTES.md ·
         P10_INTEGRATION_SUMMARY.md · PROGRESS.md · EXPERIMENT_LOG.md · references/
 outputs/   analysis/session_drift_v1/ ·
+           experiments/static_baseline_v1/{within_session,cross_session,figures,STATIC_BASELINE_REPORT.md} ·
            experiments/session_model_compare_v1/{runs,splits,summaries} ·
            experiments/session_multisource_v1/{runs,splits,summaries,figures}
 checkpoints/ session_model_compare_v1/{eegnet,deepconvnet,fbcnet}/ ·
