@@ -19,10 +19,14 @@ When helping with this repository:
 6. Online learning is test-then-update.
 7. Comment your code (project requirement): docstrings on every module/script;
    explain EEG-specific / non-obvious choices. Chinese or English is fine.
-8. Respect the staged plan: current stage is data/paths/manifest/preprocessing. Do NOT
-   build the full CAP-EEGNet, training loop, or online loop yet; keep them as skeletons.
-9. Do NOT preprocess all 51x3 or submit GPU jobs yet. Heavy/GPU work via Slurm only,
-   never on the login node.
+8. Respect the staged plan (see `docs/PROJECT_STATUS_CURRENT.md`). Current mainline =
+   cross-session DG; Steps A/B/1/2 are DONE. Do the requested step only; do NOT jump ahead to
+   Step 3 / online / fine-tuning / full CAP-EEGNet / 41-10 / LOSO without an explicit request.
+   Mark a step "done" only after its results exist on disk, never on job submission alone.
+9. Heavy/GPU work via Slurm ONLY (env `mi_torch_cu118`, fail-fast if CUDA unavailable), never on
+   the login node. Smoke-test on a GPU node via `srun` before any full `sbatch`. Write only inside
+   the project root; the external dataset under `/share/workspace2/...` is read-only input; sibling
+   handoff folders under `/share/home/yuan/SYX/` are read-only references unless the user says so.
 10. Expose parameters via YAML configs; keep scripts runnable from the project root;
     save metrics as CSV/JSON with clear `run_id`s.
 11. If a requirement is ambiguous, write a small diagnostic script rather than guess.

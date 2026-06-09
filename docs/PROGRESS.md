@@ -33,6 +33,33 @@ Format per entry: date, what was done, decisions made, open questions, next step
 
 <!-- AUTORUN_STATUS_BELOW: baseline_report.py inserts entries here -->
 
+## 2026-06-09 — Anti-data-loss: backup/recovery scheme + GPU-cluster doc integration (no experiments)
+
+**Why**: earlier loss happened because important code/docs lived only in the working tree, and
+results (`outputs/`, `checkpoints/`, `logs/`) are gitignored so commits don't protect them. Built a
+4-layer safety net + made the "soul files" + cluster knowledge durable. No experiment run.
+
+- **Soul files committed/refreshed**: `AGENTS.md` + `.cursor/rules/{00-project-context,50-server-slurm,
+  90-agent-behavior}.mdc` — generalized the senior-handoff-folder rule (no hard-coded P10 path; read &
+  integrate when pointed at it), added explicit dataset addresses + project architecture/data-flow,
+  tightened the filesystem-scope rule (write only inside the project root; `/share/workspace2` dataset
+  is read-only; sibling handoff folders read-only), and corrected the GPU/Slurm guidance (env
+  `mi_torch_cu118`, GPU jobs are normal now, fail-fast on no-CUDA).
+- **GPU cluster doc integrated** (official `http://10.26.1.75:58080/`, "4090D 集群用户文档") into
+  `docs/SERVER_RUNBOOK.md` + the 50-rule + AGENTS verified facts: 1 login01 + 5 GPU nodes
+  (gpu01-05, 8× 4090D, no SSH, Slurm-only) + storge file node; partitions gpu2node(gpu01,02)/
+  gpu3node(gpu03,04,05); monitoring `slmwatch`/`gpuwatch`/`user-tools`; modules; home quota 512 GiB;
+  IO-heavy work on storge.
+- **New doc `docs/BACKUP_AND_RECOVERY.md`**: what git manages vs. gitignored, the 4 layers
+  (commit → tag → `git bundle` → results tar), where backups live (authorized
+  `/share/home/yuan/SYX/backups/`; large → `/share/workspace2`), restore steps, and a
+  before/during/after routine checklist.
+- **Milestone tagged** `milestone-step2-alignment-complete` and **backups created** under
+  `/share/home/yuan/SYX/backups/`: `eeg-mi-online_git_2026-06-09.bundle` (full git history+tags) +
+  `eeg-mi-online_results_2026-06-09.tar.gz` (session_drift_v1 + baseline_v1 + alignment_baseline_v1
+  CSVs/reports/figures/splits/configs/job-ids; the 11 GB alignment checkpoints intentionally NOT
+  archived — re-creatable) + `BACKUP_MANIFEST.md` (sizes + sha256). Working tree clean.
+
 ## 2026-06-09 — Step 2 no-learning alignment baseline COMPLETE (negative/diagnostic result)
 
 **Status: COMPLETE.** All 75 GPU training jobs (`21261-21335`) + the summarizer (`21336`) finished
