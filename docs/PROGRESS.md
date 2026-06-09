@@ -19,15 +19,57 @@ Format per entry: date, what was done, decisions made, open questions, next step
 > accuracy — a **training-recipe/data-budget** effect (within folds carve a 20% val slice →
 > ~144 train trials/fold; dropout 0.25, no max-norm; shared un-tuned recipe), **not an
 > architecture bug** (ranking + S1<S2<S3 trend match the paper).
-> **NEXT = Step 2 no-learning adaptation baseline** (none / session_zscore / Euclidean Alignment /
-> Riemannian Alignment / target BN-stats adaptation / filter-bank reweighting) — NOT run yet.
-> CAP-EEGNet (v1/v2) + agent/toolkit/prototype/confidence/online/fine-tuning, LOSO, 41/10 remain
-> **future work, not run**. GPU env `mi_torch_cu118` (torch 2.7.1+cu118).
+> **Step 2 no-learning adaptation baseline = COMPLETE (2026-06-09).** 30,150 rows, 0 failed/0 NaN.
+> Result is a **negative/diagnostic** one: no-learning alignment is INSUFFICIENT — none clears the
+> +2pp line. none_reference acc 0.6818; best = bn_statistics_adaptation 0.6889 (Δ +0.0071); EA/RA
+> slightly hurt; z-score/filter-bank ≈ neutral. High-drift subjects helped least → motivates (but
+> does NOT run) learning-based Step-3 adaptation.
+> **NEXT = Step 3 (learning-based) is FUTURE, NOT run.** CAP-EEGNet (v1/v2) + agent/toolkit/
+> prototype/confidence/online/fine-tuning, LOSO, 41/10 remain **future work, not run**.
+> GPU env `mi_torch_cu118` (torch 2.7.1+cu118).
 > Sources of truth: `docs/PROJECT_STATUS_CURRENT.md` (status), `docs/MULTISOURCE_STEP1_REPORT.md`
 > (Step 1), `docs/NEXT_EXPERIMENT_PLAN.md` + `docs/ADAPTATION_BASELINE_PLAN.md` (Step 2 plan),
 > `docs/RESULTS_SUMMARY.md` (consolidated results), `docs/P10_INTEGRATION_SUMMARY.md` (P10 dir).
 
 <!-- AUTORUN_STATUS_BELOW: baseline_report.py inserts entries here -->
+
+## 2026-06-09 — Step 2 no-learning alignment baseline COMPLETE (negative/diagnostic result)
+
+**Status: COMPLETE.** All 75 GPU training jobs (`21261-21335`) + the summarizer (`21336`) finished
+COMPLETED; `results_alignment_all.csv` exists with **30,150 rows** (25,125 alignment + 5,025
+none_reference), **0 failed**, **0 NaN/Inf** in metrics (the only all-empty column is the text
+`error_message`). `used_target_y_for_training == False` for all rows; `used_target_x_for_stats ==
+True` for all 25,125 trained-method rows. 5 trained methods + none_reference all present; models
+eegnet/deepconvnet/fbcnet; seeds 0-4; all 6 single-source directions + multi-source ses-01+02→ses-03.
+
+**Result (honest, mean cross-acc over directions/subjects/seeds, vs baseline_v1 `none_reference`):**
+
+| method | Δacc vs none | note |
+|---|---:|---|
+| `bn_statistics_adaptation` | **+0.0071** | only net-positive method; well below +0.02 |
+| `filterbank_reweighting` | −0.0030 | ≈ neutral |
+| `session_zscore` | −0.0038 | ≈ neutral |
+| `riemannian_alignment` | −0.0101 | slightly hurts |
+| `euclidean_alignment` | −0.0124 | hurts most |
+
+- Absolute acc (all scope): none_reference **0.6818**; bn_statistics **0.6889** (best); all others < none.
+- By drift level: BN-stats small-positive at every level (stable +0.009 / moderate +0.008 / high
+  +0.005); filter-bank positive on stable/moderate (+0.011/+0.005) but **−0.024 on high drift**;
+  EA/RA negative everywhere. → the subjects that drift most are helped least.
+- **Conclusion: no-learning / unsupervised statistic-only alignment is INSUFFICIENT** (no method
+  reaches the pre-registered +2pp success line). BN-stats gives only a small positive gain. This is a
+  **valuable negative/diagnostic result** that objectively justifies learning-based Step-3 adaptation
+  (online / adapter / prototype / memory) — **which is NOT run here**.
+- Verified the `alignment_vs_baseline.csv` join is correct: none_reference is unique per
+  (model, seed, subject, train_sessions, test_session, training_scope); all 25,125 alignment rows
+  matched; an independent re-merge reproduced the summarizer's Δacc exactly.
+- Outputs: `outputs/experiments/alignment_baseline_v1/` — `ALIGNMENT_BASELINE_REPORT.md` (13 sections
+  + headline), `RUN_STATUS.md`, `manifest_sources.json`, `cross_session/tables/` (9 CSVs incl.
+  results_alignment_all.csv, alignment_vs_baseline.csv, alignment_by_method/model/direction/protocol/
+  subject.csv, alignment_gain_by_drift_level.csv, run_status.csv), `cross_session/figures/` (6 PNGs).
+  Checkpoints `checkpoints/alignment_baseline_v1/`.
+- Closeout only added a richer, honest interpretation to the report (recomputed from the same CSVs);
+  no new experiment, no new deps, baseline_v1 untouched.
 
 ## 2026-06-09 — Step 2 no-learning alignment baseline: implemented + smoke + FULL RUN SUBMITTED (results PENDING)
 

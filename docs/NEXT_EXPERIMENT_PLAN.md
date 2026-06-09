@@ -26,9 +26,27 @@
 - 核心发现：multi-source 对三模型都优于最强单源 `ses-02→03`；平均 +0.0281；
   失败案例集中在两 source 质量差异大的被试 → 动机 Step 2。完整分析 `docs/MULTISOURCE_STEP1_REPORT.md`。
 
-## Step 2 — no-learning adaptation baseline（代码实现 + smoke 通过 + **full run 已提交，结果 PENDING**，2026-06-09）
+## Step 2 — no-learning adaptation baseline ✅ 完成（2026-06-09，结论=无学习对齐不足）
 
 在 cross-session 协议上做**不更新模型权重**的对齐，量化"零学习成本能挽回多少漂移掉点"。
+
+**结果（诚实）**：75 GPU jobs `21261-21335` + summarizer `21336` 全部 COMPLETED；
+`results_alignment_all.csv` 30,150 rows，0 failed / 0 NaN。mean Δacc vs none_reference：
+
+| method | Δacc | |
+|---|---:|---|
+| `bn_statistics_adaptation` | **+0.0071** | 唯一正向，但 < +2pp |
+| `filterbank_reweighting` | −0.0030 | 近中性 |
+| `session_zscore` | −0.0038 | 近中性 |
+| `riemannian_alignment` | −0.0101 | 略降 |
+| `euclidean_alignment` | −0.0124 | 降最多 |
+
+绝对 acc：none_reference 0.6818、bn_statistics 0.6889。按 drift：BN-stats 各级小正向；filter-bank
+在 high-drift −0.024；EA/RA 各级负向（high-drift 受益最小）。**没有任何方法达到 +2pp 成功线
+→ 记录为"无学习统计对齐不足"**，构成 Step 3 学习型适配的客观依据（本阶段不实现/不运行）。
+报告：`outputs/experiments/alignment_baseline_v1/ALIGNMENT_BASELINE_REPORT.md`。
+
+### 方法/协议（已实现，备查）
 
 方法（各跑、互为对照）：
 - `none_reference`（对照，取自 baseline_v1，不重跑）
@@ -55,10 +73,12 @@
   `.../cross_session/tables/results_alignment_all.csv`、`.../ALIGNMENT_BASELINE_REPORT.md`。
   summarizer 写出 `results_alignment_all.csv` 后才算 Step 2 完成。
 
-## Step 3 — Future（Step 2 结果出来后才讨论）
+## Step 3 — Future（Step 2 已给出客观依据；现仍不实现/不跑）
 
-online learning · adapter / prototype / memory · CAP-EEGNet full · multi-agent ·
+Step 2 已证明无学习统计对齐不足、high-drift 被试受益最小 → **学习型 target 适配**是合理下一步：
+online test-then-update · adapter / prototype / memory · CAP-EEGNet full · multi-agent ·
 41/10 cross-subject pretraining · target fine-tuning · LOSO。**现在不实现、不跑、不验证。**
+若做，建议从最轻量的开始（如把 BN-stats 作默认前端 + 轻量 adapter），并优先针对 high-drift 被试。
 
 ---
 

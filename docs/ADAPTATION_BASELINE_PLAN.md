@@ -1,17 +1,21 @@
 # ADAPTATION_BASELINE_PLAN.md
 
-> Step 2 计划 + 当前进度。**代码实现 + smoke 通过 + full run 已提交，结果 PENDING**。
-> summarizer 写出 `results_alignment_all.csv` 之前，**绝不能写"已完成"**。
+> Step 2 计划 + 最终结果。**已完成（2026-06-09）。结论：无学习统计对齐不足（negative/diagnostic）。**
 
-## 1. 当前状态（2026-06-09）
+## 1. 当前状态（2026-06-09，已完成）
 
-- **Step 2 no-learning adaptation baseline：代码已实现、smoke 已通过、full run 已提交、summarizer
-  依赖已提交，结果未跑完（PENDING）。** 不是已完成。
-- Slurm：75 GPU train jobs `21261-21335` + CPU summarizer `21336`（`afterany`）。
-  job ids → `outputs/experiments/alignment_baseline_v1/full_job_ids.txt`。
-- 输出目录：`outputs/experiments/alignment_baseline_v1/`（结果 + 报告待 summarizer 跑完）。
-- checkpoints：`checkpoints/alignment_baseline_v1/`。
-- 实现细节：见 §6 与 `docs/PROGRESS.md`(2026-06-09 Step 2 条目)；none_reference 取自 baseline_v1，不重跑。
+- **Step 2 no-learning adaptation baseline：已完成。** 75 GPU train jobs `21261-21335` + CPU
+  summarizer `21336`（`afterany`）全部 COMPLETED；`results_alignment_all.csv` 30,150 rows，
+  0 failed / 0 NaN；`used_target_y_for_training` 全 False，`used_target_x_for_stats` trained 行全 True。
+- **结果（诚实）**：无方法达到 +2pp。none_reference acc 0.6818；best `bn_statistics_adaptation`
+  0.6889（Δ +0.0071，唯一正向）；`filterbank_reweighting` −0.0030、`session_zscore` −0.0038（近中性）；
+  `riemannian_alignment` −0.0101、`euclidean_alignment` −0.0124（略降）。按 drift：BN-stats 各级小正向；
+  filter-bank high-drift −0.024；EA/RA 各级负向（high-drift 受益最小）。→ **无学习统计对齐不足**，
+  支持后续学习型适配（Step 3，不在此实现/运行）。
+- 结果在哪看：`outputs/experiments/alignment_baseline_v1/ALIGNMENT_BASELINE_REPORT.md`、`RUN_STATUS.md`、
+  `cross_session/tables/`（9 CSV）、`cross_session/figures/`（6 图）。checkpoints
+  `checkpoints/alignment_baseline_v1/`。job ids `outputs/experiments/alignment_baseline_v1/full_job_ids.txt`。
+- 实现细节：见 §6；none_reference 取自 baseline_v1，不重跑。
 - 上游已完成：static baseline（within + single-source cross + multi-source ses-01+02→ses-03，
   见 `docs/RESULTS_SUMMARY.md` / `docs/MULTISOURCE_STEP1_REPORT.md`）。
 

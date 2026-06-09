@@ -3,6 +3,23 @@
 Newest entries on top. Auto + manual entries. Full narrative + decisions live in
 `docs/PROGRESS.md`; consolidated results in `docs/RESULTS_SUMMARY.md`.
 
+## 2026-06-09 — Step 2 no-learning alignment baseline COMPLETE (negative/diagnostic)
+
+- **All 75 GPU train jobs `21261-21335` + summarizer `21336` COMPLETED.** `results_alignment_all.csv`
+  exists: **30,150 rows** (25,125 alignment + 5,025 none_reference), **0 failed**, **0 NaN/Inf** in
+  metrics. `used_target_y_for_training`=False for all; `used_target_x_for_stats`=True for all 25,125
+  trained rows. 5 methods + none_reference, models eegnet/deepconvnet/fbcnet, seeds 0-4, 6 single
+  directions + multi ses-01+02→ses-03. vs_baseline join verified correct (unique none keys, full match).
+- **Mean Δacc vs none_reference:** bn_statistics_adaptation **+0.0071** (best, net-positive) > filterbank
+  −0.0030 > z-score −0.0038 > riemannian −0.0101 > euclidean −0.0124. Absolute acc: none 0.6818, BN 0.6889.
+- **By drift:** BN-stats small-positive at all levels; filter-bank +0.011/+0.005 (stable/moderate) but
+  −0.024 (high); EA/RA negative everywhere → high-drift subjects helped least.
+- **Conclusion: no-learning / unsupervised alignment is INSUFFICIENT** (no method clears +2pp). A useful
+  negative/diagnostic result that justifies learning-based Step-3 adaptation — NOT run here.
+- Report `outputs/experiments/alignment_baseline_v1/ALIGNMENT_BASELINE_REPORT.md`; tables/figures under
+  `.../cross_session/{tables,figures}/`. online / 41-10 / LOSO / fine-tuning / CAP-EEGNet full /
+  multi-agent / prototype / memory remain future work — NOT run.
+
 ## 2026-06-09 — Step 2 no-learning alignment baseline: code + smoke + full run SUBMITTED (results PENDING)
 
 - **Status: code implemented, smoke passed, full run submitted, summarizer dependency submitted,

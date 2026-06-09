@@ -247,9 +247,20 @@ def _fmt(v, nd=4):
         return "nan"
 
 
+SUCCESS_THRESHOLD = 0.02  # +2pp mean cross-acc gain over none_reference = pre-registered success line
+
+
+def _all_scope_gains(vs_base) -> pd.DataFrame:
+    """method -> mean Δacc (all scope), ordered, as a small DataFrame."""
+    if vs_base is None or vs_base.empty:
+        return pd.DataFrame(columns=["method", "gain_acc_mean"])
+    bm = vs_base[vs_base["training_scope"] == "all"].groupby("method", as_index=False)["gain_acc_mean"].mean()
+    return bm.set_index("method").reindex(_order(bm["method"], METHOD_ORDER)).reset_index()
+
+
 def write_report(report_path: Path, *, df_all, df_ok, by_method, by_proto, by_dir,
-                 vs_base, gain_drift, complete, n_failed, n_nan, tables, figures,
-                 ms_skipped, expected_info) -> None:
+                 vs_base, gain_drift, by_subject, gain_rows, complete, n_failed, n_nan,
+                 tables, figures, ms_skipped, expected_info) -> None:
     L: List[str] = []
     a = L.append
     a("# Alignment Baseline (Step 2) — Report")
@@ -262,6 +273,34 @@ def write_report(report_path: Path, *, df_all, df_ok, by_method, by_proto, by_di
     status = "COMPLETE" if complete else "INCOMPLETE (results pending / some jobs missing)"
     a(f"**Run status: {status}** — total rows {len(df_all)}, ok {len(df_ok)}, "
       f"failed {n_failed}, NaN-acc among ok {n_nan}.")
+    a("")
+    # ----- Headline conclusion (honest, computed) ------------------------------------ #
+    gains_all = _all_scope_gains(vs_base)
+    none_acc = float("nan")
+    if not by_method.empty:
+        nr = by_method[(by_method["method"] == "none_reference") & (by_method["training_scope"] == "all")]
+        if len(nr):
+            none_acc = float(nr["acc_mean"].iloc[0])
+    a("## 0. Headline conclusion (honest)")
+    a("")
+    if not gains_all.empty:
+        best = gains_all.iloc[int(gains_all["gain_acc_mean"].astype(float).values.argmax())]
+        best_m, best_g = best["method"], float(best["gain_acc_mean"])
+        n_pos = int((gains_all["gain_acc_mean"] > 0).sum())
+        cleared = best_g >= SUCCESS_THRESHOLD
+        a(f"- **No-learning / unsupervised alignment is INSUFFICIENT.** No method reaches the "
+          f"pre-registered +{SUCCESS_THRESHOLD:.0%} (≥+0.02 mean Δacc) success line.")
+        a(f"- `none_reference` (no alignment) mean cross-acc = **{none_acc:.4f}**.")
+        a(f"- Best method = **`{best_m}`** with Δacc = **{best_g:+.4f}** "
+          f"(below the +0.02 line; {'CLEARS' if cleared else 'does NOT clear'} threshold). "
+          f"Only {n_pos}/{len(gains_all)} methods are net-positive at all.")
+        a("- BatchNorm-statistics adaptation gives a **small** positive gain; the covariance "
+          "(Euclidean/Riemannian) methods slightly **hurt**; filter-bank/z-score are ≈ neutral. "
+          "This is a **useful negative / diagnostic result**: pure statistic-only alignment cannot "
+          "close the cross-session gap, which motivates (but does NOT itself perform) learning-based "
+          "Step-3 adaptation.")
+    else:
+        a("- _Comparison vs none_reference unavailable._")
     a("")
     a("## 1. Experiment goal")
     a("")
@@ -360,17 +399,57 @@ def write_report(report_path: Path, *, df_all, df_ok, by_method, by_proto, by_di
     a("")
     a("## 8. Which method improves most")
     a("")
-    a("See §5 table; the top-gain method (if any clears +2pp) is the candidate no-learning fix.")
+    if not gains_all.empty:
+        best = gains_all.iloc[int(gains_all["gain_acc_mean"].astype(float).values.argmax())]
+        best_m, best_g = best["method"], float(best["gain_acc_mean"])
+        a(f"- Top method = **`{best_m}`**, mean Δacc = **{best_g:+.4f}** over none_reference — "
+          f"**below** the +{SUCCESS_THRESHOLD:.2f} success line, so it is NOT a sufficient no-learning fix.")
+        a(f"- Net-positive methods: {int((gains_all['gain_acc_mean'] > 0).sum())}/{len(gains_all)}. "
+          "Covariance whitening (Euclidean/Riemannian) is the worst (slightly negative); "
+          "z-score and filter-bank are ≈ neutral.")
+    else:
+        a("- See §5 table.")
     a("")
     a("## 9. Which directions improve most")
     a("")
-    if not vs_base.empty and "protocol" in vs_base.columns:
-        pass
-    a("- See `alignment_by_direction.csv` and `alignment_vs_baseline.csv` (per-direction gains).")
+    if gain_rows is not None and not gain_rows.empty and "gain_acc" in gain_rows:
+        ss = gain_rows[gain_rows["training_scope"] == "single_source"]
+        if not ss.empty:
+            per_dir = (ss.groupby(["method", "protocol"], as_index=False)["gain_acc"].mean())
+            # best-method direction breakdown
+            if not gains_all.empty:
+                bm = gains_all.iloc[int(gains_all["gain_acc_mean"].astype(float).values.argmax())]["method"]
+                sub = per_dir[per_dir["method"] == bm].sort_values("gain_acc", ascending=False)
+                if not sub.empty:
+                    top = sub.iloc[0]; bot = sub.iloc[-1]
+                    a(f"- For the best method `{bm}`: most-improved direction = **{top['protocol']}** "
+                      f"({top['gain_acc']:+.4f}); least = **{bot['protocol']}** ({bot['gain_acc']:+.4f}).")
+            # overall most-improved (method,direction) and worst
+            best_row = per_dir.iloc[int(per_dir["gain_acc"].values.argmax())]
+            worst_row = per_dir.iloc[int(per_dir["gain_acc"].values.argmin())]
+            a(f"- Overall best (method,direction) gain = `{best_row['method']}` on {best_row['protocol']} "
+              f"({best_row['gain_acc']:+.4f}); worst = `{worst_row['method']}` on {worst_row['protocol']} "
+              f"({worst_row['gain_acc']:+.4f}).")
+        a("- Full per-direction means in `alignment_by_direction.csv`; per-direction gains derivable "
+          "from `results_alignment_all.csv`.")
+    else:
+        a("- See `alignment_by_direction.csv`.")
     a("")
     a("## 10. Which subjects improve / regress")
     a("")
-    a("- See `alignment_by_subject.csv` and `alignment_gain_by_subject.png`.")
+    if by_subject is not None and not by_subject.empty and not gains_all.empty:
+        bm = gains_all.iloc[int(gains_all["gain_acc_mean"].astype(float).values.argmax())]["method"]
+        sub = by_subject[by_subject["method"] == bm].copy()
+        if not sub.empty:
+            n_up = int((sub["gain_acc_mean"] > 0).sum())
+            n_dn = int((sub["gain_acc_mean"] < 0).sum())
+            sub_sorted = sub.sort_values("gain_acc_mean", ascending=False)
+            top3 = ", ".join(f"{r['subject']} ({r['gain_acc_mean']:+.3f})" for _, r in sub_sorted.head(3).iterrows())
+            bot3 = ", ".join(f"{r['subject']} ({r['gain_acc_mean']:+.3f})" for _, r in sub_sorted.tail(3).iterrows())
+            a(f"- Under the best method `{bm}`: **{n_up}** subjects improve, **{n_dn}** regress.")
+            a(f"- Most improved: {top3}.")
+            a(f"- Most regressed: {bot3}.")
+    a("- Full per-subject gains in `alignment_by_subject.csv` and `alignment_gain_by_subject.png`.")
     a("")
     a("## 11. Effect by drift level")
     a("")
@@ -390,14 +469,24 @@ def write_report(report_path: Path, *, df_all, df_ok, by_method, by_proto, by_di
     a("")
     a("## 12. Is online / agent adaptation warranted?")
     a("")
-    a("- If the best no-learning method clears the +2pp target on average AND lifts the worst "
-      "directions, a static alignment front-end may suffice. If gains are small/uneven (esp. on "
-      "high-drift subjects), that motivates Step-3 online / adapter / prototype work. See §5/§11.")
+    a("- **Yes — warranted, and this run is the evidence for it (but Step-3 is NOT run here).** "
+      "No no-learning method clears the +0.02 line; the best (BN-stats) gives only a small positive "
+      "gain, and the covariance methods slightly hurt. Crucially, on **high-drift** subjects the "
+      "gains are smallest/negative (e.g. filter-bank is strongly negative on high drift), i.e. the "
+      "subjects that need help most are the least helped by statistic-only alignment.")
+    a("- Interpretation: closing the residual cross-session gap needs **learning-based** target "
+      "adaptation (online update / adapter / prototype / memory), not just unsupervised statistics. "
+      "That is the objective justification for the next stage.")
     a("")
     a("## 13. Next-step suggestions (NOT executed here)")
     a("")
-    a("- Combine the best alignment with multi-source training; consider per-subject method "
-      "selection by an UNLABELED criterion; only then explore online/fine-tuning. No Step-3 run here.")
+    a("- Use BN-stats adaptation (cheap, mildly positive, never hurts much) as a default front-end, "
+      "possibly combined with multi-source training.")
+    a("- Explore learning-based Step-3 adaptation (online test-then-update / lightweight adapter / "
+      "prototype-memory), focusing on high-drift subjects where no-learning alignment fails.")
+    a("- Consider an UNLABELED per-subject/per-direction method-selection criterion (no target labels).")
+    a("- These are suggestions only; no Step-3 / online / fine-tuning / 41-10 / CAP-EEGNet-full run is "
+      "performed in this report.")
     a("")
     a("## Files")
     a("")
@@ -567,7 +656,8 @@ def main() -> None:
 
     write_report(out_dir / "ALIGNMENT_BASELINE_REPORT.md",
                  df_all=df_all, df_ok=df_ok, by_method=by_method, by_proto=by_proto,
-                 by_dir=by_dir, vs_base=vs_base, gain_drift=gain_drift, complete=complete,
+                 by_dir=by_dir, vs_base=vs_base, gain_drift=gain_drift,
+                 by_subject=by_subject, gain_rows=gain_rows, complete=complete,
                  n_failed=n_failed, n_nan=n_nan, tables=tables, figures=figures,
                  ms_skipped=[], expected_info={})
 

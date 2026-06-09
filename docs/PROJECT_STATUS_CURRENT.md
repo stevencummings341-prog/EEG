@@ -6,17 +6,18 @@
 > `docs/ADAPTATION_BASELINE_PLAN.md`；P10 整合 `docs/P10_INTEGRATION_SUMMARY.md`。
 >
 > 最后更新：2026-06-08（Step 1 完成）；2026-06-09 文档系统性修复 + **Step 2 alignment baseline
-> 代码实现 / smoke 通过 / full run 已提交（结果待跑完）**。
+> 已完成（negative/diagnostic 结果：无学习对齐不足）**。
 
 ---
 
 ## 0. 一句话现状
 
 项目主线 = **EEG MI 跨 session 域泛化（cross-session domain generalization）**。
-已完成：漂移诊断 → 静态 baseline（within / 单源 cross / **多源 cross**）。
-**Step 2 no-learning adaptation baseline = 代码已实现、smoke 已过、full run 已提交（75 GPU jobs
-`21261-21335` + summarizer `21336`），结果待跑完（PENDING，未完成）。** online / 41-10 / fine-tuning /
-CAP-EEGNet full / multi-agent / prototype / memory 均为 future，未运行、未验证。
+已完成：漂移诊断 → 静态 baseline（within / 单源 cross / **多源 cross**）→ **Step 2 no-learning
+adaptation baseline（已完成）**。Step 2 结论是 **negative/diagnostic：无学习统计对齐不足**——没有任何方法
+达到 +2pp；none_reference acc 0.6818，最好 bn_statistics_adaptation 0.6889（Δ +0.0071），EA/RA 反而略降，
+z-score/filter-bank 近中性，high-drift 被试受益最小 → 客观支持后续学习型适配（Step 3，**未运行**）。
+online / 41-10 / fine-tuning / CAP-EEGNet full / multi-agent / prototype / memory 均为 future，未运行。
 
 ---
 
@@ -27,8 +28,8 @@ CAP-EEGNet full / multi-agent / prototype / memory 均为 future，未运行、�
 | A | Session drift 诊断（144 pairs / 50 subjects，9 指标） | ✅ 已完成 |
 | B | 静态 baseline：within-session 10-fold CV + 单源有向 cross-session（EEGNet/DeepConvNet/FBCNet，5 seeds，26 520 trainings，30/30 cells，无泄漏/NaN） | ✅ 已完成 |
 | Step 1 / C | 静态 baseline 补齐：**multi-source `ses-01+ses-02 → ses-03`**（47 被试，4 跳过，705 rows） | ✅ 已完成 |
-| Step 2 / D | **no-learning adaptation baseline**（none_reference / session_zscore / Euclidean / Riemannian(log-Euclidean) / target BN-stats / filter-bank reweighting） | 🟡 代码实现 + smoke 通过 + **full run 已提交（jobs `21261-21335`，summarizer `21336`），结果 PENDING** |
-| Step 3+ | online / adapter / prototype / memory / CAP-EEGNet full / 41-10 / fine-tuning / LOSO | 🚧 future，未运行/未验证 |
+| Step 2 / D | **no-learning adaptation baseline**（none_reference / session_zscore / Euclidean / Riemannian(log-Euclidean) / target BN-stats / filter-bank reweighting） | ✅ 已完成（30,150 rows，0 failed/0 NaN）。**结论：无学习对齐不足**（best BN-stats Δ+0.0071，无方法过 +2pp）|
+| Step 3+ | online / adapter / prototype / memory / CAP-EEGNet full / 41-10 / fine-tuning / LOSO | 🚧 future，未运行/未验证（Step 2 negative 结果为其提供依据）|
 
 ---
 
@@ -68,20 +69,23 @@ MMD 0.238、CSP 相似度 0.420、ERD-μ corr 0.419、ERD-β 0.482、μ-KS 0.246
 
 ---
 
-## 3. Step 2（代码实现 + smoke 通过 + full run 已提交；结果 PENDING）
+## 3. Step 2（已完成 — negative/diagnostic 结果）
 
 no-learning adaptation baseline（不更新模型权重）：`none_reference`（取自 baseline_v1，不重跑）/
 `session_zscore` / Euclidean Alignment / Riemannian Alignment（log-Euclidean SPD mean，numpy/scipy
 自实现，不依赖 pyriemann）/ target BN statistics adaptation / filter-bank reweighting。
 模型 EEGNet/DeepConvNet/FBCNet，seeds 0-4，协议 = 单源 6 有向对（288）+ 多源 `ses-01+02→ses-03`（47）。
-代码：`src/adaptation/`、`src/evaluation/session_alignment_protocols.py`、
-`scripts/{train_session_alignment,summarize_alignment_results,build_alignment_baseline_outputs}.py`、
-`configs/session_alignment_compare.yaml`、`scripts/slurm/*alignment*`。
-输出：`outputs/experiments/alignment_baseline_v1/`（结果待 summarizer `21336` 跑完）。
+75 GPU jobs `21261-21335` + summarizer `21336` 全部 COMPLETED；30,150 rows，0 failed / 0 NaN。
 
-**关机后回来先看**：`sacct -j 21261-21336`、
-`outputs/experiments/alignment_baseline_v1/RUN_STATUS.md`、
-`.../cross_session/tables/results_alignment_all.csv`、`.../ALIGNMENT_BASELINE_REPORT.md`。
+**结论（诚实）**：无学习统计对齐**不足**，无方法达到 +2pp 成功线。
+- none_reference acc **0.6818**；best `bn_statistics_adaptation` **0.6889**（Δ **+0.0071**，唯一正向但远不足）。
+- `filterbank_reweighting` −0.0030、`session_zscore` −0.0038（近中性）；`riemannian_alignment` −0.0101、
+  `euclidean_alignment` −0.0124（略降）。
+- 按 drift：BN-stats 各级小正向；filter-bank 在 high-drift **−0.024**；EA/RA 各级负向 → **high-drift 受益最小**。
+- 这是有价值的 negative/diagnostic 结果，**客观支持**后续学习型适配（online/adapter/prototype），但本阶段不实现/不运行。
+
+**结果在哪看**：`outputs/experiments/alignment_baseline_v1/ALIGNMENT_BASELINE_REPORT.md`（带 headline + 13 节）、
+`RUN_STATUS.md`、`cross_session/tables/`（results_alignment_all.csv 等 9 个）、`cross_session/figures/`（6 图）。
 
 **Step 2 铁律**：对齐统计量只能用 train 的数据或 test 的**无标签** X；**绝不用 test session 的 label**。
 
@@ -89,8 +93,8 @@ no-learning adaptation baseline（不更新模型权重）：`none_reference`（
 
 ## 4. 明确没做 / 不跑
 
-- 🟡 Step 2 adaptation：代码已实现、smoke 已过、full run 已提交，**结果未跑完**（不要当成已完成）。
-- ❌ online / test-then-update 未运行、未实现。
+- ✅ Step 2 adaptation：已完成（结论=无学习对齐不足）。
+- ❌ online / test-then-update 未运行、未实现（Step 2 的 negative 结果为其提供依据，但本阶段不做）。
 - ❌ 41/10 跨被试预训练、target fine-tuning、LOSO 未运行。
 - ❌ CAP-EEGNet full / multi-agent / prototype / memory 未实现（启用 `NotImplementedError`）、未运行。
 - ❌ 未改 raw / workspace2 原数据；未覆盖已有 baseline 结果。

@@ -11,7 +11,8 @@
 > `outputs/experiments/baseline_v1/provenance/session_multisource_v1/summaries/`（Step 1）、
 > `outputs/analysis/session_drift_v1/`（drift）。
 > Step 1 深度分析（per-subject / drift-level）见 `docs/MULTISOURCE_STEP1_REPORT.md`。
-> **Step 2 no-learning adaptation 未运行**（`docs/ADAPTATION_BASELINE_PLAN.md`）。
+> **Step 2 no-learning adaptation 已完成**（结论：无学习对齐不足；见下方 §3.x 与
+> `outputs/experiments/alignment_baseline_v1/ALIGNMENT_BASELINE_REPORT.md`、`docs/ADAPTATION_BASELINE_PLAN.md`）。
 
 ---
 
@@ -85,6 +86,32 @@ Step 1 结论：把 `ses-01` 与 `ses-02` 合并训练后，三个模型都超�
 `ses-02→03`；平均 Δ vs best single = **+0.0281**。说明在静态 baseline 内，多一天 source
 session 能稳定提升 `ses-03` 泛化。无泄漏检查：`n_train=320`、`n_val=80`、`n_test=200`，
 val 只从 `ses-01+02` carve，`ses-03` label 仅用于 final evaluation。
+
+### Step 2 No-learning / unsupervised alignment baseline（已完成；结论=不足）
+
+不更新模型权重的 test-time 对齐：`none_reference`（取自 baseline_v1）/ `session_zscore` /
+`euclidean_alignment` / `riemannian_alignment`（log-Euclidean SPD mean，numpy/scipy 自实现）/
+`bn_statistics_adaptation`（只刷新 BN running stats）/ `filterbank_reweighting`（μ/β 等频带功率重加权）。
+模型 EEGNet/DeepConvNet/FBCNet，seeds 0-4，单源 6 有向对 + 多源 ses-01+02→ses-03。
+75 GPU jobs + summarizer 全部 COMPLETED；`results_alignment_all.csv` **30,150 rows，0 failed / 0 NaN**；
+全程 `used_target_y_for_training=False`（不用 target 标签训练/早停/选择）。
+
+| method | mean Δacc vs none_reference | 解读 |
+|---|---:|---|
+| `bn_statistics_adaptation` | **+0.0071** | 唯一正向，但远低于 +2pp |
+| `filterbank_reweighting` | −0.0030 | 近中性 |
+| `session_zscore` | −0.0038 | 近中性 |
+| `riemannian_alignment` | −0.0101 | 略降 |
+| `euclidean_alignment` | −0.0124 | 降最多 |
+
+绝对 acc（all scope）：none_reference **0.6818** vs bn_statistics **0.6889**（其余均低于 none）。
+按 drift：BN-stats 各级小正向（stable +0.009/moderate +0.008/high +0.005）；filter-bank 在
+**high-drift −0.024**；EA/RA 各级负向 → **漂移最大的被试受益最小**。
+
+**Step 2 结论（诚实）**：no-learning / 纯统计对齐**不足**——没有任何方法达到预设 +2pp 成功线，
+BN-stats 仅微弱正向，协方差白化（EA/RA）反而略伤。这是一个有价值的 **negative/diagnostic** 结果，
+**客观支持**后续学习型 online adaptation / adapter / prototype（Step 3，**未运行**）。
+报告/表/图：`outputs/experiments/alignment_baseline_v1/`。
 
 ---
 
@@ -165,9 +192,12 @@ val 只从 `ses-01+02` carve，`ses-03` label 仅用于 final evaluation。
 ## 7. 下一步
 
 - （可选）如要对齐论文绝对精度：按 §4.4 调整 within 配方并 within/cross 同步重跑。
-- **Step 2（下一步，未运行）**：no-learning adaptation baseline。依据漂移诊断，优先 **spatial alignment（Euclidean Alignment / CORAL）**、
-  **frequency / filter-bank adaptation**、**BN/adapter**，而不是只做全局幅值归一化。
-- CAP-EEGNet 及其复杂模块（prototype / 多源 confidence / online / fine-tuning）仍为 future work。
+- **Step 2（已完成）**：no-learning adaptation baseline 已跑完，结论=无学习统计对齐不足（best
+  BN-stats Δ+0.0071，无方法过 +2pp；high-drift 受益最小）。详见上方 §3 Step 2 小节与
+  `outputs/experiments/alignment_baseline_v1/ALIGNMENT_BASELINE_REPORT.md`。
+- **Step 3（未运行）**：Step 2 的 negative 结果客观支持学习型 target 适配（online test-then-update /
+  adapter / prototype / memory），建议从轻量方案起步并优先 high-drift 被试；本阶段不实现/不运行。
+- CAP-EEGNet 及其复杂模块（prototype / 多源 confidence / online / fine-tuning）、41/10、LOSO 仍为 future work。
 
 ---
 
