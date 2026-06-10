@@ -1,0 +1,93 @@
+experiment:
+  name: "phase2b_alignment"
+  source_config: "configs/session_alignment_compare.yaml"
+
+# =====================================================================
+# Step 2 — no-learning / unsupervised test-time alignment baseline.
+#
+# Same data filter, model params, trainer recipe, and metrics as the static
+# baselines (session_model_compare.yaml / session_multisource_compare.yaml).
+# Only status=ok sessions. Paths come from configs/paths.yaml.
+#
+# FAIRNESS RULE (enforced in code): the model trains ONLY on source sessions;
+# the target/test session is used ONLY through its unlabeled X (z-score / cov /
+# BN / band-power statistics); y_test is used ONLY for the final evaluation —
+# never for training, validation, early stopping, tuning, or method selection.
+# No optimizer.step on the target (only BN running-stat updates for the BN method).
+#
+# Run: see outputs/experiments/alignment_baseline_v1/README.md
+#   python scripts/train_session_alignment.py --config configs/session_alignment_compare.yaml \
+#       --methods session_zscore,euclidean_alignment,riemannian_alignment,bn_statistics_adaptation,filterbank_reweighting \
+#       --models eegnet --seeds 0 --subjects 1,2 --max-epochs 3 \
+#       --protocols single,multi --device cuda   # smoke test
+# =====================================================================
+
+run_id: "alignment_baseline_v1"
+experiment_id: "alignment_baseline_v1"
+
+data:
+  variant: "eog_ecg_clean"          # -> paths.eog_ecg_clean_root
+  manifest: "processed_manifest"    # -> paths.processed_manifest
+  status_filter: ["ok"]             # ONLY status=ok sessions
+  n_channels: 58
+  n_times: 1000
+  n_classes: 2
+  sfreq: 250
+
+# Methods (none_reference is NOT trained here; it is pulled from baseline_v1 by
+# the summarizer as the no-alignment reference for alignment_vs_baseline).
+methods:
+  - "session_zscore"
+  - "euclidean_alignment"
+  - "riemannian_alignment"
+  - "bn_statistics_adaptation"
+  - "filterbank_reweighting"
+
+models: ["eegnet", "deepconvnet", "fbcnet"]
+
+# Protocol groups: single-source directed pairs + multi-source ses-01+02 -> ses-03.
+protocols: ["single", "multi"]
+multisource:
+  train_sessions: ["ses-01", "ses-02"]
+  test_session: "ses-03"
+
+# Alignment hyper-parameters (recorded into each result row's *_alignment_stats).
+alignment:
+  eps: 1.0e-5                # covariance ridge for EA/RA inverse-sqrt / logm
+  shrinkage: 0.1            # diagonal shrinkage toward tr(R)/C * I (EA/RA)
+  zscore_eps: 1.0e-8
+  filterbank:
+    bands: [[4.0, 8.0], [8.0, 13.0], [13.0, 30.0], [30.0, 40.0]]   # θ / μ / β / low-γ
+    taps: 125               # FIR length (odd), ~0.5 s at 250 Hz
+    w_min: 0.5              # per-band gain clip (conservative)
+    w_max: 2.0
+
+train:
+  batch_size: 16
+  lr: 0.001
+  weight_decay: 0.0
+  optimizer: "adam"
+  max_epochs: 100            # CLI --max-epochs overrides (smoke uses 3)
+  early_stopping_patience: 20
+  early_stopping_metric: "val_loss"
+  val_fraction: 0.2          # carved from SOURCE train only
+  num_workers: 2
+  device: "cuda"             # GPU via Slurm only; fail-fast if cuda unavailable
+  seeds: [0, 1, 2, 3, 4]
+
+model_params:
+  eegnet:      {F1: 8, D: 2, F2: 16, kernel_length: 64, dropout: 0.25}
+  deepconvnet: {dropout: 0.5, n_filters_1: 25}
+  fbcnet:      {n_bands: 9, band_width: 4, f_low: 4, f_high: 40, m: 32,
+                temporal_segments: 4, dropout: 0.5}
+
+eval:
+  metrics: ["accuracy", "balanced_accuracy", "macro_f1", "auc"]
+  calibration_metrics: ["nll", "brier", "ece"]
+
+output:
+  output_dir: "outputs/experiments/alignment_baseline_v1"
+  checkpoint_dir: "checkpoints/alignment_baseline_v1"
+  # baseline_v1 none-alignment reference (single-source + multi-source cross rows).
+  baseline_cross_all: "outputs/experiments/baseline_v1/cross_session/tables/results_cross_session_all.csv"
+  drift_per_subject: "outputs/analysis/session_drift_v1/per_subject_drift_summary.csv"

@@ -1,0 +1,9 @@
+{
+  "created_from": {
+    "drift": "outputs/analysis/session_drift_v1",
+    "within_and_single_source_raw_run": "provenance/session_model_compare_v1",
+    "multi_source_raw_run": "provenance/session_multisource_v1"
+  },
+  "canonical_layout": "outputs/experiments/baseline_v1",
+  "status": "static baseline complete; Step 2 no-learning adaptation not run"
+}

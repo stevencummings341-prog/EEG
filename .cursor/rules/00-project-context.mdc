@@ -1,67 +1,12 @@
 ---
-description: Project context for SHU MI-EEG cross-subject pretraining and online adaptation.
+description: Multi-dataset MI-EEG project context and current research state
 alwaysApply: true
 ---
 
 # Project Context
 
-This project studies motor imagery EEG decoding on the Shanghai University WBCIC-SHU 2C dataset.
+This project studies motor imagery EEG cross-session domain generalization on WBCIC-SHU 2025 and SHU 2022.
 
-**Current mainline = cross-session domain generalization (DG):** measure and reduce the accuracy
-drop when training on one session and testing on another session of the SAME subject. Stages:
-(A) drift diagnostics → (B) static baselines (EEGNet/DeepConvNet/FBCNet) at within-session CV +
-single-source cross-session → (Step 1) multi-source `ses-01+02 → ses-03` → (Step 2, DONE)
-no-learning / unsupervised alignment baseline → (Step 3, future) learning-based / online adaptation.
+Current research chain: drift diagnostic -> baseline -> multi-source baseline -> no-learning alignment -> prototype drift analysis -> adaptation/memory/agent. Completed facts: WBCIC-SHU preprocessing/QC, drift diagnostic, baseline, multi-source, and no-learning alignment are done. Prototype Drift and online adaptation are future until explicitly run.
 
-Long-term vision (NOT the current runnable mainline): a **Confidence-aware Online Adaptive
-Multi-Subagent Pretraining Framework** (full CAP-EEGNet) + the 41/10 cross-subject pretrain →
-fine-tune → online plan. Kept in `docs/ROADMAP.md`; CAP-EEGNet exists only as a v1 skeleton
-(encoder + classifier + confidence head; the rest raises `NotImplementedError`). The authoritative,
-up-to-date status is always `docs/PROJECT_STATUS_CURRENT.md` — read it first if this rule and the
-docs ever disagree.
-
-Dataset:
-- Use the 2C dataset first.
-- 51 subjects.
-- 3 sessions per subject.
-- 2 classes: left-hand grasping MI and right-hand grasping MI.
-- Each session has 200 trials, 100 per class.
-- Raw data are stored outside this project directory.
-- Raw files are data.bdf and evt.bdf.
-- Final processed shape per session must be [trials, channels, time] = [200, 58, 1000].
-
-Models (current mainline):
-- EEGNet (Lawhern 2018) / DeepConvNet (Schirrmeister 2017) / FBCNet (Mane 2021), plus CAP-EEGNet
-  v1 (skeleton). All share a `{logits, features, confidence}` forward contract + one trainer +
-  one metric set so comparisons are fair. Build via `src/models/registry.build_model`.
-
-Critical constraints:
-- Split by subject/session, NEVER by trial. The early-stopping val slice is carved ONLY from train.
-- For cross-session / multi-source / adaptation: the TEST session's labels are NEVER used for
-  train / validation / early-stopping / tuning / method-selection. Only the test X (unlabeled) may
-  be used for test-time statistics; `y_test` is for final evaluation only.
-- No `optimizer.step` on the target except BatchNorm running-stat refresh (the BN-adaptation method).
-- Online learning (future) must be test-then-update.
-- Do not hard-code dataset paths (use `configs/paths.yaml`).
-- Reference / handoff folders the senior shares are READ-ONLY: read + integrate sensibly into this
-  repo's `src`/`scripts`/`configs`/`docs`; never run from them or copy draft code verbatim. No
-  specific folder path is a permanent instruction — act only when the user points you at one.
-
-Implementation language:
-- All main pipelines (preprocessing, training, cross-subject, fine-tuning, online) MUST be Python/PyTorch.
-- The dataset authors' MATLAB script (preprocessed.m) and the Neuracle toolbox are a
-  REFERENCE RECIPE ONLY. They must NOT be a runtime dependency.
-- The paper-processed `.mat` files in `derivatives/` may be used as an event/label
-  ground-truth CROSS-CHECK, but are NOT the main training data entry point.
-
-Current stage (2026-06-09) — authoritative copy in `docs/PROJECT_STATUS_CURRENT.md`:
-- DONE: full preprocessing + QC (148 ok / 5 failed); drift diagnostics; static baselines
-  (within CV + single-source cross); Step 1 multi-source `ses-01+02→ses-03`; **Step 2 no-learning
-  alignment baseline** (none_reference / z-score / Euclidean / Riemannian / BN-stats / filter-bank)
-  — result is NEGATIVE/diagnostic: no-learning alignment is insufficient (best BN-stats Δ+0.0071,
-  no method clears +2pp). Outputs in `outputs/experiments/alignment_baseline_v1/`.
-- GPU env `mi_torch_cu118` (torch 2.7.1+cu118) is the working CUDA env; GPU Slurm jobs are the
-  normal path. The old CPU-only `mi_torch` is not for GPU. Do NOT install into / mutate shared envs.
-- NOT done / future: Step 3 learning-based & online adaptation, adapter/prototype/memory, full
-  CAP-EEGNet, 41/10 cross-subject pretrain, target fine-tuning, LOSO. Do not advance to these
-  without an explicit request.
+Use `code/run.py` as the human entry. Add new datasets/models/methods/experiments only in the matching `code/` layer plus config and documentation updates.

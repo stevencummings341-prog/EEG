@@ -1,69 +1,10 @@
 ---
-description: Rules for running on the university Slurm GPU cluster safely.
+description: Slurm and GPU cluster rules
 alwaysApply: true
 ---
 
-# Server & Slurm Rules (READ BEFORE RUNNING ANYTHING HEAVY)
+# Server & Slurm
 
-This project runs on a shared university Slurm cluster. See `docs/SERVER_RUNBOOK.md`
-and `docs/ENVIRONMENT.md`. Violating these can crash the login node for everyone.
+Do not run heavy preprocessing or training on the login node. Use Slurm with CUDA env `mi_torch_cu118`. Smoke-test on a GPU node before full runs. GPU jobs must fail fast if CUDA is unavailable. Keep outputs under this project and never overwrite completed `*_v1` outputs.
 
-## Golden rule: never compute on the login node
-
-- The login node is for editing, `git`, file inspection, and submitting jobs ONLY.
-- NEVER run training, full-dataset preprocessing, or any GPU/heavy-CPU job on the
-  login node. Submit via `sbatch`, or use `srun`/`salloc` for an interactive session.
-- Quick, cheap, < ~30 s sanity checks (versions, reading one file header, listing
-  dirs, building the manifest) are acceptable on the login node.
-- A SINGLE-session preprocessing smoke test runs via `srun`, not on the login node.
-
-## Cluster facts (verified — official doc http://10.26.1.75:58080/, see docs/SERVER_RUNBOOK.md)
-
-- Topology: `login01` (10.26.1.75, submit/monitor only) + GPU nodes `gpu01-05` (8× NVIDIA 4090D
-  each, no SSH — Slurm only) + `storge` (10.26.1.74, file/IO node, no Slurm/compute). One shared
-  NFS `/share`.
-- Partitions: `gpu2node` (default = gpu01,02) and `gpu3node` (gpu03,04,05). TIMELIMIT effectively
-  unlimited -> ALWAYS set `-t`.
-- GPU conda env: **`mi_torch_cu118`** (torch 2.7.1+cu118, CUDA works) — use for all GPU jobs. The
-  old `mi_torch` is CPU-only — do NOT use it for GPU. Activate base:
-  `/share/software/anaconda3/2024.10/etc/profile.d/conda.sh`. Modules via `module load` (e.g.
-  `cuda/11.8` or `cuda/12.6`).
-- Monitoring (on login01): `slmwatch` (cluster + your quota/jobs), `gpuwatch` (per-GPU usage),
-  `user-tools` (list helpers); plus `sinfo`/`squeue -u $USER`/`sacct`/`scontrol show job`.
-- Home quota: 512 GiB (hard limit 2048 GiB, 14-day grace; `quota -s`). Keep home lean; big
-  datasets/backups go under `/share/workspace2` (44 TiB) etc., not home. Do IO-heavy work
-  (large copy/compress) on `storge`, not login01.
-- A per-user CPU/QOS cap is in effect: when you submit many jobs, most sit
-  `PD (QOSMaxCpuPerUserLimit)` and start as capacity frees. This is NORMAL, not an error.
-
-## Submitting jobs
-
-- Batch scripts live in `scripts/slurm/*.sbatch`. Run from the project root.
-- Logs go to `logs/slurm/%x-%j.out` and `.err` (create `logs/slurm` first).
-- Request only what you need (`--gres=gpu:1`, `-c`, `--mem`). Preprocessing / summarizers are
-  CPU-only (no `--gres`).
-- Activate inside the job (real base path on this cluster):
-  ```bash
-  source /share/software/anaconda3/2024.10/etc/profile.d/conda.sh
-  conda activate mi_torch_cu118
-  cd /share/home/yuan/SYX/eeg-mi-online
-  ```
-- **GPU jobs must fail-fast** if `torch.cuda.is_available()` is False (raise / exit non-zero;
-  never silently train on CPU).
-- Always smoke-test on a GPU node via `srun` (subjects 1,2, few epochs) BEFORE the full `sbatch`.
-- Split big grids into many small jobs (e.g. method × model × seed) rather than one huge job;
-  give each job collision-free output filenames; collect job ids to a file; submit the
-  aggregation/summarizer as a dependent CPU job (`--dependency=afterany:<ids>`).
-- Pass config paths as arguments. Useful: `sbatch --parsable`, `squeue -u $USER`, `scancel`,
-  `sinfo`, `sacct -X -j <jobid> --format=JobID,JobName,State,Elapsed`.
-
-## Storage / filesystem scope
-
-- Code/configs/manifests/splits/outputs live under the project root
-  `/share/home/yuan/SYX/eeg-mi-online`.
-- The raw + processed dataset under `/share/workspace2/.../WBCIC_SHU` (path from
-  `configs/paths.yaml`) is **READ-ONLY input**: read the `.npz`/manifest, but NEVER create,
-  modify, or delete anything there.
-- **Only write inside the project root.** Do not write outside `/share/home/yuan/SYX`, and do not
-  write into sibling folders under `/share/home/yuan/SYX/` (e.g. senior handoff folders) — those
-  are read-only references unless the user says otherwise.
+Use `python code/run.py --config code/configs/experiments/<phase>.yaml` as the documented entry for new runs.

@@ -1,0 +1,8 @@
+name: "fbcnet"
+n_bands: 9
+band_width: 4
+f_low: 4
+f_high: 40
+m: 32
+temporal_segments: 4
+dropout: 0.5

@@ -1,0 +1,53 @@
+# Online test-then-update adaptation of CAP-EEGNet (Stage: later).
+# Prequential on target Session 2 then Session 3. Paths from configs/paths.yaml.
+# See docs/EXPERIMENT_PROTOCOL.md (Exp C) and .cursor/rules/40-online-learning.
+# NOTE: the online loop is NOT implemented yet (current stage = data/paths/preprocessing).
+
+run_id: "cap_eegnet_online_v0"
+
+data:
+  variant: "eog_ecg_clean"      # formal entry = status=ok .npz (NOT derivatives .mat)
+  statuses: ["ok"]
+  n_channels: 58
+  n_times: 1000
+  n_classes: 2
+  online_sessions: [2, 3]       # processed trial-by-trial, in temporal order
+
+init:
+  checkpoint: ""                # pretrained CAP-EEGNet (and optionally Session-1 fine-tuned)
+  finetune_session1_first: true
+
+# IRON RULE: per trial -> predict, record (pred/conf/correct), THEN update.
+online:
+  label_mode: "supervised"      # supervised | unsupervised (pseudo-label)
+  confidence_threshold: 0.85    # unsupervised: only update if confidence > threshold
+  update_modules:               # backbone stays frozen
+    prototype_memory: true
+    adapter: true
+    calibration_head: true
+    bn_stats: true              # causal update only
+    classifier_head: false      # only when supervised labels available
+    backbone: false
+  lr: 0.0001
+  prototype_momentum: 0.9
+  # stability safeguards
+  ema_teacher: true
+  ema_decay: 0.99
+  replay_memory_size: 200
+  class_balanced_memory: true
+  entropy_regularization: 0.01
+  feature_distillation: true
+  lr_decay: true
+
+eval:
+  metrics: ["accuracy", "balanced_accuracy", "macro_f1"]
+  calibration_metrics: ["ece", "nll", "brier"]
+  curves: ["performance_vs_trial", "risk_coverage"]
+  per_trial_csv: true           # outputs/<run_id>/per_trial.csv
+  report_pre_vs_post: true
+
+logging:
+  out_dir: "outputs"
+  checkpoint_dir: "checkpoints"
+  seed: 42
+  device: "cuda"

@@ -1,0 +1,9 @@
+name: "cap_eegnet"
+F1: 8
+D: 2
+F2: 16
+kernel_length: 64
+dropout: 0.25
+use_confidence: true
+confidence_weight: 0.1
+status: "v1_skeleton_future_full_model"

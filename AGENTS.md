@@ -1,160 +1,206 @@
-# AGENTS.md — Read me first
+# AGENTS.md — Project Soul Memory
 
-Persistent context for AI agents (and humans). The project's "soul memory".
-Keep it accurate; read it first. Authoritative status: `docs/PROJECT_STATUS_CURRENT.md`.
-Master brief: `docs/PROJECT_BRIEF.md`. Full overview: `docs/PROJECT_OVERVIEW.md`.
-Memory/journal: `docs/PROGRESS.md`. Core idea: `docs/references/ChatGPT-EEG-MI-pretraining.md`.
+> 唯一权威灵魂记忆文件。后续 Agent / 人类进入本项目，先读本文件。  
+> `CLAUDE.md` 只是兼容入口，指向本文件；`.cursor/rules/` 是机器可读规则切片，不再作为独立灵魂文件。
 
-## What this project is
+## 0. Authoritative Files
 
-MI-EEG decoding on the Shanghai University **WBCIC-SHU 2C** dataset, fully in
-**Python/PyTorch**. **Current mainline = cross-session domain generalization (DG):**
-(A) diagnose what drifts across sessions, (B) static baselines (EEGNet/DeepConvNet/FBCNet)
-at within-session CV + single-source cross-session, (Step 1) multi-source `ses-01+02 → ses-03`,
-(Step 2, DONE) no-learning adaptation baseline, then (Step 3, future) learning-based / online
-continual adaptation.
+| 类型 | 文件 | 作用 |
+|:---|:---|:---|
+| 灵魂记忆 | `AGENTS.md` | 本文件，唯一权威项目记忆与执行准则。 |
+| 进度日记 | `progress.md` | PROGRESS 角色，逐条追加运行记忆，最新在上。 |
+| 架构+结构 | `0_docs/ARCHITECTURE.md` | 目录结构、代码分层、每个文件作用。 |
+| 状态+就绪 | `0_docs/STATUS.md` | 进度、能否跑、SHU 就绪、下一步、清理策略。 |
+| 文件索引 | `0_docs/FILE_CATALOG.md` | 新增文件后必须同步。 |
+| 操作日志 | `0_docs/operation_log.md` | 只记录创建、删除、移动、重命名。 |
 
-The long-term vision (CAP-EEGNet: confidence-aware online adaptive multi-subagent framework)
-is kept in `docs/ROADMAP.md` but is NOT the current runnable mainline.
+## 1. Project Identity
 
-## Where the data lives (addresses)
+| 维度 | 内容 |
+|:---|:---|
+| 项目 | 多数据集运动想象 EEG 跨 session 泛化研究 |
+| 核心问题 | 跨 session MI-EEG 解码性能下降的根因是什么，如何修复？ |
+| 数据集 | WBCIC-SHU 2025 + SHU 2022 |
+| 任务 | 二分类运动想象：左手 vs 右手 |
+| 当前主线 | Phase 2c Prototype Drift Analysis 准备阶段 |
+| 长期方向 | adaptation -> prototype memory -> online/test-then-update -> agent/tool routing |
 
-All paths come from `configs/paths.yaml` (load via `src/utils/paths.load_paths()`, env
-`SHU_2C_ROOT` overrides). For quick reference, the verified locations are:
+## 2. Research Logic Chain
 
-- **Project root (this repo):** `/share/home/yuan/SYX/eeg-mi-online`
-- **Raw 2C dataset (external, READ-ONLY):** `/share/workspace2/moto_imagination/WBCIC_SHU`
-  (BIDS; raw under `sourcedata/2C dataset`, paper `.mat` under `derivatives/2C dataset_processeddata`).
-- **Processed training entry (external, READ-ONLY for us — we only consume it):**
-  `/share/workspace2/moto_imagination/WBCIC_SHU/processed/eog_ecg_clean/` — per-session `.npz`
-  (`X[200,58,1000]` µV @250 Hz, `y[200]∈{0,1}`), `status=ok` only (148 ok / 5 failed).
-- **Processed manifest:** `.../processed/eog_ecg_clean/processed_manifest.csv` (one row per session,
-  has `npz_path` + `status`).
-- **Run artifacts:** `outputs/` (gitignored). **Weights:** `checkpoints/` (gitignored).
-  **Logs:** `logs/slurm/`.
+```text
+Phase 0: Drift Diagnostic
+  -> 发现漂移主要是空间模式 + μ/β 频谱分布，不是幅值
 
-## Behavior rules (read before acting)
+Phase 1: Baseline
+  -> 发现跨 session drop 约 10pp
 
-1. **First read** `docs/PROJECT_STATUS_CURRENT.md`, then `docs/PROGRESS.md` + `docs/PROJECT_OVERVIEW.md`.
-2. **Current mainline = cross-session DG.** Do exactly the requested step; **do NOT advance
-   multiple steps at once** (no jumping ahead to the next step / online without being asked).
-3. **Never write "done" for things not run.** 41/10, online, fine-tuning, CAP-EEGNet full,
-   multi-agent/prototype/memory = FUTURE (Step 3+, NOT run/validated). Mark a step complete ONLY
-   after its results exist on disk (e.g. the summarizer's results CSV), never on submission alone.
-4. **Code first smoke-test, then full run.** Smoke on a GPU node via `srun` before any `sbatch`.
-5. **Never overwrite completed results** (`outputs/.../*_v1/`, `checkpoints/.../*_v1/`); new
-   experiments get a new `*_v2`/distinct run_id.
-6. **After finishing a meaningful step, update `docs/PROGRESS.md` + `docs/EXPERIMENT_LOG.md`**
-   (and the status page) — factually, no exaggeration.
-7. **No heavy work on the login node** (login = edit/git/inspect/submit + <~30 s checks only).
-8. **Filesystem scope:** write ONLY inside the project root `/share/home/yuan/SYX/eeg-mi-online`.
-   - NEVER write anywhere under `/share/workspace2/...` (raw + processed dataset) — it is READ-ONLY
-     input; we *read* the `.npz`/manifest from there but never modify, add, or delete files there.
-   - Do not write into other folders under `/share/home/yuan/SYX/` (e.g. handoff folders, see below)
-     unless the user explicitly asks; treat them as read-only references.
-   - Do not touch anything outside `/share/home/yuan/SYX/` at all.
-9. **Handoff / reference folders (not hard-coded).** The user periodically drops a NEW folder into
-   the workspace after talking with the senior (it may have any name/path, e.g. a `P10_...`-style
-   research package). When such a folder is present and the user points you at it: **read it,
-   understand the intent, reference its code/notes, and sensibly fold the useful parts into the
-   CURRENT architecture** (`src/`, `scripts/`, `configs/`, `docs/`) following this repo's
-   conventions. Treat the handoff folder itself as **read-only**: don't run from it and don't copy
-   its draft code verbatim over `src/`/`scripts/`. No specific folder name is a permanent
-   instruction — only act on it when the user references it.
+Phase 2a: Multi-source Baseline
+  -> 多源 ses-01+02 -> ses-03 优于最强单源
 
-## Non-negotiable constraints
+Phase 2b: No-learning Alignment Baseline
+  -> 统计对齐不够；BN-stats 只有小幅正收益，没人超过 +2pp
 
-1. **Everything is Python/PyTorch.** MATLAB (`preprocessed.m`) + Neuracle toolbox are
-   a REFERENCE RECIPE only, never a runtime dependency.
-2. **Never hard-code data paths.** Load from `configs/paths.yaml` via
-   `src/utils/paths.load_paths()` (env `SHU_2C_ROOT` overrides). Unknown/missing path
-   → raise a clear error and ask the user to fill it. Never guess.
-3. Raw data live **outside** the repo and are READ-ONLY. **Never write into raw / workspace2
-   source dirs.** Processed data is the external `eog_ecg_clean` `.npz` tree; run artifacts go to
-   `outputs/`, weights to `checkpoints/`, logs to `logs/`.
-4. The paper `.mat` in `derivatives/` is a label/event **cross-check truth only**, NOT the
-   training data entry (that is our Python-preprocessed per-session `.npz`, `status=ok` only).
-5. Tensor convention `[trials, channels, time]`, target `[200, 58, 1000]`; labels 1→0 (left),
-   2→1 (right); normalized to {0,1}.
-6. Split by subject/session, **never leak by trial**. For cross / multi-source / adaptation, the
-   early-stopping val slice is carved **only from train**, and **the test session's labels are
-   NEVER used** for train/val/early-stopping/tuning.
-7. Online learning (future) is test-then-update (predict+record, THEN update).
-8. Comment your code (docstrings + EEG-specific reasoning). Chinese or English.
-9. Heavy/GPU work via **Slurm only** (GPU env `mi_torch_cu118`, torch 2.7.1+cu118), never on the
-   login node. Smoke-test (subjects 1,2, few epochs) on a GPU node via `srun` before any full run.
-   Activate the env with the real base on this cluster:
-   `source /share/software/anaconda3/2024.10/etc/profile.d/conda.sh && conda activate mi_torch_cu118`.
-   GPU jobs must **fail-fast if `torch.cuda.is_available()` is False** (don't silently fall back to CPU).
+Phase 2c: Prototype Drift Analysis
+  -> 当前下一步：验证跨 session 掉点是否来自 embedding / task prototype 漂移
 
-## Current status (2026-06-09) — see `docs/PROJECT_STATUS_CURRENT.md`
+Phase 3+: Adaptation / Memory / Online / Agent
+  -> future；必须由前面实验结果支撑，不为了 Agent 而 Agent
+```
 
-- ✅ Full preprocessing (148 ok / 5 failed), QC PASS.
-- ✅ **A** session-drift diagnostic (144 pairs / 50 subjects; per-subject `drift_level` high/moderate/stable).
-- ✅ **B** static baseline EEGNet/DeepConvNet/FBCNet, 5 seeds: within-session 10-fold CV +
-  single-source directed cross-session.
-- ✅ **Step 1** multi-source `ses-01+ses-02 → ses-03` (47 eligible subjects, 4 skipped, 705 rows;
-  multi-source beats best single source for all 3 models). See `docs/MULTISOURCE_STEP1_REPORT.md`.
-- ✅ **Step 2 (DONE 2026-06-09)** no-learning adaptation baseline (none_reference / session_zscore /
-  euclidean_alignment / riemannian_alignment / bn_statistics_adaptation / filterbank_reweighting),
-  3 models × 5 seeds × (288 single-source pairs + 47 multi-source). 30,150 rows, 0 failed/0 NaN.
-  **Result = negative/diagnostic: no-learning alignment is INSUFFICIENT** (best `bn_statistics_adaptation`
-  Δacc +0.0071 over none 0.6818→0.6889; EA/RA slightly hurt; no method clears +2pp; high-drift
-  helped least). Outputs: `outputs/experiments/alignment_baseline_v1/`. See
-  `docs/ADAPTATION_BASELINE_PLAN.md`.
-- 🚧 **future (Step 3+, not run / not validated)**: learning-based / online adaptation (test-then-update),
-  adapter/prototype/memory, 41/10 cross-subject pretraining, target fine-tuning, LOSO, CAP-EEGNet full,
-  multi-agent. Step 2's negative result is the objective motivation, but Step 3 is NOT started.
+**铁律**：每一步都必须有上一步结果支撑。未运行的内容只能写 future / planned，绝不能写 done。
 
-> git: work is committed regularly (latest = Step-2 closeout). No `user.name/email` is set in this
-> environment, so commit with a one-off identity override (do NOT edit git config), reusing the
-> repo's existing author (`git log -1 --format='%an %ae'`).
+## 3. Current Verified Facts
 
-## Directory map / architecture
+- WBCIC-SHU 2C processed entry:
+  `/share/workspace2/moto_imagination/WBCIC_SHU/processed/eog_ecg_clean/processed_manifest.csv`
+- WBCIC usable sessions: 148 ok / 5 failed.
+- WBCIC tensor convention: `X [trials, 58, 1000]`, `y [trials]`, labels normalized to `{0,1}`.
+- SHU 2022 source:
+  `/share/workspace2/moto_imagination/SHU`
+- SHU metadata: 25 subjects, 5 sessions, 32 EEG channels, 250 Hz, read-only external source.
+- Completed result: no-learning alignment is insufficient; best BN-stat gain is small and below +2pp.
+- Future work: Prototype Drift, prototype adaptation, memory, online, full CAP-EEGNet, 41/10 cross-subject pretraining.
 
-Data flow: external raw BDF → (preprocessing, already done) external `eog_ecg_clean/*.npz` +
-`processed_manifest.csv` → `src/data/session_splits.load_ok_sessions` (status=ok) → per-protocol
-evaluation modules build splits + tensors → shared `src/training/trainer` trains a model from
-`src/models/registry` → `src/evaluation/metrics` → per-run CSVs in `outputs/.../runs/` → a
-`summarize_*` script aggregates to `tables/` + `figures/` + a report. Every model shares the
-`{logits, features, confidence}` forward contract + one trainer + one metric set for fair comparison.
+## 4. Hard Scope
 
-| Path | What |
-| --- | --- |
-| `.cursor/rules/` | 00-project-context, 10-data-paths, 20-preprocessing, 30-model-experiments, 40-online-learning, 50-server-slurm, 90-agent-behavior |
-| `configs/` | `paths.yaml`, `preprocess.yaml`, `session_drift.yaml`, `session_model_compare.yaml`, `session_multisource_compare.yaml`, `session_alignment_compare.yaml` (Step 2); (future) `train_cross_subject/finetune/online_adaptation`.yaml |
-| `src/data/` | `session_splits.py` (load_ok_sessions, within folds, directed cross pairs, label norm), `shu_dataset.py`, `splits.py`, `manifest.py` |
-| `src/models/` | `eegnet.py`, `deepconvnet.py`, `fbcnet.py`, `cap_eegnet.py` (v1), `registry.py` (`build_model`) |
-| `src/training/` | `trainer.py` (one CE trainer + early stopping + predict, model-agnostic) |
-| `src/evaluation/` | `session_protocols.py` (within + single-source cross), `session_multisource_protocols.py` (Step 1), `session_alignment_protocols.py` (Step 2), `metrics.py`, `data_quality.py` |
-| `src/adaptation/` | **Step 2** `session_alignment.py` (z-score / Euclidean / Riemannian log-Euclidean SPD mean / filter-bank), `bn_adaptation.py` (BN running-stat refresh, no optimizer) |
-| `src/` (other) | `analysis/` (drift), `preprocessing/`, `utils/` (paths, io, config, seed, logging), `visualization/`, `online/` (future) |
-| `scripts/` | preprocess + `train_session_models.py`, `train_session_multisource.py`, `train_session_alignment.py`, `summarize_session_results.py`, `summarize_multisource_results.py`, `summarize_alignment_results.py`, `build_alignment_baseline_outputs.py`, `analysis/`, `slurm/*.sbatch` |
-| `docs/` | PROJECT_STATUS_CURRENT, PROJECT_OVERVIEW, RESULTS_SUMMARY, MULTISOURCE_STEP1_REPORT, BASELINE_PROTOCOL, SESSION_DRIFT_ANALYSIS, NEXT_EXPERIMENT_PLAN, ADAPTATION_BASELINE_PLAN, CODE_INTEGRATION_NOTES, PROGRESS, EXPERIMENT_LOG, references/ |
-| `outputs/`, `logs/`, `checkpoints/` | run artifacts (gitignored). Canonical experiment dirs: `outputs/experiments/{baseline_v1, alignment_baseline_v1}/`, `outputs/analysis/session_drift_v1/`. Processed `.npz` live in the external workspace (read-only). |
+1. Write only inside `/share/home/yuan/SYX/eeg-mi-online` unless the user explicitly says otherwise.
+2. Treat `/share/home/yuan/SYX/P10_MI泛化研究` as read-only reference.
+3. Treat `/share/home/yuan/SYX/CLAUDE.md` as read-only upstream reference.
+4. Treat `/share/workspace2/moto_imagination/WBCIC_SHU` and `/share/workspace2/moto_imagination/SHU` as read-only data sources.
+5. Do not move, rename, delete, or create files under `/share/workspace2/...`.
+6. Do not overwrite completed `*_v1` outputs/checkpoints.
 
-## Verified facts (so you don't re-derive)
+## 5. Directory Routing
 
-- 2C: 51 subjects, 153 sessions (manifest confirms). 148 ok / 5 failed; failed sessions =
-  sub-023/ses-01, sub-024/ses-02, sub-024/ses-03, sub-026/ses-01, sub-032/ses-02 (trigger<200).
-  47 subjects have all 3 sessions ok; subjects 023/024/026/032 are the 4 partial ones.
-- 200 trials/session (100/class), classes left(1)/right(2).
-- Raw 1000 Hz, 64 ch = 59 EEG + 1 ECG(`ECG`) + 4 EOG(`HEOR/HEOL/VEOU/VEOL`)
-  [`eeg.json` EOG/ECG counts are swapped]. Reref Pz → drop → 58 EEG. 4 s @ 250 Hz = 1000.
-- Data unit is µV (BDF dim `?V`; MNE does not rescale — do NOT ×1e6).
-- evt.bdf triggers are in the TAL channel; parse via `src/preprocessing/neuracle_events.py`.
-- GPU env `mi_torch_cu118` (torch 2.7.1+cu118, cuda 11.8) — CUDA works, GPU Slurm jobs are the
-  normal path now (the old `mi_torch` was CPU-only; do not use it for GPU). RTX 4090 D.
-  Slurm partitions `gpu2node`(default=gpu01,02)/`gpu3node`(gpu03,04,05), `gpu:8` per node; ALWAYS
-  set `-t`. A per-user CPU/QOS cap means many submitted jobs sit `PD (QOSMaxCpuPerUserLimit)` and
-  drain as capacity frees — normal, not an error. Conda base:
-  `/share/software/anaconda3/2024.10/etc/profile.d/conda.sh`. Monitor with `slmwatch`/`gpuwatch` on
-  login01. IO-heavy work (large copy/compress/backup) → `storge` node, not login01. Home quota
-  512 GiB (`quota -s`). Official cluster doc: http://10.26.1.75:58080/ (see `docs/SERVER_RUNBOOK.md`).
+| 目录 | 内容 | 规则 |
+|:---|:---|:---|
+| `0_docs/` | 文档中心：ARCHITECTURE / STATUS / FILE_CATALOG / operation_log | 新文档必须同步 `FILE_CATALOG.md` |
+| `1_session_drift/` | Phase 0 漂移诊断真实结果（报告+CSV+图） | 已完成结果只读，复跑必须新 run_id |
+| `2_baseline/` | Phase 1 baseline + 2a multi-source + 2b alignment 真实结果 | 已完成结果只读，禁止覆盖 |
+| `3_online_adaptation/` | online/adaptation 设计区 | future，不写成已验证 |
+| `4_experiments/` | Phase 2c+ 新实验入口 | 每个实验一个子目录 + README |
+| `5_papers/` | 论文、PPT、图表材料 | 不放 raw EEG / checkpoint |
+| `code/` | 代码框架 | 人工入口只用 `code/run.py` |
+| `inbox/` | 临时交接材料 | 读完后归档并更新索引 |
+| `backup/root_archive_2026-06-10/` | 清理前的旧代码/文档/产物/权重/日志 | 保留追溯；根目录不再放旧层；阶段目录的可读结果即从这里复制 |
+| `backup/legacy_snapshot_2026-06-10/` | 更早的轻量快照 | 历史追溯 |
 
-## Models (current mainline)
+## 6. Code Architecture Rule
 
-EEGNet (Lawhern 2018) / DeepConvNet (Schirrmeister 2017) / FBCNet (Mane 2021), plus CAP-EEGNet
-**v1** (encoder + classifier + learned confidence head; the rest raises `NotImplementedError`).
-All share a `{logits, features, confidence}` forward contract + one trainer + one metric set for
-fair comparison. CAP-EEGNet full + all complex modules = future (`docs/ROADMAP.md`).
+Human-facing entry is:
+
+```bash
+python code/run.py --config code/configs/experiments/<phase>.yaml
+```
+
+Layering:
+
+- Add dataset -> `code/datasets/<name>.py` + `code/configs/datasets/<name>.yaml`.
+- Add model -> `code/models/<name>.py` + `code/configs/models/<name>.yaml`.
+- Add method -> `code/methods/<name>.py`.
+- Add experiment -> `code/experiments/<name>.py` + `code/configs/experiments/<phase>.yaml`.
+- Every new file -> update nearest `README.md` + `0_docs/FILE_CATALOG.md`.
+
+Current run capability:
+
+- `code/run.py` is the new entry and is fully runnable in-process via `code/runners.py` (no dependency on the archived `scripts/`).
+- Phase 0/1/2a/2b runners are implemented in `code/runners.py`; summarizers + canonical 9-section report in `code/summaries/`.
+- Train: `python code/run.py --config code/configs/experiments/<phase>.yaml [...]`.
+- Summarize: `python code/run.py --summarize --config code/configs/experiments/<phase>.yaml` → tables/figures/native report + canonical `REPORT.md`.
+- Verified: Phase 0 drift + Phase 1 EEGNet training (CPU smoke); Phase 2b summarize on archived 30150-row run CSVs (canonical report numbers match history).
+- Old `src/scripts/configs` remain archived in `backup/root_archive_2026-06-10/` for reference only.
+- Canonical reports MUST follow the 9-section structure in §8 (Core conclusion → Goal → Method → Protocol → Results → Analysis → Relationship to previous phases → Next step → File list).
+
+## 6.5 Reporting Workflow (two layers)
+
+There are two report layers; do not confuse them.
+
+1. **Scripted report (no AI, automatable).** `python code/run.py --summarize --config <phase>` produces tables/figures, the native detailed report, and the canonical 9-section `REPORT.md`. This is deterministic and may be auto-run after training (e.g. a Slurm dependency job `--dependency=afterany:<train_ids>`). No AI and no manual narration needed.
+
+2. **AI analysis report (manual trigger, per user's choice).** The user does NOT pre-write analysis and does NOT need to run anything special. After training+summarize have produced the data, the user opens Cursor/ChatGPT and says one line like “<phase> 跑完了，读结果写分析报告”. The agent then:
+   - reads the phase's `tables/` CSVs + canonical `REPORT.md` (never fabricates numbers),
+   - writes a deep analysis following the §8 9-section structure,
+   - saves it to the phase's `report/` folder as `AI_ANALYSIS.md` (e.g. `2_baseline/no_alignment_baseline/report/AI_ANALYSIS.md`),
+   - updates `progress.md` + `0_docs/operation_log.md`.
+
+   Trigger phrases an agent should treat as "write the AI analysis report": “写分析报告 / 写 AI 分析 / 解读结果 / analyze results / write analysis report”. The AI report is grounded in the scripted tables; it adds cross-phase reasoning, anomalies, hypotheses, and next-step research direction that the templated report cannot.
+
+## 7. Experiment Rules
+
+1. Split by subject/session, never leak by trial.
+2. Cross-session train/val come only from source/train data.
+3. Target labels are only for final evaluation.
+4. If Prototype Drift uses target labels for offline diagnostics, report must state: target labels are used only for offline diagnostic analysis, not for training or adaptation.
+5. All experiments must record seed, data version, model hyperparameters, training recipe, hardware.
+6. Heavy/GPU work must use Slurm and CUDA env `mi_torch_cu118`.
+7. Smoke test before full run.
+8. Mark a stage done only after output files exist on disk.
+
+## 8. File Generation Rules
+
+Markdown files should use YAML frontmatter:
+
+```yaml
+---
+title: "File Title"
+tags:
+  - "#modality/eeg"
+created: "YYYY-MM-DD"
+updated: "YYYY-MM-DD"
+status: "active"
+---
+```
+
+Naming:
+
+- No spaces in filenames.
+- Prefer lowercase snake_case for logs/tables.
+- Reports can use `*_REPORT.md` or descriptive `.md`.
+- CSV headers use English lowercase snake_case.
+
+Report structure:
+
+1. Core conclusion first.
+2. Goal.
+3. Method.
+4. Protocol.
+5. Results.
+6. Analysis.
+7. Relationship to previous phases.
+8. Next step.
+9. File list.
+
+## 8.5 Mandatory Handoff Updates
+
+Every meaningful action must update the handoff memory immediately, not later:
+
+1. If project structure changes, update `0_docs/ARCHITECTURE.md`.
+2. If run readiness, cleanup policy, backup location, or deletable-file guidance changes, update `0_docs/STATUS.md`.
+3. If a new file is created, update `0_docs/FILE_CATALOG.md` and the nearest `README.md`.
+4. If files/directories are created, moved, renamed, or deleted, update `0_docs/operation_log.md`.
+5. If experiment status, completed results, or next-step decisions change, update `progress.md`, `experiment_log.md`, and `results.md`.
+6. If the change affects what another ChatGPT/Cursor agent must know, update this `AGENTS.md`.
+
+This is required for cross-agent handoff. Do not leave structure/progress knowledge only in chat.
+
+## 9. Historical Tracking and Backup Policy
+
+Current state:
+
+- Historical experiments, Slurm scripts, completed results, checkpoints, logs, and old compatibility layers have been moved into `backup/root_archive_2026-06-10/`.
+- A lighter pre-cleanup snapshot remains in `backup/legacy_snapshot_2026-06-10/`.
+
+Recommended future strategy:
+
+- Do not delete `backup/root_archive_2026-06-10/`; it contains the old runnable/project history.
+- Do not duplicate large checkpoints again.
+- If full training is needed before direct `code/` runners are implemented, temporarily restore compatibility dirs from backup or implement direct runners first.
+
+## 10. What Not To Do
+
+- Do not write to `/share/workspace2`.
+- Do not fabricate results.
+- Do not silently run heavy jobs on login node.
+- Do not collapse future work into current status.
+- Do not move old compatibility layers into backup without updating paths and confirming risk.
+- Do not delete checkpoints/results/logs just because they are large.

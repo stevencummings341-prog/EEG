@@ -1,0 +1,4 @@
+Project : /share/home/yuan/SYX/eeg-mi-online | Env: mi_torch_cu118 | Args:  | Node: gpu02 | Mon Jun  8 23:02:04 CST 2026
+[summarize] 705 rows (ok=705 failed=0) | models=['eegnet', 'deepconvnet', 'fbcnet'] | used_subjects=47 skipped=4
+[summarize] wrote tables + figure + report to /share/home/yuan/SYX/eeg-mi-online/outputs/experiments/session_multisource_v1/summaries
+Done: Mon Jun  8 23:02:13 CST 2026

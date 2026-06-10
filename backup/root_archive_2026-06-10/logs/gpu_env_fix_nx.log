@@ -1,0 +1,30 @@
+=== networkx before (import may crash) ===
+                              ^
+SyntaxError: invalid syntax
+=== pip install -U networkx (fix torch2.7 dynamo import; NOT a torch change) ===
+    Found existing installation: networkx 3.3
+    Uninstalling networkx-3.3:
+      Successfully uninstalled networkx-3.3
+Successfully installed networkx-3.4.2
+[nx] exit=0
+=== networkx after ===
+3.4.2
+=== CUDA VERIFY ===
+2.7.1+cu118
+11.8
+True
+1
+NVIDIA GeForce RTX 4090 D
+=== SANITY on GPU (3 subjects, 3 epochs) ===
+2026-06-05 22:39:35 | INFO    | sanity_train | CUDA: {'torch_version': '2.7.1+cu118', 'torch_cuda_build': '11.8', 'cuda_available': True, 'device_count': 1, 'device_name': 'NVIDIA GeForce RTX 4090 D'}
+2026-06-05 22:39:35 | INFO    | sanity_train | sanity 数据：subjects=['sub-001', 'sub-002', 'sub-003'] | 9 npz | 1800 trials
+/share/home/yuan/.conda/envs/mi_torch_cu118/lib/python3.10/site-packages/torch/nn/modules/conv.py:549: UserWarning: Using padding='same' with even kernel lengths and odd dilation may require a zero-padded copy of the input be created (Triggered internally at /pytorch/aten/src/ATen/native/Convolution.cpp:1036.)
+  return F.conv2d(
+2026-06-05 22:39:36 | INFO    | sanity_train | 模型 CAP-EEGNet(minimal) | feature_dim=496 | params=3026 | device=cuda
+2026-06-05 22:39:59 | INFO    | sanity_train | epoch 1/3 | loss=0.7000 | acc=0.5556
+2026-06-05 22:39:59 | INFO    | sanity_train | epoch 2/3 | loss=0.6457 | acc=0.6278
+2026-06-05 22:39:59 | INFO    | sanity_train | epoch 3/3 | loss=0.6057 | acc=0.6811
+2026-06-05 22:39:59 | INFO    | sanity_train | sanity 结果写入 /share/home/yuan/SYX/eeg-mi-online/outputs/sanity_check/sanity_check_metrics_gpu.json
+2026-06-05 22:39:59 | INFO    | sanity_train | loss: 0.7000 -> 0.6057 | decreased=True | elapsed=24.3s
+[sanity] exit=0
+DONE_NX

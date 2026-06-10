@@ -1,0 +1,321 @@
+========================================================
+Project : /share/home/yuan/SYX/eeg-mi-online
+Paths   : configs/paths.yaml
+Config  : configs/preprocess.yaml
+Node    : gpu02  |  Start: Thu Jun  4 22:26:58 CST 2026
+========================================================
+2026-06-04 22:26:59 | INFO    | preprocess_all | mode=eog_ecg_clean | 输出根: /share/workspace2/moto_imagination/WBCIC_SHU/processed/eog_ecg_clean
+2026-06-04 22:26:59 | INFO    | preprocess_all | raw manifest /share/home/yuan/SYX/eeg-mi-online/manifests/shu_2c_raw_manifest.csv -> 选中 153/153 个 session 处理。
+2026-06-04 22:27:33 | INFO    | preprocess_all | sub-001/ses-01 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[1, 4, 10] match_mat=True multiset=True status=ok
+2026-06-04 22:27:33 | INFO    | preprocess_all | [1/153] sub-001/ses-01 用时 34.3s（ok=1 failed=0）
+2026-06-04 22:28:09 | INFO    | preprocess_all | sub-001/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[1] match_mat=False multiset=True status=ok
+2026-06-04 22:28:09 | INFO    | preprocess_all | [2/153] sub-001/ses-02 用时 35.6s（ok=2 failed=0）
+2026-06-04 22:28:46 | INFO    | preprocess_all | sub-001/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[1, 2] match_mat=None multiset=None status=ok
+2026-06-04 22:28:46 | INFO    | preprocess_all | [3/153] sub-001/ses-03 用时 37.5s（ok=3 failed=0）
+2026-06-04 22:29:22 | INFO    | preprocess_all | sub-002/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[] match_mat=True multiset=True status=ok
+2026-06-04 22:29:22 | INFO    | preprocess_all | [4/153] sub-002/ses-01 用时 35.4s（ok=4 failed=0）
+2026-06-04 22:29:58 | INFO    | preprocess_all | sub-002/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[] match_mat=True multiset=True status=ok
+2026-06-04 22:29:58 | INFO    | preprocess_all | [5/153] sub-002/ses-02 用时 36.1s（ok=5 failed=0）
+2026-06-04 22:30:27 | INFO    | preprocess_all | sub-002/ses-03 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[] match_mat=True multiset=True status=ok
+2026-06-04 22:30:27 | INFO    | preprocess_all | [6/153] sub-002/ses-03 用时 28.9s（ok=6 failed=0）
+2026-06-04 22:31:06 | INFO    | preprocess_all | sub-003/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[1] match_mat=True multiset=True status=ok
+2026-06-04 22:31:06 | INFO    | preprocess_all | [7/153] sub-003/ses-01 用时 38.7s（ok=7 failed=0）
+2026-06-04 22:31:41 | INFO    | preprocess_all | sub-003/ses-02 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[0, 1, 3, 9, 12, 15, 16] match_mat=True multiset=True status=ok
+2026-06-04 22:31:41 | INFO    | preprocess_all | [8/153] sub-003/ses-02 用时 34.9s（ok=8 failed=0）
+2026-06-04 22:32:07 | INFO    | preprocess_all | sub-003/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[3] match_mat=True multiset=True status=ok
+2026-06-04 22:32:07 | INFO    | preprocess_all | [9/153] sub-003/ses-03 用时 26.6s（ok=9 failed=0）
+2026-06-04 22:33:25 | INFO    | preprocess_all | sub-004/ses-01 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[0, 7] match_mat=False multiset=True status=ok
+2026-06-04 22:33:25 | INFO    | preprocess_all | [10/153] sub-004/ses-01 用时 78.3s（ok=10 failed=0）
+2026-06-04 22:34:46 | INFO    | preprocess_all | sub-004/ses-02 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[5, 6, 14] match_mat=True multiset=True status=ok
+2026-06-04 22:34:46 | INFO    | preprocess_all | [11/153] sub-004/ses-02 用时 80.5s（ok=11 failed=0）
+2026-06-04 22:36:10 | INFO    | preprocess_all | sub-004/ses-03 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[0, 3] match_mat=False multiset=True status=ok
+2026-06-04 22:36:10 | INFO    | preprocess_all | [12/153] sub-004/ses-03 用时 83.6s（ok=12 failed=0）
+2026-06-04 22:37:27 | INFO    | preprocess_all | sub-005/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[] match_mat=True multiset=True status=ok
+2026-06-04 22:37:27 | INFO    | preprocess_all | [13/153] sub-005/ses-01 用时 77.8s（ok=13 failed=0）
+2026-06-04 22:38:47 | INFO    | preprocess_all | sub-005/ses-02 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[4] match_mat=True multiset=True status=ok
+2026-06-04 22:38:47 | INFO    | preprocess_all | [14/153] sub-005/ses-02 用时 79.6s（ok=14 failed=0）
+2026-06-04 22:40:10 | INFO    | preprocess_all | sub-005/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[1, 2, 11, 13] match_mat=True multiset=True status=ok
+2026-06-04 22:40:10 | INFO    | preprocess_all | [15/153] sub-005/ses-03 用时 83.0s（ok=15 failed=0）
+2026-06-04 22:41:28 | INFO    | preprocess_all | sub-006/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[0, 5] match_mat=False multiset=True status=ok
+2026-06-04 22:41:28 | INFO    | preprocess_all | [16/153] sub-006/ses-01 用时 78.2s（ok=16 failed=0）
+2026-06-04 22:42:45 | INFO    | preprocess_all | sub-006/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[] match_mat=False multiset=True status=ok
+2026-06-04 22:42:45 | INFO    | preprocess_all | [17/153] sub-006/ses-02 用时 77.2s（ok=17 failed=0）
+2026-06-04 22:43:59 | INFO    | preprocess_all | sub-006/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[5] match_mat=True multiset=True status=ok
+2026-06-04 22:43:59 | INFO    | preprocess_all | [18/153] sub-006/ses-03 用时 73.9s（ok=18 failed=0）
+2026-06-04 22:45:13 | INFO    | preprocess_all | sub-007/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[2, 5] match_mat=False multiset=True status=ok
+2026-06-04 22:45:13 | INFO    | preprocess_all | [19/153] sub-007/ses-01 用时 74.0s（ok=19 failed=0）
+2026-06-04 22:46:31 | INFO    | preprocess_all | sub-007/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[] match_mat=False multiset=True status=ok
+2026-06-04 22:46:31 | INFO    | preprocess_all | [20/153] sub-007/ses-02 用时 77.3s（ok=20 failed=0）
+2026-06-04 22:47:43 | INFO    | preprocess_all | sub-007/ses-03 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[0, 3] match_mat=False multiset=True status=ok
+2026-06-04 22:47:43 | INFO    | preprocess_all | [21/153] sub-007/ses-03 用时 72.0s（ok=21 failed=0）
+2026-06-04 22:49:01 | INFO    | preprocess_all | sub-008/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[2, 8, 11] match_mat=True multiset=True status=ok
+2026-06-04 22:49:01 | INFO    | preprocess_all | [22/153] sub-008/ses-01 用时 78.7s（ok=22 failed=0）
+2026-06-04 22:50:18 | INFO    | preprocess_all | sub-008/ses-02 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[1, 4, 5] match_mat=False multiset=True status=ok
+2026-06-04 22:50:18 | INFO    | preprocess_all | [23/153] sub-008/ses-02 用时 76.6s（ok=23 failed=0）
+2026-06-04 22:51:35 | INFO    | preprocess_all | sub-008/ses-03 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[] match_mat=False multiset=True status=ok
+2026-06-04 22:51:35 | INFO    | preprocess_all | [24/153] sub-008/ses-03 用时 77.2s（ok=24 failed=0）
+2026-06-04 22:53:00 | INFO    | preprocess_all | sub-009/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[] match_mat=True multiset=True status=ok
+2026-06-04 22:53:00 | INFO    | preprocess_all | [25/153] sub-009/ses-01 用时 85.2s（ok=25 failed=0）
+2026-06-04 22:54:10 | INFO    | preprocess_all | sub-009/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[0, 1, 3] match_mat=True multiset=True status=ok
+2026-06-04 22:54:10 | INFO    | preprocess_all | [26/153] sub-009/ses-02 用时 69.1s（ok=26 failed=0）
+2026-06-04 22:55:47 | INFO    | preprocess_all | sub-009/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[1] match_mat=True multiset=True status=ok
+2026-06-04 22:55:47 | INFO    | preprocess_all | [27/153] sub-009/ses-03 用时 97.9s（ok=27 failed=0）
+2026-06-04 22:57:16 | INFO    | preprocess_all | sub-010/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[7, 21, 28] match_mat=False multiset=True status=ok
+2026-06-04 22:57:16 | INFO    | preprocess_all | [28/153] sub-010/ses-01 用时 89.0s（ok=28 failed=0）
+2026-06-04 22:58:32 | INFO    | preprocess_all | sub-010/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[0, 1, 2, 6, 8] match_mat=True multiset=True status=ok
+2026-06-04 22:58:32 | INFO    | preprocess_all | [29/153] sub-010/ses-02 用时 76.1s（ok=29 failed=0）
+2026-06-04 22:59:58 | INFO    | preprocess_all | sub-010/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[3, 7, 30] match_mat=False multiset=True status=ok
+2026-06-04 22:59:58 | INFO    | preprocess_all | [30/153] sub-010/ses-03 用时 85.6s（ok=30 failed=0）
+2026-06-04 23:01:09 | INFO    | preprocess_all | sub-011/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[0] match_mat=None multiset=None status=ok
+2026-06-04 23:01:09 | INFO    | preprocess_all | [31/153] sub-011/ses-01 用时 71.1s（ok=31 failed=0）
+2026-06-04 23:02:21 | INFO    | preprocess_all | sub-011/ses-02 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[5, 6, 12] match_mat=None multiset=None status=ok
+2026-06-04 23:02:21 | INFO    | preprocess_all | [32/153] sub-011/ses-02 用时 71.7s（ok=32 failed=0）
+2026-06-04 23:03:29 | INFO    | preprocess_all | sub-011/ses-03 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[2, 5, 11] match_mat=None multiset=None status=ok
+2026-06-04 23:03:29 | INFO    | preprocess_all | [33/153] sub-011/ses-03 用时 68.0s（ok=33 failed=0）
+2026-06-04 23:04:39 | INFO    | preprocess_all | sub-012/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-04 23:04:39 | INFO    | preprocess_all | [34/153] sub-012/ses-01 用时 70.0s（ok=34 failed=0）
+2026-06-04 23:05:49 | INFO    | preprocess_all | sub-012/ses-02 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[3] match_mat=None multiset=None status=ok
+2026-06-04 23:05:49 | INFO    | preprocess_all | [35/153] sub-012/ses-02 用时 70.3s（ok=35 failed=0）
+2026-06-04 23:06:53 | INFO    | preprocess_all | sub-012/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[0, 1, 2] match_mat=None multiset=None status=ok
+2026-06-04 23:06:53 | INFO    | preprocess_all | [36/153] sub-012/ses-03 用时 63.6s（ok=36 failed=0）
+2026-06-04 23:08:05 | INFO    | preprocess_all | sub-013/ses-01 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[9, 13] match_mat=None multiset=None status=ok
+2026-06-04 23:08:05 | INFO    | preprocess_all | [37/153] sub-013/ses-01 用时 72.0s（ok=37 failed=0）
+2026-06-04 23:09:06 | INFO    | preprocess_all | sub-013/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-04 23:09:06 | INFO    | preprocess_all | [38/153] sub-013/ses-02 用时 61.9s（ok=38 failed=0）
+2026-06-04 23:10:21 | INFO    | preprocess_all | sub-013/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[10, 20] match_mat=None multiset=None status=ok
+2026-06-04 23:10:21 | INFO    | preprocess_all | [39/153] sub-013/ses-03 用时 74.8s（ok=39 failed=0）
+2026-06-04 23:11:26 | INFO    | preprocess_all | sub-014/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[1, 9, 10] match_mat=None multiset=None status=ok
+2026-06-04 23:11:26 | INFO    | preprocess_all | [40/153] sub-014/ses-01 用时 65.2s（ok=40 failed=0）
+2026-06-04 23:12:33 | INFO    | preprocess_all | sub-014/ses-02 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[0, 3] match_mat=None multiset=None status=ok
+2026-06-04 23:12:33 | INFO    | preprocess_all | [41/153] sub-014/ses-02 用时 66.9s（ok=41 failed=0）
+2026-06-04 23:13:50 | INFO    | preprocess_all | sub-014/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[2] match_mat=None multiset=None status=ok
+2026-06-04 23:13:50 | INFO    | preprocess_all | [42/153] sub-014/ses-03 用时 76.9s（ok=42 failed=0）
+2026-06-04 23:15:10 | INFO    | preprocess_all | sub-015/ses-01 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[1, 20] match_mat=None multiset=None status=ok
+2026-06-04 23:15:10 | INFO    | preprocess_all | [43/153] sub-015/ses-01 用时 79.8s（ok=43 failed=0）
+2026-06-04 23:16:15 | INFO    | preprocess_all | sub-015/ses-02 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-04 23:16:15 | INFO    | preprocess_all | [44/153] sub-015/ses-02 用时 65.5s（ok=44 failed=0）
+2026-06-04 23:17:27 | INFO    | preprocess_all | sub-015/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[2, 5, 10] match_mat=None multiset=None status=ok
+2026-06-04 23:17:27 | INFO    | preprocess_all | [45/153] sub-015/ses-03 用时 71.2s（ok=45 failed=0）
+2026-06-04 23:18:45 | INFO    | preprocess_all | sub-016/ses-01 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[7] match_mat=None multiset=None status=ok
+2026-06-04 23:18:45 | INFO    | preprocess_all | [46/153] sub-016/ses-01 用时 78.3s（ok=46 failed=0）
+2026-06-04 23:20:01 | INFO    | preprocess_all | sub-016/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[1, 2] match_mat=None multiset=None status=ok
+2026-06-04 23:20:01 | INFO    | preprocess_all | [47/153] sub-016/ses-02 用时 75.6s（ok=47 failed=0）
+2026-06-04 23:21:18 | INFO    | preprocess_all | sub-016/ses-03 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[1, 2] match_mat=None multiset=None status=ok
+2026-06-04 23:21:18 | INFO    | preprocess_all | [48/153] sub-016/ses-03 用时 77.0s（ok=48 failed=0）
+2026-06-04 23:22:25 | INFO    | preprocess_all | sub-017/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[1, 3] match_mat=None multiset=None status=ok
+2026-06-04 23:22:25 | INFO    | preprocess_all | [49/153] sub-017/ses-01 用时 67.8s（ok=49 failed=0）
+2026-06-04 23:23:40 | INFO    | preprocess_all | sub-017/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-04 23:23:40 | INFO    | preprocess_all | [50/153] sub-017/ses-02 用时 74.5s（ok=50 failed=0）
+2026-06-04 23:24:53 | INFO    | preprocess_all | sub-017/ses-03 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-04 23:24:53 | INFO    | preprocess_all | [51/153] sub-017/ses-03 用时 73.6s（ok=51 failed=0）
+2026-06-04 23:26:01 | INFO    | preprocess_all | sub-018/ses-01 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[6] match_mat=None multiset=None status=ok
+2026-06-04 23:26:01 | INFO    | preprocess_all | [52/153] sub-018/ses-01 用时 67.9s（ok=52 failed=0）
+2026-06-04 23:27:21 | INFO    | preprocess_all | sub-018/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[2, 5] match_mat=None multiset=None status=ok
+2026-06-04 23:27:21 | INFO    | preprocess_all | [53/153] sub-018/ses-02 用时 79.8s（ok=53 failed=0）
+2026-06-04 23:28:41 | INFO    | preprocess_all | sub-018/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-04 23:28:41 | INFO    | preprocess_all | [54/153] sub-018/ses-03 用时 80.0s（ok=54 failed=0）
+2026-06-04 23:29:46 | INFO    | preprocess_all | sub-019/ses-01 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[2, 3] match_mat=None multiset=None status=ok
+2026-06-04 23:29:46 | INFO    | preprocess_all | [55/153] sub-019/ses-01 用时 65.0s（ok=55 failed=0）
+2026-06-04 23:30:55 | INFO    | preprocess_all | sub-019/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[1, 3, 5] match_mat=None multiset=None status=ok
+2026-06-04 23:30:55 | INFO    | preprocess_all | [56/153] sub-019/ses-02 用时 68.7s（ok=56 failed=0）
+2026-06-04 23:32:05 | INFO    | preprocess_all | sub-019/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[3] match_mat=None multiset=None status=ok
+2026-06-04 23:32:05 | INFO    | preprocess_all | [57/153] sub-019/ses-03 用时 70.3s（ok=57 failed=0）
+2026-06-04 23:33:18 | INFO    | preprocess_all | sub-020/ses-01 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[0, 10, 12, 16, 17] match_mat=None multiset=None status=ok
+2026-06-04 23:33:18 | INFO    | preprocess_all | [58/153] sub-020/ses-01 用时 72.9s（ok=58 failed=0）
+2026-06-04 23:34:27 | INFO    | preprocess_all | sub-020/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[1, 5] match_mat=None multiset=None status=ok
+2026-06-04 23:34:27 | INFO    | preprocess_all | [59/153] sub-020/ses-02 用时 68.6s（ok=59 failed=0）
+2026-06-04 23:35:31 | INFO    | preprocess_all | sub-020/ses-03 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[0, 1, 5, 6] match_mat=None multiset=None status=ok
+2026-06-04 23:35:31 | INFO    | preprocess_all | [60/153] sub-020/ses-03 用时 64.4s（ok=60 failed=0）
+2026-06-04 23:36:45 | INFO    | preprocess_all | sub-021/ses-01 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[2, 3, 4, 6] match_mat=None multiset=None status=ok
+2026-06-04 23:36:45 | INFO    | preprocess_all | [61/153] sub-021/ses-01 用时 73.7s（ok=61 failed=0）
+2026-06-04 23:37:57 | INFO    | preprocess_all | sub-021/ses-02 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[1, 3, 4, 5, 8] match_mat=None multiset=None status=ok
+2026-06-04 23:37:57 | INFO    | preprocess_all | [62/153] sub-021/ses-02 用时 72.6s（ok=62 failed=0）
+2026-06-04 23:39:13 | INFO    | preprocess_all | sub-021/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[14] match_mat=None multiset=None status=ok
+2026-06-04 23:39:13 | INFO    | preprocess_all | [63/153] sub-021/ses-03 用时 75.2s（ok=63 failed=0）
+2026-06-04 23:40:15 | INFO    | preprocess_all | sub-022/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[0, 4] match_mat=None multiset=None status=ok
+2026-06-04 23:40:15 | INFO    | preprocess_all | [64/153] sub-022/ses-01 用时 62.5s（ok=64 failed=0）
+2026-06-04 23:41:27 | INFO    | preprocess_all | sub-022/ses-02 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[1] match_mat=None multiset=None status=ok
+2026-06-04 23:41:27 | INFO    | preprocess_all | [65/153] sub-022/ses-02 用时 72.1s（ok=65 failed=0）
+2026-06-04 23:42:40 | INFO    | preprocess_all | sub-022/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[0, 1] match_mat=None multiset=None status=ok
+2026-06-04 23:42:40 | INFO    | preprocess_all | [66/153] sub-022/ses-03 用时 72.7s（ok=66 failed=0）
+2026-06-04 23:43:46 | INFO    | preprocess_all | sub-023/ses-01 | shape=[199, 58, 1000] labels={0: 99, 1: 100} aux_used=True excluded=[5, 8] match_mat=None multiset=None status=failed reasons=shape [199, 58, 1000] != [200,58,1000]; label_count 99/100 != 100/100; trigger_count 199 != 200
+2026-06-04 23:43:46 | INFO    | preprocess_all | [67/153] sub-023/ses-01 用时 65.7s（ok=66 failed=1）
+2026-06-04 23:45:07 | INFO    | preprocess_all | sub-023/ses-02 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[3, 7] match_mat=None multiset=None status=ok
+2026-06-04 23:45:07 | INFO    | preprocess_all | [68/153] sub-023/ses-02 用时 81.3s（ok=67 failed=1）
+2026-06-04 23:46:26 | INFO    | preprocess_all | sub-023/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[3, 4] match_mat=None multiset=None status=ok
+2026-06-04 23:46:26 | INFO    | preprocess_all | [69/153] sub-023/ses-03 用时 79.4s（ok=68 failed=1）
+2026-06-04 23:47:35 | INFO    | preprocess_all | sub-024/ses-01 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[1] match_mat=None multiset=None status=ok
+2026-06-04 23:47:35 | INFO    | preprocess_all | [70/153] sub-024/ses-01 用时 68.3s（ok=69 failed=1）
+2026-06-04 23:48:54 | INFO    | preprocess_all | sub-024/ses-02 | shape=[199, 58, 1000] labels={1: 100, 0: 99} aux_used=True excluded=[] match_mat=None multiset=None status=failed reasons=shape [199, 58, 1000] != [200,58,1000]; label_count 99/100 != 100/100; trigger_count 199 != 200
+2026-06-04 23:48:54 | INFO    | preprocess_all | [71/153] sub-024/ses-02 用时 78.9s（ok=69 failed=2）
+2026-06-04 23:50:13 | INFO    | preprocess_all | sub-024/ses-03 | shape=[195, 58, 1000] labels={0: 99, 1: 96} aux_used=True excluded=[] match_mat=None multiset=None status=failed reasons=shape [195, 58, 1000] != [200,58,1000]; label_count 99/96 != 100/100; trigger_count 195 != 200
+2026-06-04 23:50:13 | INFO    | preprocess_all | [72/153] sub-024/ses-03 用时 79.2s（ok=69 failed=3）
+2026-06-04 23:51:24 | INFO    | preprocess_all | sub-025/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[3, 6] match_mat=None multiset=None status=ok
+2026-06-04 23:51:24 | INFO    | preprocess_all | [73/153] sub-025/ses-01 用时 71.0s（ok=70 failed=3）
+2026-06-04 23:52:26 | INFO    | preprocess_all | sub-025/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[0] match_mat=None multiset=None status=ok
+2026-06-04 23:52:26 | INFO    | preprocess_all | [74/153] sub-025/ses-02 用时 62.6s（ok=71 failed=3）
+2026-06-04 23:53:40 | INFO    | preprocess_all | sub-025/ses-03 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[2, 11] match_mat=None multiset=None status=ok
+2026-06-04 23:53:40 | INFO    | preprocess_all | [75/153] sub-025/ses-03 用时 74.0s（ok=72 failed=3）
+2026-06-04 23:54:43 | INFO    | preprocess_all | sub-026/ses-01 | shape=[199, 58, 1000] labels={0: 99, 1: 100} aux_used=True excluded=[0, 1, 3] match_mat=None multiset=None status=failed reasons=shape [199, 58, 1000] != [200,58,1000]; label_count 99/100 != 100/100; trigger_count 199 != 200
+2026-06-04 23:54:43 | INFO    | preprocess_all | [76/153] sub-026/ses-01 用时 62.4s（ok=72 failed=4）
+2026-06-04 23:55:48 | INFO    | preprocess_all | sub-026/ses-02 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[6] match_mat=None multiset=None status=ok
+2026-06-04 23:55:48 | INFO    | preprocess_all | [77/153] sub-026/ses-02 用时 65.3s（ok=73 failed=4）
+2026-06-04 23:56:50 | INFO    | preprocess_all | sub-026/ses-03 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[0] match_mat=None multiset=None status=ok
+2026-06-04 23:56:50 | INFO    | preprocess_all | [78/153] sub-026/ses-03 用时 62.1s（ok=74 failed=4）
+2026-06-04 23:57:55 | INFO    | preprocess_all | sub-027/ses-01 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[0] match_mat=None multiset=None status=ok
+2026-06-04 23:57:55 | INFO    | preprocess_all | [79/153] sub-027/ses-01 用时 64.3s（ok=75 failed=4）
+2026-06-04 23:59:01 | INFO    | preprocess_all | sub-027/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[0, 1] match_mat=None multiset=None status=ok
+2026-06-04 23:59:01 | INFO    | preprocess_all | [80/153] sub-027/ses-02 用时 66.8s（ok=76 failed=4）
+2026-06-05 00:00:08 | INFO    | preprocess_all | sub-027/ses-03 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[0, 2] match_mat=None multiset=None status=ok
+2026-06-05 00:00:08 | INFO    | preprocess_all | [81/153] sub-027/ses-03 用时 66.2s（ok=77 failed=4）
+2026-06-05 00:01:28 | INFO    | preprocess_all | sub-028/ses-01 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[1] match_mat=None multiset=None status=ok
+2026-06-05 00:01:28 | INFO    | preprocess_all | [82/153] sub-028/ses-01 用时 80.2s（ok=78 failed=4）
+2026-06-05 00:02:42 | INFO    | preprocess_all | sub-028/ses-02 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[2, 8] match_mat=None multiset=None status=ok
+2026-06-05 00:02:42 | INFO    | preprocess_all | [83/153] sub-028/ses-02 用时 74.2s（ok=79 failed=4）
+2026-06-05 00:04:00 | INFO    | preprocess_all | sub-028/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[1, 7] match_mat=None multiset=None status=ok
+2026-06-05 00:04:00 | INFO    | preprocess_all | [84/153] sub-028/ses-03 用时 78.6s（ok=80 failed=4）
+2026-06-05 00:05:07 | INFO    | preprocess_all | sub-029/ses-01 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[0, 2, 3] match_mat=None multiset=None status=ok
+2026-06-05 00:05:07 | INFO    | preprocess_all | [85/153] sub-029/ses-01 用时 67.0s（ok=81 failed=4）
+2026-06-05 00:06:14 | INFO    | preprocess_all | sub-029/ses-02 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-05 00:06:14 | INFO    | preprocess_all | [86/153] sub-029/ses-02 用时 66.6s（ok=82 failed=4）
+2026-06-05 00:07:21 | INFO    | preprocess_all | sub-029/ses-03 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[1] match_mat=None multiset=None status=ok
+2026-06-05 00:07:21 | INFO    | preprocess_all | [87/153] sub-029/ses-03 用时 66.7s（ok=83 failed=4）
+2026-06-05 00:08:32 | INFO    | preprocess_all | sub-030/ses-01 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[1, 3, 6] match_mat=None multiset=None status=ok
+2026-06-05 00:08:32 | INFO    | preprocess_all | [88/153] sub-030/ses-01 用时 70.9s（ok=84 failed=4）
+2026-06-05 00:09:52 | INFO    | preprocess_all | sub-030/ses-02 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[0, 1, 3, 17] match_mat=None multiset=None status=ok
+2026-06-05 00:09:52 | INFO    | preprocess_all | [89/153] sub-030/ses-02 用时 80.5s（ok=85 failed=4）
+2026-06-05 00:10:58 | INFO    | preprocess_all | sub-030/ses-03 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[0, 2] match_mat=None multiset=None status=ok
+2026-06-05 00:10:58 | INFO    | preprocess_all | [90/153] sub-030/ses-03 用时 65.8s（ok=86 failed=4）
+2026-06-05 00:12:20 | INFO    | preprocess_all | sub-031/ses-01 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[8, 19] match_mat=None multiset=None status=ok
+2026-06-05 00:12:20 | INFO    | preprocess_all | [91/153] sub-031/ses-01 用时 82.3s（ok=87 failed=4）
+2026-06-05 00:13:43 | INFO    | preprocess_all | sub-031/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[2] match_mat=None multiset=None status=ok
+2026-06-05 00:13:43 | INFO    | preprocess_all | [92/153] sub-031/ses-02 用时 82.4s（ok=88 failed=4）
+2026-06-05 00:14:59 | INFO    | preprocess_all | sub-031/ses-03 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-05 00:14:59 | INFO    | preprocess_all | [93/153] sub-031/ses-03 用时 76.0s（ok=89 failed=4）
+2026-06-05 00:16:25 | INFO    | preprocess_all | sub-032/ses-01 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[0] match_mat=None multiset=None status=ok
+2026-06-05 00:16:25 | INFO    | preprocess_all | [94/153] sub-032/ses-01 用时 86.3s（ok=90 failed=4）
+2026-06-05 00:17:40 | INFO    | preprocess_all | sub-032/ses-02 | shape=[199, 58, 1000] labels={1: 100, 0: 99} aux_used=True excluded=[0, 8] match_mat=None multiset=None status=failed reasons=shape [199, 58, 1000] != [200,58,1000]; label_count 99/100 != 100/100; trigger_count 199 != 200
+2026-06-05 00:17:40 | INFO    | preprocess_all | [95/153] sub-032/ses-02 用时 75.1s（ok=90 failed=5）
+2026-06-05 00:19:11 | INFO    | preprocess_all | sub-032/ses-03 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-05 00:19:11 | INFO    | preprocess_all | [96/153] sub-032/ses-03 用时 91.0s（ok=91 failed=5）
+2026-06-05 00:20:31 | INFO    | preprocess_all | sub-033/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-05 00:20:31 | INFO    | preprocess_all | [97/153] sub-033/ses-01 用时 80.1s（ok=92 failed=5）
+2026-06-05 00:21:44 | INFO    | preprocess_all | sub-033/ses-02 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[1] match_mat=None multiset=None status=ok
+2026-06-05 00:21:44 | INFO    | preprocess_all | [98/153] sub-033/ses-02 用时 73.1s（ok=93 failed=5）
+2026-06-05 00:23:06 | INFO    | preprocess_all | sub-033/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[2, 18] match_mat=None multiset=None status=ok
+2026-06-05 00:23:06 | INFO    | preprocess_all | [99/153] sub-033/ses-03 用时 81.3s（ok=94 failed=5）
+2026-06-05 00:24:12 | INFO    | preprocess_all | sub-034/ses-01 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[1] match_mat=None multiset=None status=ok
+2026-06-05 00:24:12 | INFO    | preprocess_all | [100/153] sub-034/ses-01 用时 66.8s（ok=95 failed=5）
+2026-06-05 00:25:34 | INFO    | preprocess_all | sub-034/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-05 00:25:34 | INFO    | preprocess_all | [101/153] sub-034/ses-02 用时 81.7s（ok=96 failed=5）
+2026-06-05 00:26:55 | INFO    | preprocess_all | sub-034/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[27, 28] match_mat=None multiset=None status=ok
+2026-06-05 00:26:55 | INFO    | preprocess_all | [102/153] sub-034/ses-03 用时 81.0s（ok=97 failed=5）
+2026-06-05 00:27:59 | INFO    | preprocess_all | sub-035/ses-01 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[2] match_mat=None multiset=None status=ok
+2026-06-05 00:27:59 | INFO    | preprocess_all | [103/153] sub-035/ses-01 用时 63.5s（ok=98 failed=5）
+2026-06-05 00:29:10 | INFO    | preprocess_all | sub-035/ses-02 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-05 00:29:10 | INFO    | preprocess_all | [104/153] sub-035/ses-02 用时 71.1s（ok=99 failed=5）
+2026-06-05 00:30:19 | INFO    | preprocess_all | sub-035/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-05 00:30:19 | INFO    | preprocess_all | [105/153] sub-035/ses-03 用时 69.4s（ok=100 failed=5）
+2026-06-05 00:31:46 | INFO    | preprocess_all | sub-036/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-05 00:31:46 | INFO    | preprocess_all | [106/153] sub-036/ses-01 用时 86.6s（ok=101 failed=5）
+2026-06-05 00:33:06 | INFO    | preprocess_all | sub-036/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[8] match_mat=None multiset=None status=ok
+2026-06-05 00:33:06 | INFO    | preprocess_all | [107/153] sub-036/ses-02 用时 80.0s（ok=102 failed=5）
+2026-06-05 00:34:27 | INFO    | preprocess_all | sub-036/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-05 00:34:27 | INFO    | preprocess_all | [108/153] sub-036/ses-03 用时 81.1s（ok=103 failed=5）
+2026-06-05 00:35:36 | INFO    | preprocess_all | sub-037/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[1, 3] match_mat=None multiset=None status=ok
+2026-06-05 00:35:36 | INFO    | preprocess_all | [109/153] sub-037/ses-01 用时 68.7s（ok=104 failed=5）
+2026-06-05 00:37:04 | INFO    | preprocess_all | sub-037/ses-02 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[1, 7] match_mat=None multiset=None status=ok
+2026-06-05 00:37:04 | INFO    | preprocess_all | [110/153] sub-037/ses-02 用时 88.1s（ok=105 failed=5）
+2026-06-05 00:38:23 | INFO    | preprocess_all | sub-037/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[2, 3] match_mat=None multiset=None status=ok
+2026-06-05 00:38:23 | INFO    | preprocess_all | [111/153] sub-037/ses-03 用时 79.6s（ok=106 failed=5）
+2026-06-05 00:39:23 | INFO    | preprocess_all | sub-038/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[0, 4] match_mat=None multiset=None status=ok
+2026-06-05 00:39:23 | INFO    | preprocess_all | [112/153] sub-038/ses-01 用时 60.1s（ok=107 failed=5）
+2026-06-05 00:40:40 | INFO    | preprocess_all | sub-038/ses-02 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-05 00:40:40 | INFO    | preprocess_all | [113/153] sub-038/ses-02 用时 76.7s（ok=108 failed=5）
+2026-06-05 00:41:54 | INFO    | preprocess_all | sub-038/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-05 00:41:54 | INFO    | preprocess_all | [114/153] sub-038/ses-03 用时 74.4s（ok=109 failed=5）
+2026-06-05 00:43:16 | INFO    | preprocess_all | sub-039/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[1, 4, 9] match_mat=None multiset=None status=ok
+2026-06-05 00:43:16 | INFO    | preprocess_all | [115/153] sub-039/ses-01 用时 81.2s（ok=110 failed=5）
+2026-06-05 00:44:32 | INFO    | preprocess_all | sub-039/ses-02 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[3] match_mat=None multiset=None status=ok
+2026-06-05 00:44:32 | INFO    | preprocess_all | [116/153] sub-039/ses-02 用时 76.5s（ok=111 failed=5）
+2026-06-05 00:45:53 | INFO    | preprocess_all | sub-039/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[1, 2] match_mat=None multiset=None status=ok
+2026-06-05 00:45:53 | INFO    | preprocess_all | [117/153] sub-039/ses-03 用时 80.5s（ok=112 failed=5）
+2026-06-05 00:47:13 | INFO    | preprocess_all | sub-040/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[1, 2] match_mat=None multiset=None status=ok
+2026-06-05 00:47:13 | INFO    | preprocess_all | [118/153] sub-040/ses-01 用时 80.6s（ok=113 failed=5）
+2026-06-05 00:48:58 | INFO    | preprocess_all | sub-040/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[1, 2, 15] match_mat=None multiset=None status=ok
+2026-06-05 00:48:58 | INFO    | preprocess_all | [119/153] sub-040/ses-02 用时 104.3s（ok=114 failed=5）
+2026-06-05 00:50:18 | INFO    | preprocess_all | sub-040/ses-03 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[1] match_mat=None multiset=None status=ok
+2026-06-05 00:50:18 | INFO    | preprocess_all | [120/153] sub-040/ses-03 用时 80.8s（ok=115 failed=5）
+2026-06-05 00:51:52 | INFO    | preprocess_all | sub-041/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[2] match_mat=None multiset=None status=ok
+2026-06-05 00:51:52 | INFO    | preprocess_all | [121/153] sub-041/ses-01 用时 93.4s（ok=116 failed=5）
+2026-06-05 00:53:08 | INFO    | preprocess_all | sub-041/ses-02 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-05 00:53:08 | INFO    | preprocess_all | [122/153] sub-041/ses-02 用时 75.8s（ok=117 failed=5）
+2026-06-05 00:54:48 | INFO    | preprocess_all | sub-041/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-05 00:54:48 | INFO    | preprocess_all | [123/153] sub-041/ses-03 用时 100.5s（ok=118 failed=5）
+2026-06-05 00:56:38 | INFO    | preprocess_all | sub-042/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[2] match_mat=None multiset=None status=ok
+2026-06-05 00:56:38 | INFO    | preprocess_all | [124/153] sub-042/ses-01 用时 109.6s（ok=119 failed=5）
+2026-06-05 00:58:28 | INFO    | preprocess_all | sub-042/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[1, 2] match_mat=None multiset=None status=ok
+2026-06-05 00:58:28 | INFO    | preprocess_all | [125/153] sub-042/ses-02 用时 110.1s（ok=120 failed=5）
+2026-06-05 01:00:09 | INFO    | preprocess_all | sub-042/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[1] match_mat=None multiset=None status=ok
+2026-06-05 01:00:09 | INFO    | preprocess_all | [126/153] sub-042/ses-03 用时 101.1s（ok=121 failed=5）
+2026-06-05 01:01:34 | INFO    | preprocess_all | sub-043/ses-01 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-05 01:01:34 | INFO    | preprocess_all | [127/153] sub-043/ses-01 用时 85.4s（ok=122 failed=5）
+2026-06-05 01:03:00 | INFO    | preprocess_all | sub-043/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[8, 9] match_mat=None multiset=None status=ok
+2026-06-05 01:03:00 | INFO    | preprocess_all | [128/153] sub-043/ses-02 用时 85.9s（ok=123 failed=5）
+2026-06-05 01:04:33 | INFO    | preprocess_all | sub-043/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[5, 24] match_mat=None multiset=None status=ok
+2026-06-05 01:04:33 | INFO    | preprocess_all | [129/153] sub-043/ses-03 用时 93.3s（ok=124 failed=5）
+2026-06-05 01:06:03 | INFO    | preprocess_all | sub-044/ses-01 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[1] match_mat=None multiset=None status=ok
+2026-06-05 01:06:03 | INFO    | preprocess_all | [130/153] sub-044/ses-01 用时 89.3s（ok=125 failed=5）
+2026-06-05 01:07:13 | INFO    | preprocess_all | sub-044/ses-02 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-05 01:07:13 | INFO    | preprocess_all | [131/153] sub-044/ses-02 用时 70.6s（ok=126 failed=5）
+2026-06-05 01:08:45 | INFO    | preprocess_all | sub-044/ses-03 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[1, 2] match_mat=None multiset=None status=ok
+2026-06-05 01:08:45 | INFO    | preprocess_all | [132/153] sub-044/ses-03 用时 91.8s（ok=127 failed=5）
+2026-06-05 01:10:37 | INFO    | preprocess_all | sub-045/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[4] match_mat=None multiset=None status=ok
+2026-06-05 01:10:37 | INFO    | preprocess_all | [133/153] sub-045/ses-01 用时 111.4s（ok=128 failed=5）
+2026-06-05 01:12:28 | INFO    | preprocess_all | sub-045/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-05 01:12:28 | INFO    | preprocess_all | [134/153] sub-045/ses-02 用时 111.6s（ok=129 failed=5）
+2026-06-05 01:14:09 | INFO    | preprocess_all | sub-045/ses-03 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[6, 8, 26] match_mat=None multiset=None status=ok
+2026-06-05 01:14:09 | INFO    | preprocess_all | [135/153] sub-045/ses-03 用时 100.5s（ok=130 failed=5）
+2026-06-05 01:15:32 | INFO    | preprocess_all | sub-046/ses-01 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-05 01:15:32 | INFO    | preprocess_all | [136/153] sub-046/ses-01 用时 83.3s（ok=131 failed=5）
+2026-06-05 01:16:54 | INFO    | preprocess_all | sub-046/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[1] match_mat=None multiset=None status=ok
+2026-06-05 01:16:54 | INFO    | preprocess_all | [137/153] sub-046/ses-02 用时 82.3s（ok=132 failed=5）
+2026-06-05 01:18:17 | INFO    | preprocess_all | sub-046/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[1, 14] match_mat=None multiset=None status=ok
+2026-06-05 01:18:17 | INFO    | preprocess_all | [138/153] sub-046/ses-03 用时 82.7s（ok=133 failed=5）
+2026-06-05 01:19:40 | INFO    | preprocess_all | sub-047/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-05 01:19:40 | INFO    | preprocess_all | [139/153] sub-047/ses-01 用时 83.6s（ok=134 failed=5）
+2026-06-05 01:21:10 | INFO    | preprocess_all | sub-047/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-05 01:21:10 | INFO    | preprocess_all | [140/153] sub-047/ses-02 用时 89.2s（ok=135 failed=5）
+2026-06-05 01:22:41 | INFO    | preprocess_all | sub-047/ses-03 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[24] match_mat=None multiset=None status=ok
+2026-06-05 01:22:41 | INFO    | preprocess_all | [141/153] sub-047/ses-03 用时 91.5s（ok=136 failed=5）
+2026-06-05 01:24:01 | INFO    | preprocess_all | sub-048/ses-01 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[7] match_mat=None multiset=None status=ok
+2026-06-05 01:24:01 | INFO    | preprocess_all | [142/153] sub-048/ses-01 用时 79.9s（ok=137 failed=5）
+2026-06-05 01:25:15 | INFO    | preprocess_all | sub-048/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[2, 7] match_mat=None multiset=None status=ok
+2026-06-05 01:25:15 | INFO    | preprocess_all | [143/153] sub-048/ses-02 用时 73.5s（ok=138 failed=5）
+2026-06-05 01:26:22 | INFO    | preprocess_all | sub-048/ses-03 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[0, 1, 3, 4, 6, 8] match_mat=None multiset=None status=ok
+2026-06-05 01:26:22 | INFO    | preprocess_all | [144/153] sub-048/ses-03 用时 67.8s（ok=139 failed=5）
+2026-06-05 01:27:33 | INFO    | preprocess_all | sub-049/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[2] match_mat=None multiset=None status=ok
+2026-06-05 01:27:33 | INFO    | preprocess_all | [145/153] sub-049/ses-01 用时 70.6s（ok=140 failed=5）
+2026-06-05 01:28:51 | INFO    | preprocess_all | sub-049/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[0, 4, 9, 13, 15, 16] match_mat=None multiset=None status=ok
+2026-06-05 01:28:51 | INFO    | preprocess_all | [146/153] sub-049/ses-02 用时 78.4s（ok=141 failed=5）
+2026-06-05 01:30:07 | INFO    | preprocess_all | sub-049/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[1, 8] match_mat=None multiset=None status=ok
+2026-06-05 01:30:07 | INFO    | preprocess_all | [147/153] sub-049/ses-03 用时 75.3s（ok=142 failed=5）
+2026-06-05 01:31:27 | INFO    | preprocess_all | sub-050/ses-01 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-05 01:31:27 | INFO    | preprocess_all | [148/153] sub-050/ses-01 用时 80.0s（ok=143 failed=5）
+2026-06-05 01:32:49 | INFO    | preprocess_all | sub-050/ses-02 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-05 01:32:49 | INFO    | preprocess_all | [149/153] sub-050/ses-02 用时 82.2s（ok=144 failed=5）
+2026-06-05 01:34:08 | INFO    | preprocess_all | sub-050/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[23] match_mat=None multiset=None status=ok
+2026-06-05 01:34:08 | INFO    | preprocess_all | [150/153] sub-050/ses-03 用时 79.5s（ok=145 failed=5）
+2026-06-05 01:35:34 | INFO    | preprocess_all | sub-051/ses-01 | shape=[200, 58, 1000] labels={0: 100, 1: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-05 01:35:34 | INFO    | preprocess_all | [151/153] sub-051/ses-01 用时 86.0s（ok=146 failed=5）
+2026-06-05 01:37:04 | INFO    | preprocess_all | sub-051/ses-02 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[1, 4] match_mat=None multiset=None status=ok
+2026-06-05 01:37:04 | INFO    | preprocess_all | [152/153] sub-051/ses-02 用时 89.7s（ok=147 failed=5）
+2026-06-05 01:38:07 | INFO    | preprocess_all | sub-051/ses-03 | shape=[200, 58, 1000] labels={1: 100, 0: 100} aux_used=True excluded=[] match_mat=None multiset=None status=ok
+2026-06-05 01:38:07 | INFO    | preprocess_all | [153/153] sub-051/ses-03 用时 62.9s（ok=148 failed=5）
+2026-06-05 01:38:07 | INFO    | preprocess_all | 完成：148 ok / 5 failed / 共 153（用时 11468.1s）。
+2026-06-05 01:38:07 | INFO    | preprocess_all | processed manifest: /share/workspace2/moto_imagination/WBCIC_SHU/processed/eog_ecg_clean/processed_manifest.csv
+2026-06-05 01:38:07 | INFO    | preprocess_all | summary: /share/workspace2/moto_imagination/WBCIC_SHU/processed/eog_ecg_clean/preprocess_summary.csv
+2026-06-05 01:38:07 | WARNING | preprocess_all | 有 5 个 session 失败，详见 manifest 的 error_message 列。
+--------------------------------------------------------
+Done: Fri Jun  5 01:38:08 CST 2026
+========================================================

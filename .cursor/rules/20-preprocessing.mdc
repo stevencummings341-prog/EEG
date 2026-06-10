@@ -1,83 +1,17 @@
 ---
-description: Rules for Python raw EEG preprocessing (formal = eog_ecg_clean; paper-style is a legacy sanity-check reproduced from preprocessed.m).
+description: Preprocessing and dataset-indexing rules for the new code architecture
 globs:
-  - "src/preprocessing/**/*.py"
-  - "src/data/**/*.py"
-  - "scripts/build_manifest.py"
-  - "scripts/preprocess_raw.py"
-  - "scripts/preprocess_all.py"
-  - "scripts/check_raw_bdf.py"
-  - "configs/preprocess.yaml"
+  - "code/preprocessing/**/*.py"
+  - "code/datasets/**/*.py"
+  - "code/configs/datasets/**/*.yaml"
+  - "code/configs/experiments/*preprocess*.yaml"
+alwaysApply: false
 ---
 
-# Preprocessing Rules (Python only)
+# Preprocessing & Dataset Indexing
 
-Preprocessing MUST be implemented in Python + MNE. The MATLAB `preprocessed.m` is a
-reference recipe only; reproduce its steps faithfully but never call MATLAB. See
-`docs/PREPROCESSING_SPEC.md`.
+WBCIC-SHU formal training entry is the existing external `eog_ecg_clean` `.npz` manifest. SHU 2022 is currently indexed read-only from EDF/MAT/events/metadata files under `/share/workspace2/moto_imagination/SHU`.
 
-## Pipelines (chosen by `mode` in configs/preprocess.yaml)
+Preprocessing must be explicit: do not hide raw-to-npz conversion inside dataset `load()`. If SHU preprocessing is added later, write outputs inside this project, record manifest rows, and never write into `/share/workspace2/moto_imagination/SHU`.
 
-- **FORMAL = `eog_ecg_clean`** (`src/preprocessing/eog_ecg_clean.py` +
-  `src/preprocessing/pipeline.py`): EOG/ECG-assisted MNE ICA cleaning, then the
-  paper-style second half. Writes ONE `.npz` per session. This is the formal output
-  of the current stage. `scripts/preprocess_all.py` is IMPLEMENTED (manifest-driven;
-  per-session try/except → `status`+`error_message`; supports `--subjects/--sessions/
-  --limit/--tag`). Dry-run on sub-001/002/003 (9 sessions) = 9/9 ok.
-- **legacy = `paper_style`** (`src/preprocessing/shu_preprocess.py`): no ICA, writes
-  `X.npy`/`y.npy`. Retained for the single-session sanity check only.
-
-## Paths
-
-- Raw root, processed output roots, and manifest paths all come from `configs/paths.yaml`
-  via `src/utils/paths.load_paths()`. Never hard-code them. Keys are `*_root`
-  (`paper_style_root`, `eog_ecg_clean_root`).
-- Raw layout under the root: `sourcedata/2C dataset/sub-XXX/ses-YY/eeg/{data.bdf, evt.bdf}`
-  (note the literal space in `2C dataset`; always build paths with pathlib).
-- Write processed data only under the configured processed root. The formal
-  `eog_ecg_clean_root` is an EXTERNAL dir (e.g.
-  `<raw_root>/processed/eog_ecg_clean`); `assert_safe_output_dir()` refuses any path
-  under `sourcedata/`/`derivatives/`/`code/` or the raw root itself. Never write into
-  the raw dataset directory.
-
-## Verified channel facts (sub-001/ses-01)
-
-- 64 raw channels = 59 EEG + 1 ECG (`ECG`) + 4 EOG (`HEOR/HEOL/VEOU/VEOL`).
-  (`task-motorimagery_eeg.json` says 1 EOG + 4 ECG — SWAPPED; trust the names.)
-- Re-reference to `Pz` (EEGLAB channel 43), then drop Pz -> 58 EEG channels.
-- Unit quirk: BDF physical dim is the garbled `?V` (meant µV); MNE returns
-  µV-magnitude values — store µV as-is, do NOT multiply by 1e6.
-
-## Events (RESOLVED — keep verifying labels, do not blindly trust)
-
-- The 200 MI triggers live in `evt.bdf`'s `BDF Annotations` (TAL) channel. MNE's
-  `read_raw_bdf` does NOT recover them (it only shows block markers {7,8}).
-- Parse via `src/preprocessing/neuracle_events.py`. Map trigger 1->0 (left), 2->1 (right).
-- Cross-check labels/trial-count against the paper `.mat` in `derivatives/` for every
-  session you validate. Treat the `.mat` as ground truth for the label sequence only.
-
-## Paper-style steps (legacy `paper_style`; also the second half of `eog_ecg_clean`)
-
-1. Read `data.bdf` with MNE (preload).
-2. Parse events from `evt.bdf` TAL; build the MNE events array (onset*sfreq).
-3. Drop the 5 aux channels {ECG, HEOR, HEOL, VEOU, VEOL} -> 59 EEG.
-4. Re-reference to Pz, drop Pz -> 58 EEG.
-5. Band-pass 0.5-40 Hz; 50 Hz notch.
-6. Epoch [0, 4) s relative to each trigger (tmax = 4 - 1/sfreq -> 4000 samples @1000Hz).
-7. Baseline correction = whole-epoch demean (`baseline=(None, None)`).
-8. Resample to 250 Hz -> 1000 samples per trial.
-9. Output `X=[200,58,1000]` float32 (µV), `y=[200]` int64 in {0,1}, plus `meta.json`.
-
-## Discipline
-
-- FAIL LOUDLY (strict mode) / mark `status=failed` if `[200, 58, 1000]` cannot be
-  produced; never silently pad/crop/drop. Record the reason in `meta.json` /
-  `preprocess_report.json` and the processed manifest. In `preprocess_all.py`, a
-  per-session failure must NOT abort the run (try/except → `status`+`error_message`).
-- Always log: subject/session, raw sfreq, orig/final channel counts, n_events,
-  n_trials, per-class counts, output shape, units, aux-cleaning info, status.
-- For `eog_ecg_clean`, the formal output is ONE `.npz` per session
-  (`sub-XXX_ses-YY_task-motorimagery_eeg.npz`) plus `meta.json` +
-  `preprocess_report.json` (+ `manifest_row.json`); debug `X.npy`/`y.npy` only when
-  `output.save_debug_npy: true`. `preprocess_all.py` writes `processed_manifest.csv`
-  + `preprocess_summary.csv` **beside the npz tree** (under `eog_ecg_clean_root`).
+Preserve tensor convention `[trials, channels, time]`; WBCIC target is `[200,58,1000]`, SHU target metadata is 32 channels at 250 Hz. Fit preprocessing/alignment parameters only on the appropriate train/source data unless a report explicitly declares an offline diagnostic use.

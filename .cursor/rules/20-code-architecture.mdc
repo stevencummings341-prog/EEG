@@ -1,0 +1,13 @@
+---
+description: P10-style code architecture rules
+globs:
+  - "code/**/*.py"
+  - "code/configs/**/*.yaml"
+alwaysApply: false
+---
+
+# Code Architecture
+
+`code/run.py` is the only manual run entry. `code/configs/datasets` describes datasets, `code/configs/models` describes model hyperparameters, and `code/configs/experiments` describes runnable phases.
+
+Add a dataset in `code/datasets` + dataset YAML. Add a model in `code/models` + model YAML. Add an alignment/adaptation method in `code/methods`. Add an experiment in `code/experiments` + experiment YAML. Update the local README and `0_docs/FILE_CATALOG.md` every time.

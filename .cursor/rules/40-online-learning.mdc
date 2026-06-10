@@ -1,62 +1,11 @@
 ---
-description: Rules for online test-then-update adaptation.
+description: Online adaptation remains future and must be test-then-update
 globs:
-  - "src/online/**/*.py"
-  - "scripts/run_online_adaptation.py"
-  - "configs/online_adaptation.yaml"
+  - "code/online/**/*.py"
+  - "code/configs/experiments/*online*.yaml"
+alwaysApply: false
 ---
 
-# Online Learning Rules
+# Online Learning
 
-Python/PyTorch. See `docs/ROADMAP.md` (Stage 4), `docs/EXPERIMENT_PROTOCOL.md`
-(Experiment 3) and the senior's chat record
-(`docs/references/ChatGPT-EEG-MI-pretraining.md`, sec. 7-12).
-
-## Non-negotiables
-
-- **Online MUST be test-then-update (prequential).** Predict + record BEFORE any update.
-- **Default-forbid updating the full backbone online.** Backbone stays frozen; full-backbone
-  online update is only an ablation to show it is worse, never the default path.
-- **Confidence gate + prototype memory + adapter are the CORE of online adaptation.** The
-  confidence used for gating/weighting is multi-source (not max-softmax). Low-confidence
-  trials must not drive pseudo-label updates.
-
-## Setup
-
-- Start from the pretrained CAP-EEGNet, optionally after target Session-1 fine-tuning.
-- Run on target Session 2, then Session 3, in temporal trial order.
-
-## Iron rule: test-then-update (prequential)
-
-For each trial, strictly in this order:
-1. Input the EEG trial.
-2. Predict the MI class.
-3. Output a confidence score.
-4. Record prediction, confidence, correctness.
-5. ONLY THEN update the model.
-
-Never train on a trial before evaluating it. Never update on a whole session and then
-test the same session.
-
-## What may update online
-
-- Allowed: prototype memory, adapter, confidence calibration head, BN statistics
-  (causal), classifier head (only if supervised labels available).
-- Frozen by default: the EEGNet backbone.
-- Unlabeled regime: pseudo-label updates must be confidence-gated
-  (`if confidence > threshold: update; else: skip / only update norm stats`).
-
-## Stability safeguards
-
-confidence threshold, EMA teacher, replay memory, prototype momentum, entropy
-regularization, feature distillation, class-balanced memory, learning-rate decay.
-
-## Outputs
-
-- `outputs/<run_id>/per_trial.csv` (trial, pred, confidence, correct, updated?).
-- pre-online vs post-online metrics, performance-vs-trial curve, risk-coverage curve.
-
-## Stage note (2026-06-05)
-
-Online is Stage 4 (see `docs/ROADMAP.md`); not started. Keep `src/online/` as documented
-skeletons. Do NOT implement a flow that silently full-backbone-updates online.
+Online adaptation is future work. If implemented later, it must be prequential: predict and record first, then update. Do not update the full backbone by default. Confidence-gated prototype/adapter/BN updates are allowed only when the experiment explicitly asks for them.

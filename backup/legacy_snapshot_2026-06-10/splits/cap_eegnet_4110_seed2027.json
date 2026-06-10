@@ -1,0 +1,374 @@
+{
+  "schema_version": 1,
+  "run_id": "cap_eegnet_4110",
+  "seed": 2027,
+  "created_utc": "2026-06-05T10:32:28+00:00",
+  "manifest_path": "/share/workspace2/moto_imagination/WBCIC_SHU/processed/eog_ecg_clean/processed_manifest.csv",
+  "variant": "eog_ecg_clean",
+  "split_policy": "subject-wise 41 source / 10 target; target subjects require all 3 sessions status=ok; source may include subjects with failed sessions but training uses ok sessions only; failed sessions go to excluded_sessions; NEVER trial/session-wise",
+  "n_total_subjects": 51,
+  "n_source_subjects": 41,
+  "n_target_subjects": 10,
+  "required_sessions": [
+    "ses-01",
+    "ses-02",
+    "ses-03"
+  ],
+  "source_subjects": [
+    "sub-002",
+    "sub-003",
+    "sub-004",
+    "sub-005",
+    "sub-008",
+    "sub-009",
+    "sub-010",
+    "sub-011",
+    "sub-013",
+    "sub-014",
+    "sub-015",
+    "sub-016",
+    "sub-017",
+    "sub-018",
+    "sub-019",
+    "sub-020",
+    "sub-022",
+    "sub-023",
+    "sub-024",
+    "sub-025",
+    "sub-026",
+    "sub-027",
+    "sub-028",
+    "sub-030",
+    "sub-031",
+    "sub-032",
+    "sub-033",
+    "sub-035",
+    "sub-036",
+    "sub-037",
+    "sub-038",
+    "sub-039",
+    "sub-040",
+    "sub-041",
+    "sub-042",
+    "sub-043",
+    "sub-047",
+    "sub-048",
+    "sub-049",
+    "sub-050",
+    "sub-051"
+  ],
+  "target_subjects": [
+    "sub-001",
+    "sub-006",
+    "sub-007",
+    "sub-012",
+    "sub-021",
+    "sub-029",
+    "sub-034",
+    "sub-044",
+    "sub-045",
+    "sub-046"
+  ],
+  "excluded_sessions": [
+    "sub-023/ses-01",
+    "sub-024/ses-02",
+    "sub-024/ses-03",
+    "sub-026/ses-01",
+    "sub-032/ses-02"
+  ],
+  "excluded_sessions_detail": [
+    {
+      "subject": "sub-023",
+      "session": "ses-01",
+      "status": "failed"
+    },
+    {
+      "subject": "sub-024",
+      "session": "ses-02",
+      "status": "failed"
+    },
+    {
+      "subject": "sub-024",
+      "session": "ses-03",
+      "status": "failed"
+    },
+    {
+      "subject": "sub-026",
+      "session": "ses-01",
+      "status": "failed"
+    },
+    {
+      "subject": "sub-032",
+      "session": "ses-02",
+      "status": "failed"
+    }
+  ],
+  "target_finetune_sessions": [
+    1
+  ],
+  "target_online_sessions": [
+    2,
+    3
+  ],
+  "source_train_sessions": {
+    "sub-002": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-003": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-004": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-005": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-008": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-009": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-010": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-011": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-013": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-014": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-015": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-016": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-017": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-018": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-019": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-020": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-022": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-023": [
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-024": [
+      "ses-01"
+    ],
+    "sub-025": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-026": [
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-027": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-028": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-030": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-031": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-032": [
+      "ses-01",
+      "ses-03"
+    ],
+    "sub-033": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-035": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-036": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-037": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-038": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-039": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-040": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-041": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-042": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-043": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-047": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-048": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-049": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-050": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-051": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ]
+  },
+  "target_sessions": {
+    "sub-001": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-006": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-007": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-012": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-021": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-029": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-034": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-044": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-045": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ],
+    "sub-046": [
+      "ses-01",
+      "ses-02",
+      "ses-03"
+    ]
+  },
+  "counts": {
+    "source_ok_sessions": 118,
+    "target_ok_sessions": 30,
+    "excluded_sessions": 5,
+    "source_ok_trials_est": 23600,
+    "target_ok_trials_est": 6000
+  }
+}

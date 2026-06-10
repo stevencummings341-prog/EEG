@@ -1,0 +1,196 @@
+========================================================
+Project : /share/home/yuan/SYX/eeg-mi-online
+Env     : mi_torch_cu118
+Args    : --config configs/session_multisource_compare.yaml --models eegnet,deepconvnet,fbcnet --seeds 4
+Node    : gpu01  |  Start: Mon Jun  8 22:39:16 CST 2026
+========================================================
+[env] python: /share/home/yuan/.conda/envs/mi_torch_cu118/bin/python | CONDA_DEFAULT_ENV=mi_torch_cu118
+Mon Jun  8 22:39:16 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 570.153.02             Driver Version: 570.153.02     CUDA Version: 12.8     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 4090 D      On  |   00000000:21:00.0 Off |                  Off |
+| 41%   44C    P0             66W /  425W |       1MiB /  24564MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+[cuda-check] torch=2.7.1+cu118 cuda_build=11.8 cuda_avail=True
+2026-06-08 22:39:19 | INFO    | train_session_multisource | device=cuda | cuda={'torch': '2.7.1+cu118', 'cuda_build': '11.8', 'cuda_available': True, 'device': 'cuda', 'device_name': 'NVIDIA GeForce RTX 4090 D'}
+2026-06-08 22:39:19 | INFO    | train_session_multisource | loaded 148 ok sessions across 51 subjects | models=['eegnet', 'deepconvnet', 'fbcnet'] | seeds=[4] | ses-01+ses-02 -> ses-03
+2026-06-08 22:39:19 | INFO    | train_session_multisource | === RUN multisource_0102_to_03__eegnet ===
+2026-06-08 22:39:19 | INFO    | train_session_multisource | [multisource] model=eegnet | eligible subjects=47 | skipped=4 | ses-01+ses-02 -> ses-03
+2026-06-08 22:39:19 | INFO    | train_session_multisource | [multisource][skip] sub-023 (missing ok session(s): ses-01)
+2026-06-08 22:39:19 | INFO    | train_session_multisource | [multisource][skip] sub-024 (missing ok session(s): ses-02,ses-03)
+2026-06-08 22:39:19 | INFO    | train_session_multisource | [multisource][skip] sub-026 (missing ok session(s): ses-01)
+2026-06-08 22:39:19 | INFO    | train_session_multisource | [multisource][skip] sub-032 (missing ok session(s): ses-02)
+2026-06-08 22:39:31 | INFO    | train_session_multisource | [multisource] eegnet      sub-001 seed=4 acc=0.9550 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:39:37 | INFO    | train_session_multisource | [multisource] eegnet      sub-002 seed=4 acc=0.7250 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:39:53 | INFO    | train_session_multisource | [multisource] eegnet      sub-003 seed=4 acc=0.9000 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:39:58 | INFO    | train_session_multisource | [multisource] eegnet      sub-004 seed=4 acc=0.4750 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:40:08 | INFO    | train_session_multisource | [multisource] eegnet      sub-005 seed=4 acc=0.7800 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:40:19 | INFO    | train_session_multisource | [multisource] eegnet      sub-006 seed=4 acc=0.9700 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:40:28 | INFO    | train_session_multisource | [multisource] eegnet      sub-007 seed=4 acc=0.8900 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:40:37 | INFO    | train_session_multisource | [multisource] eegnet      sub-008 seed=4 acc=0.8850 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:40:43 | INFO    | train_session_multisource | [multisource] eegnet      sub-009 seed=4 acc=0.6250 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:40:48 | INFO    | train_session_multisource | [multisource] eegnet      sub-010 seed=4 acc=0.5750 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:40:54 | INFO    | train_session_multisource | [multisource] eegnet      sub-011 seed=4 acc=0.9550 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:40:58 | INFO    | train_session_multisource | [multisource] eegnet      sub-012 seed=4 acc=0.5200 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:41:11 | INFO    | train_session_multisource | [multisource] eegnet      sub-013 seed=4 acc=0.8100 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:41:15 | INFO    | train_session_multisource | [multisource] eegnet      sub-014 seed=4 acc=0.4750 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:41:23 | INFO    | train_session_multisource | [multisource] eegnet      sub-015 seed=4 acc=0.5750 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:41:27 | INFO    | train_session_multisource | [multisource] eegnet      sub-016 seed=4 acc=0.6250 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:41:37 | INFO    | train_session_multisource | [multisource] eegnet      sub-017 seed=4 acc=0.7350 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:41:47 | INFO    | train_session_multisource | [multisource] eegnet      sub-018 seed=4 acc=0.6750 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:41:55 | INFO    | train_session_multisource | [multisource] eegnet      sub-019 seed=4 acc=0.7600 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:42:07 | INFO    | train_session_multisource | [multisource] eegnet      sub-020 seed=4 acc=0.5700 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:42:14 | INFO    | train_session_multisource | [multisource] eegnet      sub-021 seed=4 acc=0.7900 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:42:28 | INFO    | train_session_multisource | [multisource] eegnet      sub-022 seed=4 acc=0.8200 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:42:37 | INFO    | train_session_multisource | [multisource] eegnet      sub-025 seed=4 acc=0.8550 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:42:44 | INFO    | train_session_multisource | [multisource] eegnet      sub-027 seed=4 acc=0.7250 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:42:52 | INFO    | train_session_multisource | [multisource] eegnet      sub-028 seed=4 acc=0.5650 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:43:00 | INFO    | train_session_multisource | [multisource] eegnet      sub-029 seed=4 acc=0.7600 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:43:11 | INFO    | train_session_multisource | [multisource] eegnet      sub-030 seed=4 acc=0.8200 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:43:17 | INFO    | train_session_multisource | [multisource] eegnet      sub-031 seed=4 acc=0.7150 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:43:26 | INFO    | train_session_multisource | [multisource] eegnet      sub-033 seed=4 acc=0.9600 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:43:31 | INFO    | train_session_multisource | [multisource] eegnet      sub-034 seed=4 acc=0.8500 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:43:39 | INFO    | train_session_multisource | [multisource] eegnet      sub-035 seed=4 acc=0.9200 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:43:46 | INFO    | train_session_multisource | [multisource] eegnet      sub-036 seed=4 acc=0.9900 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:43:56 | INFO    | train_session_multisource | [multisource] eegnet      sub-037 seed=4 acc=0.9300 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:44:04 | INFO    | train_session_multisource | [multisource] eegnet      sub-038 seed=4 acc=0.5900 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:44:10 | INFO    | train_session_multisource | [multisource] eegnet      sub-039 seed=4 acc=0.4250 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:44:16 | INFO    | train_session_multisource | [multisource] eegnet      sub-040 seed=4 acc=0.8650 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:44:22 | INFO    | train_session_multisource | [multisource] eegnet      sub-041 seed=4 acc=0.8950 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:44:28 | INFO    | train_session_multisource | [multisource] eegnet      sub-042 seed=4 acc=0.6800 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:44:41 | INFO    | train_session_multisource | [multisource] eegnet      sub-043 seed=4 acc=0.9750 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:44:47 | INFO    | train_session_multisource | [multisource] eegnet      sub-044 seed=4 acc=0.7350 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:44:53 | INFO    | train_session_multisource | [multisource] eegnet      sub-045 seed=4 acc=0.8450 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:45:10 | INFO    | train_session_multisource | [multisource] eegnet      sub-046 seed=4 acc=0.9650 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:45:20 | INFO    | train_session_multisource | [multisource] eegnet      sub-047 seed=4 acc=0.8550 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:45:24 | INFO    | train_session_multisource | [multisource] eegnet      sub-048 seed=4 acc=0.7950 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:45:33 | INFO    | train_session_multisource | [multisource] eegnet      sub-049 seed=4 acc=0.8700 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:45:42 | INFO    | train_session_multisource | [multisource] eegnet      sub-050 seed=4 acc=0.9450 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:45:52 | INFO    | train_session_multisource | [multisource] eegnet      sub-051 seed=4 acc=0.8800 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:45:52 | INFO    | train_session_multisource | multisource_0102_to_03__eegnet: 47 rows (ok=47 failed=0) | used=47 skipped=4 | 392.9s
+2026-06-08 22:45:52 | INFO    | train_session_multisource | === RUN multisource_0102_to_03__deepconvnet ===
+2026-06-08 22:45:52 | INFO    | train_session_multisource | [multisource] model=deepconvnet | eligible subjects=47 | skipped=4 | ses-01+ses-02 -> ses-03
+2026-06-08 22:45:52 | INFO    | train_session_multisource | [multisource][skip] sub-023 (missing ok session(s): ses-01)
+2026-06-08 22:45:52 | INFO    | train_session_multisource | [multisource][skip] sub-024 (missing ok session(s): ses-02,ses-03)
+2026-06-08 22:45:52 | INFO    | train_session_multisource | [multisource][skip] sub-026 (missing ok session(s): ses-01)
+2026-06-08 22:45:52 | INFO    | train_session_multisource | [multisource][skip] sub-032 (missing ok session(s): ses-02)
+2026-06-08 22:46:06 | INFO    | train_session_multisource | [multisource] deepconvnet sub-001 seed=4 acc=0.9300 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:46:12 | INFO    | train_session_multisource | [multisource] deepconvnet sub-002 seed=4 acc=0.6250 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:46:30 | INFO    | train_session_multisource | [multisource] deepconvnet sub-003 seed=4 acc=0.9250 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:46:36 | INFO    | train_session_multisource | [multisource] deepconvnet sub-004 seed=4 acc=0.4650 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:46:59 | INFO    | train_session_multisource | [multisource] deepconvnet sub-005 seed=4 acc=0.7050 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:47:07 | INFO    | train_session_multisource | [multisource] deepconvnet sub-006 seed=4 acc=0.9500 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:47:16 | INFO    | train_session_multisource | [multisource] deepconvnet sub-007 seed=4 acc=0.8950 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:47:24 | INFO    | train_session_multisource | [multisource] deepconvnet sub-008 seed=4 acc=0.7250 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:47:35 | INFO    | train_session_multisource | [multisource] deepconvnet sub-009 seed=4 acc=0.6150 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:47:43 | INFO    | train_session_multisource | [multisource] deepconvnet sub-010 seed=4 acc=0.5250 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:47:50 | INFO    | train_session_multisource | [multisource] deepconvnet sub-011 seed=4 acc=0.9000 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:47:56 | INFO    | train_session_multisource | [multisource] deepconvnet sub-012 seed=4 acc=0.5250 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:48:07 | INFO    | train_session_multisource | [multisource] deepconvnet sub-013 seed=4 acc=0.7750 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:48:19 | INFO    | train_session_multisource | [multisource] deepconvnet sub-014 seed=4 acc=0.4900 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:48:29 | INFO    | train_session_multisource | [multisource] deepconvnet sub-015 seed=4 acc=0.6250 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:48:36 | INFO    | train_session_multisource | [multisource] deepconvnet sub-016 seed=4 acc=0.5850 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:48:45 | INFO    | train_session_multisource | [multisource] deepconvnet sub-017 seed=4 acc=0.7600 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:48:58 | INFO    | train_session_multisource | [multisource] deepconvnet sub-018 seed=4 acc=0.5700 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:49:10 | INFO    | train_session_multisource | [multisource] deepconvnet sub-019 seed=4 acc=0.8700 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:49:29 | INFO    | train_session_multisource | [multisource] deepconvnet sub-020 seed=4 acc=0.5950 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:49:47 | INFO    | train_session_multisource | [multisource] deepconvnet sub-021 seed=4 acc=0.8000 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:49:56 | INFO    | train_session_multisource | [multisource] deepconvnet sub-022 seed=4 acc=0.7050 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:50:08 | INFO    | train_session_multisource | [multisource] deepconvnet sub-025 seed=4 acc=0.8650 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:50:18 | INFO    | train_session_multisource | [multisource] deepconvnet sub-027 seed=4 acc=0.8100 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:50:35 | INFO    | train_session_multisource | [multisource] deepconvnet sub-028 seed=4 acc=0.5000 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:50:59 | INFO    | train_session_multisource | [multisource] deepconvnet sub-029 seed=4 acc=0.9650 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:51:05 | INFO    | train_session_multisource | [multisource] deepconvnet sub-030 seed=4 acc=0.7400 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:51:12 | INFO    | train_session_multisource | [multisource] deepconvnet sub-031 seed=4 acc=0.7350 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:51:32 | INFO    | train_session_multisource | [multisource] deepconvnet sub-033 seed=4 acc=0.9100 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:51:42 | INFO    | train_session_multisource | [multisource] deepconvnet sub-034 seed=4 acc=0.9450 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:52:02 | INFO    | train_session_multisource | [multisource] deepconvnet sub-035 seed=4 acc=0.9350 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:52:16 | INFO    | train_session_multisource | [multisource] deepconvnet sub-036 seed=4 acc=0.9850 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:52:25 | INFO    | train_session_multisource | [multisource] deepconvnet sub-037 seed=4 acc=0.8750 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:52:32 | INFO    | train_session_multisource | [multisource] deepconvnet sub-038 seed=4 acc=0.5350 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:52:42 | INFO    | train_session_multisource | [multisource] deepconvnet sub-039 seed=4 acc=0.4950 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:52:49 | INFO    | train_session_multisource | [multisource] deepconvnet sub-040 seed=4 acc=0.7150 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:53:00 | INFO    | train_session_multisource | [multisource] deepconvnet sub-041 seed=4 acc=0.8900 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:53:13 | INFO    | train_session_multisource | [multisource] deepconvnet sub-042 seed=4 acc=0.7300 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:53:29 | INFO    | train_session_multisource | [multisource] deepconvnet sub-043 seed=4 acc=0.9750 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:53:38 | INFO    | train_session_multisource | [multisource] deepconvnet sub-044 seed=4 acc=0.7100 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:53:47 | INFO    | train_session_multisource | [multisource] deepconvnet sub-045 seed=4 acc=0.8250 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:54:13 | INFO    | train_session_multisource | [multisource] deepconvnet sub-046 seed=4 acc=0.9700 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:54:23 | INFO    | train_session_multisource | [multisource] deepconvnet sub-047 seed=4 acc=0.7250 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:54:35 | INFO    | train_session_multisource | [multisource] deepconvnet sub-048 seed=4 acc=0.7950 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:54:55 | INFO    | train_session_multisource | [multisource] deepconvnet sub-049 seed=4 acc=0.8900 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:55:09 | INFO    | train_session_multisource | [multisource] deepconvnet sub-050 seed=4 acc=0.9050 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:55:18 | INFO    | train_session_multisource | [multisource] deepconvnet sub-051 seed=4 acc=0.8150 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:55:19 | INFO    | train_session_multisource | multisource_0102_to_03__deepconvnet: 47 rows (ok=47 failed=0) | used=47 skipped=4 | 566.3s
+2026-06-08 22:55:19 | INFO    | train_session_multisource | === RUN multisource_0102_to_03__fbcnet ===
+2026-06-08 22:55:19 | INFO    | train_session_multisource | [multisource] model=fbcnet | eligible subjects=47 | skipped=4 | ses-01+ses-02 -> ses-03
+2026-06-08 22:55:19 | INFO    | train_session_multisource | [multisource][skip] sub-023 (missing ok session(s): ses-01)
+2026-06-08 22:55:19 | INFO    | train_session_multisource | [multisource][skip] sub-024 (missing ok session(s): ses-02,ses-03)
+2026-06-08 22:55:19 | INFO    | train_session_multisource | [multisource][skip] sub-026 (missing ok session(s): ses-01)
+2026-06-08 22:55:19 | INFO    | train_session_multisource | [multisource][skip] sub-032 (missing ok session(s): ses-02)
+2026-06-08 22:55:25 | INFO    | train_session_multisource | [multisource] fbcnet      sub-001 seed=4 acc=0.7450 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:55:30 | INFO    | train_session_multisource | [multisource] fbcnet      sub-002 seed=4 acc=0.5050 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:55:43 | INFO    | train_session_multisource | [multisource] fbcnet      sub-003 seed=4 acc=0.8000 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:55:47 | INFO    | train_session_multisource | [multisource] fbcnet      sub-004 seed=4 acc=0.5000 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:55:58 | INFO    | train_session_multisource | [multisource] fbcnet      sub-005 seed=4 acc=0.8350 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:56:15 | INFO    | train_session_multisource | [multisource] fbcnet      sub-006 seed=4 acc=0.8850 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:56:21 | INFO    | train_session_multisource | [multisource] fbcnet      sub-007 seed=4 acc=0.5600 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:56:27 | INFO    | train_session_multisource | [multisource] fbcnet      sub-008 seed=4 acc=0.7150 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:56:32 | INFO    | train_session_multisource | [multisource] fbcnet      sub-009 seed=4 acc=0.5250 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:56:39 | INFO    | train_session_multisource | [multisource] fbcnet      sub-010 seed=4 acc=0.5400 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:56:47 | INFO    | train_session_multisource | [multisource] fbcnet      sub-011 seed=4 acc=0.6950 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:56:51 | INFO    | train_session_multisource | [multisource] fbcnet      sub-012 seed=4 acc=0.5100 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:56:57 | INFO    | train_session_multisource | [multisource] fbcnet      sub-013 seed=4 acc=0.5800 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:57:04 | INFO    | train_session_multisource | [multisource] fbcnet      sub-014 seed=4 acc=0.4900 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:57:08 | INFO    | train_session_multisource | [multisource] fbcnet      sub-015 seed=4 acc=0.5050 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:57:12 | INFO    | train_session_multisource | [multisource] fbcnet      sub-016 seed=4 acc=0.5250 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:57:17 | INFO    | train_session_multisource | [multisource] fbcnet      sub-017 seed=4 acc=0.5750 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:57:23 | INFO    | train_session_multisource | [multisource] fbcnet      sub-018 seed=4 acc=0.5200 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:57:28 | INFO    | train_session_multisource | [multisource] fbcnet      sub-019 seed=4 acc=0.5500 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:57:37 | INFO    | train_session_multisource | [multisource] fbcnet      sub-020 seed=4 acc=0.5000 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:57:49 | INFO    | train_session_multisource | [multisource] fbcnet      sub-021 seed=4 acc=0.5650 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:57:59 | INFO    | train_session_multisource | [multisource] fbcnet      sub-022 seed=4 acc=0.6300 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:58:11 | INFO    | train_session_multisource | [multisource] fbcnet      sub-025 seed=4 acc=0.5650 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:58:21 | INFO    | train_session_multisource | [multisource] fbcnet      sub-027 seed=4 acc=0.5150 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:58:35 | INFO    | train_session_multisource | [multisource] fbcnet      sub-028 seed=4 acc=0.7100 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:58:51 | INFO    | train_session_multisource | [multisource] fbcnet      sub-029 seed=4 acc=0.9650 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:58:59 | INFO    | train_session_multisource | [multisource] fbcnet      sub-030 seed=4 acc=0.7150 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:59:06 | INFO    | train_session_multisource | [multisource] fbcnet      sub-031 seed=4 acc=0.6750 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:59:12 | INFO    | train_session_multisource | [multisource] fbcnet      sub-033 seed=4 acc=0.9000 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:59:18 | INFO    | train_session_multisource | [multisource] fbcnet      sub-034 seed=4 acc=0.5650 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:59:29 | INFO    | train_session_multisource | [multisource] fbcnet      sub-035 seed=4 acc=0.8900 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:59:34 | INFO    | train_session_multisource | [multisource] fbcnet      sub-036 seed=4 acc=0.9100 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:59:49 | INFO    | train_session_multisource | [multisource] fbcnet      sub-037 seed=4 acc=0.7400 (n_train=320 n_val=80 n_test=200)
+2026-06-08 22:59:58 | INFO    | train_session_multisource | [multisource] fbcnet      sub-038 seed=4 acc=0.5100 (n_train=320 n_val=80 n_test=200)
+2026-06-08 23:00:03 | INFO    | train_session_multisource | [multisource] fbcnet      sub-039 seed=4 acc=0.6500 (n_train=320 n_val=80 n_test=200)
+2026-06-08 23:00:08 | INFO    | train_session_multisource | [multisource] fbcnet      sub-040 seed=4 acc=0.6600 (n_train=320 n_val=80 n_test=200)
+2026-06-08 23:00:19 | INFO    | train_session_multisource | [multisource] fbcnet      sub-041 seed=4 acc=0.8500 (n_train=320 n_val=80 n_test=200)
+2026-06-08 23:00:25 | INFO    | train_session_multisource | [multisource] fbcnet      sub-042 seed=4 acc=0.6250 (n_train=320 n_val=80 n_test=200)
+2026-06-08 23:00:36 | INFO    | train_session_multisource | [multisource] fbcnet      sub-043 seed=4 acc=0.9950 (n_train=320 n_val=80 n_test=200)
+2026-06-08 23:00:41 | INFO    | train_session_multisource | [multisource] fbcnet      sub-044 seed=4 acc=0.5750 (n_train=320 n_val=80 n_test=200)
+2026-06-08 23:00:49 | INFO    | train_session_multisource | [multisource] fbcnet      sub-045 seed=4 acc=0.7700 (n_train=320 n_val=80 n_test=200)
+2026-06-08 23:01:05 | INFO    | train_session_multisource | [multisource] fbcnet      sub-046 seed=4 acc=0.9650 (n_train=320 n_val=80 n_test=200)
+2026-06-08 23:01:12 | INFO    | train_session_multisource | [multisource] fbcnet      sub-047 seed=4 acc=0.8250 (n_train=320 n_val=80 n_test=200)
+2026-06-08 23:01:18 | INFO    | train_session_multisource | [multisource] fbcnet      sub-048 seed=4 acc=0.6500 (n_train=320 n_val=80 n_test=200)
+2026-06-08 23:01:32 | INFO    | train_session_multisource | [multisource] fbcnet      sub-049 seed=4 acc=0.7250 (n_train=320 n_val=80 n_test=200)
+2026-06-08 23:01:49 | INFO    | train_session_multisource | [multisource] fbcnet      sub-050 seed=4 acc=0.8650 (n_train=320 n_val=80 n_test=200)
+2026-06-08 23:02:03 | INFO    | train_session_multisource | [multisource] fbcnet      sub-051 seed=4 acc=0.7750 (n_train=320 n_val=80 n_test=200)
+2026-06-08 23:02:03 | INFO    | train_session_multisource | multisource_0102_to_03__fbcnet: 47 rows (ok=47 failed=0) | used=47 skipped=4 | 404.3s
+2026-06-08 23:02:03 | INFO    | train_session_multisource | ALL DONE in 1363.7s | outputs in /share/home/yuan/SYX/eeg-mi-online/outputs/experiments/session_multisource_v1
+--------------------------------------------------------
+Done: Mon Jun  8 23:02:04 CST 2026
+========================================================

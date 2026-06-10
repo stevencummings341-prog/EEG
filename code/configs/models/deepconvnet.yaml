@@ -1,0 +1,3 @@
+name: "deepconvnet"
+dropout: 0.5
+n_filters_1: 25
