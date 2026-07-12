@@ -1,0 +1,140 @@
+experiment:
+  name: "phase3_tta"
+  source_config: "configs/experiments/phase3_tta.yaml"
+
+# =====================================================================
+# Phase 3 — Prototype-based Test-Time Adaptation (T3A) — WBCIC-SHU (58ch).
+#
+# 参考: arXiv:2604.16926v1 (NeuroAdapt-Bench). 主方法 = T3A（无优化、原型 + 熵筛选）；
+#       Tent/SHOT 为论文对比复现。路线/方法/矩阵见 3_online_adaptation/PHASE3_TTA_DESIGN.md。
+#
+# 状态: Round-1 scaffold + smoke runnable（2026-07-10）。
+#       runner `phase3_tta` 已注册。默认只跑极小 smoke，不是 full T3A experiment。
+#       预训练模型尚未接入；复杂 method catalog 候选只登记不实现。
+#
+# FAIRNESS / NO-LEAKAGE:
+#   * 复用 Phase 2c 已训 source-only 冻结模型 + 已存 target 嵌入；主干不更新（T3A）。
+#   * target 标签只用于最终评测；T3A 用伪标签，绝不用 target 真标签适应。
+#   * Oracle diagnostic 显式 used_target_labels=True（不可部署）。
+# =====================================================================
+
+run_id: "tta_v1"
+phase: "phase3"
+
+dataset: "wbci_shu"
+task: "2C left vs right MI"
+
+data:
+  variant: "eog_ecg_clean"
+  manifest: "processed_manifest"
+  status_filter: ["ok"]
+  n_channels: 58
+  n_times: 1000
+  n_classes: 2
+  sfreq: 250
+
+# 输入 = Phase 2c 已存嵌入（T3A 离线 replay，无需重训/GPU）。
+source_embeddings:
+  index_glob: "outputs/experiments/wbci_shu/prototype_drift_v1/runs/embed_index__*.csv"
+  embeddings_dir: "outputs/experiments/wbci_shu/prototype_drift_v1/embeddings"
+  checkpoint_dir: "checkpoints/wbci_shu/prototype_drift_v1"   # 供 clf_weights 初始化
+
+# Round-1 safety switches (default = tiny smoke only)
+round1:
+  mode: "smoke"                 # DEFAULT stays "smoke". Do NOT change this default.
+  dry_run: false
+  max_cells: 4
+  run_replay_validation: true
+  run_oracle: true
+  smoke:
+    model: "eegnet"             # example adapter name only — backend is model-agnostic
+    model_adapter: "eegnet"
+    seed: 0
+    drift_summary: "1_session_drift/wbci_shu/tables/per_subject_drift_summary.csv"
+    phase2c_metrics: "4_experiments/wbci_shu/prototype_drift/tables/prototype_drift_metrics.csv"
+    # Smoke variant only — NOT a permanent project-wide default:
+    t3a:
+      initialization: "src_proto"
+      geometry: "cosine"
+      filter_k: 20
+      episodic: false
+      temperature: 1.0
+  # ---------------------------------------------------------------------
+  # OPT-IN full A0 no_tta replay validation (Agent C, Round-1 extension).
+  # NOT run by default — this block only takes effect if you explicitly set
+  # `mode: "full_a0_replay"` (e.g. in a separate override file such as
+  # `code/configs/experiments/phase3_tta_full_a0.yaml`, which copies this
+  # file and flips just the mode). Never flip `mode` above to this value.
+  #
+  # Behavior: dynamically builds the canonical Phase 2c cell universe from
+  # the metrics CSV + embed_index__*.csv + actual npz files on disk (no
+  # hardcoded cell count), replays no_tta ONLY (no t3a/oracle) for every
+  # valid cell, and reports |Δ| vs Phase 2c acc_target per cell + aggregated
+  # by model/seed/direction. See code/experiments/session_tta.py::
+  # run_full_a0_replay / build_canonical_universe.
+  # ---------------------------------------------------------------------
+  full_a0_replay:
+    models: ["eegnet", "deepconvnet", "fbcnet"]   # default: all Phase 2c models
+    seeds: [0, 1, 2, 3, 4]                        # default: all Phase 2c seeds
+    tolerance: 1.0e-6
+    log_every: 250
+    # max_cells: <int>   # DEV-ONLY override to sanity-test on a subset; leave
+                          # unset for the real full A0 run (forces verdict=partial
+                          # when set, so it can never be mistaken for the real run).
+
+models: ["eegnet", "deepconvnet", "fbcnet"]
+seeds: [0, 1, 2, 3, 4]
+
+sessions: ["ses-01", "ses-02", "ses-03"]
+directed_pairs:
+  - ["ses-01", "ses-02"]
+  - ["ses-01", "ses-03"]
+  - ["ses-02", "ses-01"]
+  - ["ses-02", "ses-03"]
+  - ["ses-03", "ses-01"]
+  - ["ses-03", "ses-02"]
+
+target_label_usage: "final_evaluation_only"
+
+# ------------------ TTA 方法与网格 ------------------
+# Round-1 实际跑: no_tta + t3a_minimal (+ optional oracle). 下列全网格为 future catalog。
+methods_round1: ["no_tta", "t3a_minimal", "target_label_oracle_proto"]
+methods: ["no_tta", "t3a", "tent", "shot"]   # future; tent/shot 需活模型(GPU) — Round-1 不跑
+
+t3a:
+  # Future experiment matrix (NOT executed by Round-1 smoke):
+  geometry: ["cosine", "dot"]
+  filter_k: [5, 10, 20, 50, 0]
+  init: ["clf_weights", "src_proto"]
+  update_gate: ["pseudo_label", "entropy_gated"]
+  entropy_gate_tau: 0.6
+  uncertainty: ["entropy", "margin", "soft"]  # ⚠ K=2: entropy≡max-conf ranking
+  temperature: 1.0
+
+tent:                                 # future — Round-1 不实现
+  lr: 0.001
+  momentum: 0.9
+  steps: 1
+  episodic: false
+
+shot:                                 # future — Round-1 不实现
+  lr: 0.0001
+  weight_decay: 0.0001
+  steps: 1
+  mi_weight: 1.0
+  pl_weight: 1.0
+  episodic: false
+
+adaptation_batch_sizes: [64, 128, 256]
+
+eval:
+  metrics: ["balanced_accuracy", "accuracy", "macro_f1", "auc"]
+  delta_reference: "no_tta"          # Δ_TTA 逐 (subject,direction,seed) 先算差再聚合
+  report_stability: true             # 净正 cell 比例 / 最差 cell 掉点
+
+output:
+  readable_dir: "4_experiments/wbci_shu/tta"   # 硬约束1：结果放 4_experiments/，3_online_adaptation/ 只放设计文档
+  output_dir: "outputs/experiments/wbci_shu/tta_v1"
+  run_dir: "outputs/experiments/wbci_shu/tta_v1"
+  checkpoint_dir: "checkpoints/wbci_shu/tta_v1"   # 仅 tent/shot 适应后权重
+  slurm_log_dir: "logs/slurm"

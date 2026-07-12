@@ -1,0 +1,4 @@
+cell_id,npz_path_resolved,n_target_trials,no_tta_acc,phase2c_acc_target,abs_delta,pass_1e-6
+wbci_shu__eegnet__seed0__sub-005__ses-01->ses-02,/share/home/yuan/SYX/eeg-mi-online/outputs/experiments/wbci_shu/prototype_drift_v1/embeddings/eegnet/seed0/sub-005_ses-01-to-ses-02.npz,200,0.885,0.885,0.0,True
+wbci_shu__eegnet__seed0__sub-020__ses-01->ses-02,/share/home/yuan/SYX/eeg-mi-online/outputs/experiments/wbci_shu/prototype_drift_v1/embeddings/eegnet/seed0/sub-020_ses-01-to-ses-02.npz,200,0.87,0.87,0.0,True
+wbci_shu__eegnet__seed0__sub-005__ses-01->ses-03,/share/home/yuan/SYX/eeg-mi-online/outputs/experiments/wbci_shu/prototype_drift_v1/embeddings/eegnet/seed0/sub-005_ses-01-to-ses-03.npz,200,0.73,0.73,0.0,True

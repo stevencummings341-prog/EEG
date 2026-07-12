@@ -1,0 +1,82 @@
+experiment:
+  name: "phase3_tta"
+  source_config: "configs/experiments/phase3_tta_full_a0.yaml"
+
+# =====================================================================
+# Phase 3 — Full A0 no_tta embedding replay validation — WBCIC-SHU (58ch).
+#
+# OPT-IN override of code/configs/experiments/phase3_tta.yaml. This file
+# exists ONLY so the project-wide default config can stay on `mode: "smoke"`
+# while still allowing an explicit, auditable full-universe replay run.
+#
+# Scope (Agent C, Round-1 extension — see 3_online_adaptation/PHASE3_TTA_DESIGN.md
+# for the overall route; this file does NOT expand T3A / Tent / SHOT / Oracle):
+#   - Dynamically builds the canonical Phase 2c cell universe from the metrics
+#     CSV + embed_index__*.csv + actual npz files on disk (no hardcoded count).
+#   - Replays no_tta ONLY for every valid cell (frozen-model predictions
+#     already stored in the npz — no live model forward, no adaptation).
+#   - Reports |Δ| vs Phase 2c acc_target per cell + aggregated by
+#     model/seed/direction, plus a set-consistency (missing/duplicate/
+#     unexpected) diagnosis.
+#
+# Usage:
+#   python code/run.py --config code/configs/experiments/phase3_tta_full_a0.yaml
+#
+# Outputs go to the SAME readable_dir/run_dir as the default smoke config,
+# but under full_a0_-prefixed filenames — Round-1 smoke evidence
+# (smoke_results.csv, replay_delta_table.csv, round1_summary.json, ...) is
+# never overwritten.
+# =====================================================================
+
+run_id: "tta_v1"
+phase: "phase3"
+
+dataset: "wbci_shu"
+task: "2C left vs right MI"
+
+data:
+  variant: "eog_ecg_clean"
+  manifest: "processed_manifest"
+  status_filter: ["ok"]
+  n_channels: 58
+  n_times: 1000
+  n_classes: 2
+  sfreq: 250
+
+source_embeddings:
+  index_glob: "outputs/experiments/wbci_shu/prototype_drift_v1/runs/embed_index__*.csv"
+  embeddings_dir: "outputs/experiments/wbci_shu/prototype_drift_v1/embeddings"
+  checkpoint_dir: "checkpoints/wbci_shu/prototype_drift_v1"
+
+round1:
+  mode: "full_a0_replay"        # <-- the only behavioral difference vs phase3_tta.yaml
+  dry_run: false
+  full_a0_replay:
+    models: ["eegnet", "deepconvnet", "fbcnet"]
+    seeds: [0, 1, 2, 3, 4]
+    tolerance: 1.0e-6
+    log_every: 250
+    # max_cells: <int>   # DEV-ONLY subset override; leave unset for the real run.
+
+models: ["eegnet", "deepconvnet", "fbcnet"]
+seeds: [0, 1, 2, 3, 4]
+
+sessions: ["ses-01", "ses-02", "ses-03"]
+directed_pairs:
+  - ["ses-01", "ses-02"]
+  - ["ses-01", "ses-03"]
+  - ["ses-02", "ses-01"]
+  - ["ses-02", "ses-03"]
+  - ["ses-03", "ses-01"]
+  - ["ses-03", "ses-02"]
+
+target_label_usage: "final_evaluation_only"
+
+methods_round1: ["no_tta"]   # full_a0_replay mode only ever runs no_tta
+
+output:
+  readable_dir: "4_experiments/wbci_shu/tta"
+  output_dir: "outputs/experiments/wbci_shu/tta_v1"
+  run_dir: "outputs/experiments/wbci_shu/tta_v1"
+  checkpoint_dir: "checkpoints/wbci_shu/tta_v1"
+  slurm_log_dir: "logs/slurm"

@@ -1,0 +1,119 @@
+experiment:
+  name: "phase3_tta"                  # 复用同一 phase runner
+  source_config: "configs/experiments/shu_phase3_tta.yaml"
+
+# =====================================================================
+# Phase 3 — Prototype-based Test-Time Adaptation (T3A) — SHU 2022 (32ch, 5 session).
+#
+# 参考: arXiv:2604.16926v1 (NeuroAdapt-Bench). 路线见 3_online_adaptation/PHASE3_TTA_DESIGN.md。
+# 状态: Round-1 scaffold ready（默认 smoke 以 WBCIC 为主；SHU 配置并列保留）。
+# 注意: SHU 跨 session 近 chance（地板效应）；Round-1 不把 SHU 并入主结论。
+# FAIRNESS: 复用 Phase 2c 冻结模型 + 已存嵌入；target 标签仅评测；Oracle 为 diagnostic only。
+# =====================================================================
+
+run_id: "shu_tta_v1"
+phase: "phase3"
+
+dataset: "shu"
+task: "2C left vs right MI"
+
+data:
+  name: "shu"
+  manifest: "/share/workspace2/moto_imagination/SHU/processed/npz_clean/processed_manifest.csv"
+  status_filter: ["ok"]
+  n_channels: 32
+  n_times: 1000
+  n_classes: 2
+  sfreq: 250
+
+source_embeddings:
+  index_glob: "outputs/experiments/shu/prototype_drift_v1/runs/embed_index__*.csv"
+  embeddings_dir: "outputs/experiments/shu/prototype_drift_v1/embeddings"
+  checkpoint_dir: "checkpoints/shu/prototype_drift_v1"
+
+round1:
+  mode: "smoke"
+  dry_run: false
+  max_cells: 2                  # 1-3 cells per SHU minimal smoke spec
+  run_replay_validation: true
+  run_t3a: false                 # SHU minimal smoke = no_tta ONLY (per spec)
+  run_oracle: false               # SHU minimal smoke = no_tta ONLY (per spec)
+  smoke:
+    model: "eegnet"
+    model_adapter: "eegnet"
+    seed: 0
+    drift_summary: "1_session_drift/shu/tables/per_subject_drift_summary.csv"
+    phase2c_metrics: "4_experiments/shu/prototype_drift/tables/prototype_drift_metrics.csv"
+    t3a:
+      initialization: "src_proto"
+      geometry: "cosine"
+      filter_k: 20
+      episodic: false
+      temperature: 1.0
+
+models: ["eegnet", "deepconvnet", "fbcnet"]
+seeds: [0, 1, 2, 3, 4]
+
+sessions: ["ses-01", "ses-02", "ses-03", "ses-04", "ses-05"]
+directed_pairs:
+  - ["ses-01", "ses-02"]
+  - ["ses-01", "ses-03"]
+  - ["ses-01", "ses-04"]
+  - ["ses-01", "ses-05"]
+  - ["ses-02", "ses-01"]
+  - ["ses-02", "ses-03"]
+  - ["ses-02", "ses-04"]
+  - ["ses-02", "ses-05"]
+  - ["ses-03", "ses-01"]
+  - ["ses-03", "ses-02"]
+  - ["ses-03", "ses-04"]
+  - ["ses-03", "ses-05"]
+  - ["ses-04", "ses-01"]
+  - ["ses-04", "ses-02"]
+  - ["ses-04", "ses-03"]
+  - ["ses-04", "ses-05"]
+  - ["ses-05", "ses-01"]
+  - ["ses-05", "ses-02"]
+  - ["ses-05", "ses-03"]
+  - ["ses-05", "ses-04"]
+
+target_label_usage: "final_evaluation_only"
+
+methods: ["no_tta", "t3a", "tent", "shot"]
+
+t3a:
+  geometry: ["cosine", "dot"]
+  filter_k: [5, 10, 20, 50, 0]
+  init: ["clf_weights", "src_proto"]
+  update_gate: ["pseudo_label", "entropy_gated"]
+  entropy_gate_tau: 0.6
+  uncertainty: ["entropy", "margin", "soft"]
+  temperature: 1.0
+
+tent:
+  lr: 0.001
+  momentum: 0.9
+  steps: 1
+  episodic: false
+
+shot:
+  lr: 0.0001
+  weight_decay: 0.0001
+  steps: 1
+  mi_weight: 1.0
+  pl_weight: 1.0
+  episodic: false
+
+adaptation_batch_sizes: [64, 128, 256]
+
+eval:
+  metrics: ["balanced_accuracy", "accuracy", "macro_f1", "auc"]
+  delta_reference: "no_tta"
+  report_stability: true
+
+output:
+  readable_dir: "4_experiments/shu/tta"   # 硬约束1：结果放 4_experiments/，3_online_adaptation/ 只放设计文档
+  output_dir: "outputs/experiments/shu/tta_v1"
+  run_dir: "outputs/experiments/shu/tta_v1"
+  checkpoint_dir: "checkpoints/shu/tta_v1"
+  slurm_log_dir: "logs/slurm"

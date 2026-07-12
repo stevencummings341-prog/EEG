@@ -1,0 +1,62 @@
+# Phase 3 Round-1 method catalog (candidates).
+# Only entries with implemented: true are runnable in Round-1 code.
+# Complex candidates are registered for future experiments — do NOT treat this
+# file as a mandate to implement everything now.
+#
+# Binary MI note: for K=2, prediction entropy ranking ≡ max-confidence ranking.
+# Do not run entropy vs max-conf as a pseudo-ablation on this task.
+
+version: "round1"
+provisional: true
+notes:
+  - "Round-1 implements no_tta + one minimal T3A variant only."
+  - "Smoke may use src_proto + cosine + filter_k=20; that is NOT a permanent project default."
+  - "Current Oracle thresholds (+3pp / +1pp) are provisional and should be revisited after pretrained model integration."
+
+implemented:
+  - id: no_tta
+    kind: baseline
+    used_target_labels: false
+    description: "Frozen model predictions from Phase 2c embeddings (pred/logits)."
+  - id: t3a_minimal
+    kind: tta
+    used_target_labels: false
+    description: "Minimal clean T3A (frozen features, pseudo-label supports, prototype predict)."
+    smoke_example_config:
+      initialization: src_proto
+      geometry: cosine
+      filter_k: 20
+      episodic: false
+  - id: target_label_oracle_proto
+    kind: oracle_diagnostic
+    used_target_labels: true
+    oracle_diagnostic_only: true
+    not_deployable: true
+    description: "Minimal target-label prototype Oracle (diagnostic only)."
+
+candidates_not_implemented_round1:
+  # --- T3A / TTA variants ---
+  - t3a_classifier_weight_init
+  - t3a_source_proto_init
+  - t3a_target_support_only
+  - t3a_cumulative
+  - t3a_episodic
+  - confidence_filtering
+  - entropy_filtering
+  - margin_filtering
+  - top_k_filtering
+  - threshold_filtering
+  - cosine_geometry
+  - dot_product_geometry
+  - euclidean_geometry
+  - class_balanced_support
+  - reliability_weighted_support
+  - shrinkage_prototype
+  - source_target_prototype_interpolation
+  # --- Oracle candidates ---
+  - cosine_oracle_proto
+  - shrinkage_oracle
+  - reliability_weighted_oracle
+  - scatter_aware_oracle
+  - source_target_interpolation_oracle
+  - mahalanobis_covariance_aware_oracle

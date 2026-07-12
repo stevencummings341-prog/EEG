@@ -7,6 +7,301 @@ Format per entry: date, what was done, decisions made, open questions, next step
 
 ---
 
+## 2026-07-12 — Phase 3 Pretrained-Model Readiness Round（工程验收，非科研裁决）
+
+- **目标**：在学长真实预训练模型交付前，把 TTA 后端从 “embedding replay 已跑通” 提升到
+  “mock live inference 已验证 + A0 充分 + 双数据集路由 + 交接规范完备”。**不做**正式 Oracle /
+  full T3A / 新算法。
+- **多智能体**：Lead + A(审计) + B(live inference) + C(A0/SHU) + D(契约) + E(独立 QA)。
+- **Agent A**：当前 smoke 路径无 Critical；Major 含 label-free 仅约定安全、exception taxonomy、
+  soft_call、t3a_minimal 近邻 trim≠熵排序、dry_run mkdir 顺序。
+- **Agent B**：实现 `ModelInferenceSource`；`AdapterCapabilities` + typed exceptions；
+  `run_label_free` 接口级 strip labels；测试专用 mock（Profiles A/B/C）仅在 `tests/tta/support/`。
+  测试 **41 passed**（原 14 + 新增）。
+- **Agent C**：opt-in `full_a0_replay`（`phase3_tta_full_a0.yaml`）；默认仍 smoke。
+  **WBCIC full A0 COMPLETE**：canonical 4320/4320/4320，0 missing/dup，4320 pass，**max_abs_delta=0.0**。
+  **SHU smoke passed**：2 cells no_tta，路径均 `outputs/experiments/shu/`，max\|Δ\|≈2.1e-7。
+  修复 dry_run 无 I/O；SHU `run_t3a/run_oracle=false`。
+- **Agent D**：权威契约 `3_online_adaptation/PRETRAINED_MODEL_INTEGRATION_CONTRACT.md`（Lead 已同步状态表）。
+- **Agent E**：独立复核 1–9/11–12 PASS；契约曾 stale（已修）。结论工程上 **Ready to receive real pretrained model**。
+- **未做**：学长模型接入、formal Oracle、full T3A、Tent/SHOT、改写 Phase 2c。
+- **下一步**：学长交付 checkpoint → 新 adapter → preflight → live smoke → 再 Phase 3B。
+
+## 2026-07-10 — Phase 3 Round-1：model-agnostic TTA backend scaffold + smoke runnable
+
+- **目标**：搭模型无关 T3A/TTA 后端骨架 + 最小测试/smoke；**不是** full T3A experiment，不写科研结论。
+- **新增包 `code/tta/`**：adapters（Protocol + registry + embedding_only + baseline_torch 示例）/
+  feature_sources（FeatureBundle + embedding_replay 路径重拼 + model_inference scaffold）/
+  methods（no_tta + t3a_minimal）/ oracle（label_guard + target_label_oracle_proto）/
+  eval（schema/metrics）/ report（smoke reporters）+ `method_catalog.yaml`。
+- **入口**：`code/experiments/session_tta.py`；`code/runners.py` 已注册 `phase3_tta`；
+  config `round1` 安全开关（默认 smoke / max_cells=4）；`code/methods/t3a.py` 薄 re-export。
+- **测试**：`tests/tta/` 14 passed（CPU，`mi_torch`）。
+- **WBCIC smoke（CPU）**：自动选 sub-005(stable)+sub-020(high)，seed0，eegnet 示例 adapter；
+  3 cells × (no_tta + t3a_minimal + oracle) = 9 rows。
+  - **A0 replay**：3/3 cell `|Δ|=0` vs Phase 2c `acc_target`（路径重拼成功，未改 Phase 2c 产物）。
+  - **A1**：pipeline runnable；smoke 数字**不得**解读为 T3A 有效/无效。
+  - **Oracle**：minimal target-label proto 跑通，`used_target_labels=True` 等三字段齐全；阈值仍 provisional。
+- **结果区**：`4_experiments/wbci_shu/tta/{smoke,replay_validation,oracle_diagnostic,method_catalog,reports}/`；
+  heavy `outputs/experiments/wbci_shu/tta_v1/`。SHU 侧 catalog+README 已建，Round-1 未跑 SHU smoke。
+- **未做**：full sweep / ablation / Tent/SHOT / catalog 复杂方法实现 / 预训练模型接入 / 全量 A0。
+- **下一步**：等学长预训练模型 → 新增 adapter+config；可选扩大 A0 全量 replay；再按 Oracle 裁决是否扩大 T3A。
+
+## 2026-07-08（晚）— 学长批准 Phase 0 + A0/A1，补 7 条硬约束（v2.1，未跑代码）
+
+- **学长审批**：Phase 3 v2 主路线通过（Oracle 提前为 Phase B 裁决门不推翻）；批准开 **Phase 0 + Phase A0/A1**；
+  附 **7 条上机前硬约束**，其中 cell_id / Oracle 泄漏标识 / Mahalanobis 数值稳定性 三条"不补后面结果无法 defend"。
+- **7 条硬约束（已写进 `PHASE3_ROUTE_PLAN.md` §2.5 + 对应 Phase）**：
+  1. 结果目录**定死 `4_experiments/{wbci_shu,shu}/tta/`**；`3_online_adaptation/` 只放设计文档。
+     → 已改两个 config 的 `output.readable_dir`（原 `3_online_adaptation/*/tta` → `4_experiments/*/tta`）+ DESIGN 文件清单。
+  2. A0 定义 **canonical cell_id**（dataset/model/seed/subject/source/target/cell_id/npz_path_resolved/n_target_trials），
+     No-TTA 复现按 cell_id join（先断言两侧 cell_id 集合一致），防错行 join。
+  3. A1 stable/high-drift 被试**从 Phase 2c drift tertile 表自动选**，落盘 `selected_smoke_cells.csv`，禁手选（防 cherry-pick）。
+  4. Oracle 方法**带 `used_target_labels` 泄漏标识**，报告单列 "Oracle diagnostic only"，不与 deployable T3A 混主表。
+  5. Mahalanobis/shrinkage 默认 **shrinkage cov + ridge eps + 记录 cond number**，病态则 fail 或降级 cosine oracle（标 degraded）。
+  6. Phase B 裁决门 = **收益+风险双条件**：均值>+3pp 且 high-drift/各模型无高负迁移且 Fisher 有恢复 → 才进 full；
+     <+1pp → 转 scatter/reliability/decision-boundary；割裂情形降级小范围验证。
+  7. **FBCNet 与 SHU 单列**，不与 WBCIC EEGNet/DeepConvNet 混成主结论（主结论=WBCIC×{EEGNet,DeepConvNet}）。
+- **本轮改动（纯文档/配置，未跑代码）**：`PHASE3_ROUTE_PLAN.md` 升级为 v2.1 批准版（新增 §2.5 七条 + Phase A0/A1/B/E
+  逐条落约束 + §4 决策锁定 + §6 审批记录）；两个 `phase3_tta.yaml` 的 readable_dir 改到 4_experiments；
+  同步 `PHASE3_TTA_DESIGN.md`（文件清单路径）、`AGENTS.md`、`0_docs/STATUS.md`。另交付 `PROJECT_ARCH_SYNC_FOR_ADVISOR.md`
+  （给学长的架构同步简报，防结构冲突）。
+- **下一步（已获批，可开工写代码）**：Phase A0 = `code/experiments/session_tta.py` + 注册 `phase3_tta` runner +
+  No-TTA 按 cell_id 精确复现（|Δ|<1e-6），逐条对照 7 条硬约束；通过后 Phase A1 minimal T3A smoke。
+
+## 2026-07-08 — Phase 3 路线 v2 重排：Oracle 提前为裁决门 + Phase 0 状态修正（planned，未跑代码）
+
+- **触发**：学长用 `writing-plans` 口径给出修订路线，核心改动 = **Oracle 上限实验必须提前到 T3A 大扫之前
+  作为科研裁决门**（原 v1 把 Oracle 放最后 Step E）。依据 = Phase 2c 权威结论：prototype drift 只解释部分
+  掉点（多元 R²≈0.35），主机制是 within-class scatter 膨胀 / Fisher collapse（**非 centroid collapse**）。
+  若连"已知 target 原型/scatter-aware 几何"的理论上限都救不回多少 acc，T3A（带噪伪标签重估原型）更不可能有大收益。
+- **架构映射**：学长文档按另一套项目结构写（P10 / CLAUDE.md / `run_phase()` / 无 runners.py/summaries）。
+  已全部映射到本项目真实结构：灵魂记忆是 `AGENTS.md`（`CLAUDE.md` 仅指针）；runner 走 `code/runners.py` 的
+  `PHASE_RUNNERS`；已有 `code/summaries/`；Phase 2c 表在 `4_experiments/{wbci_shu,shu}/prototype_drift/tables/`
+  （`trial_embeddings_index.csv` / `prototype_drift_metrics.csv` 均在）；结果放 `4_experiments/{wbci_shu,shu}/tta/`。
+- **本轮产出（纯文档，未写代码、未跑实验）**：
+  1. 新建根目录 `PHASE3_ROUTE_PLAN.md`（完整 v2 路线 Phase 0→G + 决策门 + 待定选项 + 批准口径，供用户过目审批）。
+  2. 重排 `3_online_adaptation/PHASE3_TTA_DESIGN.md` §7 实现路线 + 时间线：Oracle 从 Step E 提前为 **Phase B 裁决门**。
+  3. Phase 0 状态修正：`AGENTS.md`（当前主线/第一优先/逻辑链/事实 → Oracle 先裁决）、`0_docs/STATUS.md`、
+     `README.md` §0、`results.md`（WBCIC Prototype Drift 行措辞 Step 4→Phase 3B Oracle）。
+- **裁决门槛**：Oracle >+3pp → 继续 T3A ablation/safe-T3A/全量；<+1pp → 停大规模 T3A，转 scatter/reliability/
+  decision-boundary 机制；中间地带谨慎推进。三种结果对应论文三条叙事路线（见 PHASE3_ROUTE_PLAN §3 Phase G）。
+- **🐞 已定位 bug（实现时消费端修，不改 Phase 2c 产物）**：WBCIC `outputs/experiments/wbci_shu/prototype_drift_v1/
+  runs/embed_index__*.csv` 的 `npz_path` 列是失效旧路径（写成 `outputs/experiments/prototype_drift_v1/embeddings/...`，
+  缺 `wbci_shu/`，文件已迁移）；SHU 的 index 正确。Phase 3 runner 须用 config `source_embeddings.embeddings_dir`
+  重拼路径、缺失即 fail-fast，不信任该列。已确认 `phase3_tta.yaml` 里 embeddings_dir 指向正确新路径。
+- **纪律**：T3A 现仅作无梯度 prototype baseline，Oracle 未裁决前不写"最终修复方案"、不做全量；未跑不写 done。
+- **下一步（等用户一句话确认再写代码）**：Phase A0 = `code/experiments/session_tta.py` + 注册 `phase3_tta` runner
+  + **No-TTA 逐 cell 精确复现 Phase 2c `acc_target`（|Δ|<1e-6）**；通过后 Phase A1 minimal T3A smoke（WBCIC/EEGNet/
+  2 被试/seed0/src_proto+cosine）；再 Phase B Oracle 裁决。
+
+## 2026-07-06 — Phase 3 立项：基于原型的测试时适应 (T3A) 方案 + 路线文件（planned，未跑）
+
+- **触发**：用户给出论文 `2604.16926v1`（Lee, Pradeepkumar, Sun. *Test-Time Adaptation for EEG
+  Foundation Models: A Systematic Study under Real-World Distribution Shifts*，NeuroAdapt-Bench），
+  要求基于 T3A 做跨 session 脑电模型优化：用预训练模型抽特征、按不确定性（熵）筛高置信样本作伪标签
+  微调、提升泛化；1 个月内组合"不同预训练模型 × 不确定性指标"找最优组合并对比 baseline。本条只**立项 +
+  写方案 + 更新指示文件**，未实现 runner、未跑实验、未产出任何结果数字。
+- **读论文（HTML 全文，非编造）**：本机无 PDF 库且不装包，改用 arXiv HTML 全文
+  (`arxiv.org/html/2604.16926v1`) 提取正文。要点：① 系统 benchmark 三种 TTA——**Tent**(梯度，改 norm
+  affine)、**SHOT**(梯度，改特征提取器 + 互信息 + 伪标签)、**T3A**(无优化，原型 + 熵筛选)。② 核心结论：
+  **只有 T3A 在 in-dist/OOD/极端漂移三设定下平均平衡准确率为正、且最稳**；梯度类常负迁移；T3A 对 batch
+  size 不敏感、类不平衡时收益最大（REVE-Base@CHB-MIT +18.9pp）。③ T3A 超参 `filter_k=20`、episodic=False、
+  预测 `p(y=k|z)∝exp(z·c_k)`；c_k=每类低熵 support 特征均值。④ 论文用**EEG 基础模型**(CBraMod/REVE/
+  TFM-Tokenizer)冻结编码器 + 共享线性头，跑**跨数据集/任务/模态**漂移。
+- **映射到本项目（关键契合）**：Phase 2c 已证跨 session 掉点 = within-class scatter 膨胀/Fisher collapse
+  (非 centroid collapse)、prototype 确漂移、cosine>euclidean。**T3A 正是"无标签用 target 特征重估 class
+  prototype 调整分类器几何"的可部署解**，也是原 Step 4 cosine Oracle 上限(label-informed)的 label-free 对应物。
+  故把原 Step 4 并入 Phase 3，统一为「基于原型的测试时适应」：Oracle 上限(诊断) + T3A/Tent/SHOT(方法)。
+- **代码复用盘点（已读源码确认）**：三模型(eegnet/deepconvnet/fbcnet)均 `.classifier=nn.Linear` +
+  `{logits,features,confidence}` 契约 → T3A 可用分类头权重 ω_k 初始化 support。`prototype_drift.py` 已
+  存每 (subject,direction,model,seed) 的 `target_test__{z,logits,probs,pred,conf,y}` npz + checkpoint →
+  **T3A 无优化、纯特征空间，全程离线 CPU replay 即可，无需重训/GPU**。runner 模式(`PHASE_RUNNERS`)、
+  `--summarize` 调度、config 结构均已摸清。
+- **诚实要点（写进 DESIGN，避免邀功/误导）**：① backbone 是自训小模型≠论文基础模型，跨 session≠跨数据集，
+  不得声称基础模型结果；② **二分类预测熵是最大 softmax 概率的严格单调函数 → "熵筛选"与"最大置信度筛选"排序
+  完全等价**，本任务真正有区分度的轴是 filter_k / 几何(cosine vs dot) / 软硬(soft 加权 vs hard top-k) /
+  margin，报告须点明；③ SHU 近 chance，伪标签噪声大，预期收益有限；④ FBCNet 几何异常，T3A 恐失效，单列。
+- **本次产出（planned，非结果）**：新增路线文件 `3_online_adaptation/PHASE3_TTA_DESIGN.md`（方法/协议/
+  1 个月矩阵/实现 Step A–F/时间线/诚实警示）；config 骨架 `code/configs/experiments/{phase3_tta,
+  shu_phase3_tta}.yaml`（runner 待实现，现在跑会报 "No runner registered"，与 future_*.yaml 同惯例）；
+  同步 AGENTS.md（主线/逻辑链/事实）、STATUS.md、FILE_CATALOG.md、operation_log.md。
+- **下一步（Step A，照 DESIGN §7）**：实现 `code/methods/t3a.py`（support/原型/熵筛选/cosine|dot，无梯度）
+  + `code/experiments/session_tta.py`（离线 replay Phase 2c 嵌入，No-TTA + T3A，泄漏断言 + NaN fail-fast）
+  + 注册 `phase3_tta` runner + 接入 `--summarize`；CPU smoke（subjects 1,2，No-TTA acc 必须与 Phase 2c
+  `acc_target` 对齐）。之后 Step B Tent/SHOT(GPU)、Step C 汇总、Step D 全量 sweep、Step E Oracle、Step F 分析。
+
+## 2026-07-06 — SHU Phase 1/2a/2b/2c summarize + AI 分析补齐（与 WBCIC 齐平）
+
+- **目标**：把 SHU 剩余进度（训练早已完成、仅缺 summarize+AI 分析）一次补齐，使 SHU 在 Phase 0–2c 与 WBCIC 齐平。全程只读磁盘真实产物，数字均来自各阶段 `tables/`，未捏造。
+- **执行顺序**：P1 → P2a → P2b → P2c，均 `python code/run.py --summarize --config <shu_phaseX>`（CPU，`mi_torch`）。
+- **两处 bug 修复（否则 SHU 结果不对）**：
+  1. **P2c summarizer manifest key**：`code/experiments/prototype_drift_summarize.py:summarize_from_cfg` 原读 `data.manifest_path`，但全项目约定是 `data.manifest`（见 `runners._resolve_manifest`）。SHU 因此回退到 WBCIC manifest，`build_run_status` 误用 WBCIC 期望网格（把 sub-026+ 判 missing，假报 2220 missing）。改为优先读 `data.manifest`。修正后 SHU 期望网格正确，**run_status 7500/7500 全 ok**。
+  2. **P2b baseline schema**：Phase 2b 的 `none_reference` join 需要 `acc/bacc/f1 + train_sessions + training_scope`，而 Phase 1 cross 产出是 `accuracy/balanced_accuracy/macro_f1 + train_session`。新增数据集无关脚本 `scripts/make_baseline_cross_all.py` 做 schema 适配，写到 config `baseline_cross_all` 路径（7500 行，training_scope=single_source）。join key (model,train_sessions,test_session,subject,seed) 行对行匹配。
+- **完整性核验**：P1 within 18750 + cross 7500 行（3 models×5 seeds 全齐）；P2a 375 行 ok；P2b 45000 行 ok / 0 failed / 0 NaN / complete=True；P2c 45000 metric 行、run_status 7500 全 ok。
+- **SHU 真实结果**（数字见各 `tables/` 与 AI_ANALYSIS）：
+  - **P1 baseline**：within/cross（5-seed）EEGNet 0.611/0.538、DeepConvNet 0.606/0.536、FBCNet 0.553/0.508；drop 7.3/7.0/4.5pp。**cross 近 chance（地板效应）**，掉点 pp 小≠更稳。排序同 WBCIC，FBCNet 最弱。
+  - **P2a multi-source**：ses-01+02→03 = EEGNet 0.544 / DeepConvNet 0.558 / FBCNet 0.512；vs 最强单源 +0.7 / +2.6 / −0.2pp（方向同 WBCIC）。
+  - **P2b alignment**：无对齐 0.5274；最佳 **session_zscore +1.42pp**（≠WBCIC 的 BN-stats），4/5 净正，filterbank −1.47pp 有害；**无方法过 +2pp**；high-drift 受益最小（z-score stable +2.88/moderate +1.06/high +0.44pp）。
+  - **P2c prototype drift**：机制同 WBCIC——within-class scatter 膨胀 **15.7→38.3 (+144%)** / Fisher collapse **1.96→0.79 (−60%)**，非 centroid collapse（separation 6.6→23.9 反增）。最强预测子 fisher_change ρ=0.43、separation_change cosine ρ=0.38/r²=0.16；drift_mean/direction/margin 弱。cosine>euclidean。EEGNet/DeepConvNet 清晰、**FBCNet 弱且几何异常**（scatter 几乎不变、separation 反缩）。信号比 WBCIC 更噪（cross 近 chance，acc_drop 三分位非单调）。
+- **可读产物落地**：P1+P2a → `2_baseline/shu/no_alignment_baseline/{tables,figures,report}`（并入同一目录，未新建 phase 子目录）；P2b → `2_baseline/shu/alignment_baseline/`；P2c → `4_experiments/shu/prototype_drift/`。每个 report/ 都写了 `AI_ANALYSIS.md`（9 段，数字源自 tables）。
+- **诚实提醒**：P1 脚本原生报告内嵌 WBCIC 参照常量（论文 85.32/148 sessions/288 pairs/ses01-03 trend），对 SHU 不适用、并因此假报 "INCOMPLETE"；已在 AI_ANALYSIS §0 明确标注，以 tables 真实数字为准。
+- 状态：**SHU Phase 0–2c 全部 done**，与 WBCIC 齐平。下一步 = Step 4 cosine Oracle 上限诊断（qualified go），FBCNet 单独处理。
+
+## 2026-07-05 — 重新接手：盘面核查（SHU 训练全完成，summarize/AI 分析仍缺）
+
+- **背景**：用户重新接手项目，并准备用 ChatGPT 当"指挥"来驱动 Cursor agent。本条只做**盘面事实核查**，未跑新实验、未 summarize、未改结果数值。
+- **核查方法**：`squeue`（空，无在跑/排队 job）+ 逐 phase 数 run CSV + 扫 `logs/slurm/shu_*.out` 是否有 Traceback/CUDA/RuntimeError。
+- **SHU 训练：4 个 phase 全部训练完成，无失败**（最后一个 CSV 落盘 2026-06-13 05:23，此后无活动）：
+  - Phase 1 baseline：`session_model_compare_v1/runs/` 30 CSV = within/cross/meta × 3 models × seeds 0-4；日志 `ALL DONE`。
+  - Phase 2a multisource：`session_multisource_v1/runs/` 15 CSV（3 models × seeds 0-4），ses01+02→03。
+  - Phase 2b alignment：`alignment_baseline_v1/` 75 CSV（5 methods × 3 models × seeds 0-4）；日志 `rows=2500 ok=2500 failed=0`。
+  - Phase 2c prototype drift：`prototype_drift_v1/runs/` 60 CSV + 15 `metrics__*.csv`（3 models × seeds 0-4）。
+- **关键 gap（下一步动作）**：**summarize + AI 分析尚未跑**。可读结果区 `2_baseline/shu/`、`4_experiments/shu/prototype_drift/` 除 README 外**为空**；无聚合 `*_metrics.csv` / canonical `REPORT.md` / `run_status.csv`。SHU 的 P1/2a/2b/2c **正式准确率/漂移数字尚不存在**（不得引用/编造）。
+- **唯一已落地的 SHU 可读结果**：Phase 0 漂移诊断（`1_session_drift/shu/` + `report/AI_ANALYSIS.md`）。
+- **诚实状态**：SHU Phase 1/2a/2b/2c = **训练 done，summarize+AI 分析 pending**。这是重新接手后的第一优先动作。
+- **下一步（按序）**：① `python code/run.py --summarize --config code/configs/experiments/shu_phase1_baseline.yaml`（P1 single-source cross）→ 归并进 `2_baseline/shu/no_alignment_baseline/`；② P2a multisource summarize（并入同一 `no_alignment_baseline/`，见 2026-06-12 13:27 归属约束）；③ P2b alignment summarize → `2_baseline/shu/alignment_baseline/`；④ P2c summarize → `4_experiments/shu/prototype_drift/`。每步核验 run_status 后再写 AI 分析，并同步 5 个 handoff 文件。之后才是 WBCIC 主线的 Step 4（cosine 空间 Oracle 上限诊断）。
+
+## 2026-06-11 — SHU 主线复跑启动：Slurm 脚本 + Phase 0 漂移诊断完成
+
+- **目标**：把 WBCIC 已完成的跨 session 主线（Phase 0/1/2a/2b/2c）在 SHU 2022 上按双数据集并列架构原样复跑。先不碰 online/adaptation/agent/41-10。
+- **Step 1（只检查）**：4 个 SHU config dry-run 全 OK，输出全部 `shu/` 作用域，无 WBCIC 覆盖；manifest 125 ok / 25 subj；`outputs/experiments/shu/` 空、`outputs/analysis/shu` 与 `checkpoints/shu` 不存在；env `mi_torch_cu118` 在；分区仅 gpu2node/gpu3node。
+- **Step 2（Slurm）**：新增 `scripts/slurm/shu_gpu.sbatch`（GPU 训练）+ `shu_cpu.sbatch`（CPU 漂移/汇总），均用 `mi_torch_cu118`、cuda fail-fast、GPU 不在登录节点跑。WBCIC 的 prototype_drift sbatch 是写死的，故新建 SHU 通用脚本。
+- **发现的 gap**：① SHU 缺 Phase 2a multisource config（待 step 5 给最小补充方案）；② Phase 0 的 `per_subject_drift_summary.csv`/`session_pair_summary.csv` 不是新 runner 产物，legacy builder 硬编码 3 session → 新建 session 无关的 `scripts/build_drift_report.py`。
+- **Step 3（Phase 0 完成）**：Slurm CPU job 21601，250 pairs / 25 subjects / 367s。
+  - 核心：MMD 0.356、CSP_sim 0.344、ERD μ/β 0.527/0.532、RMS median 1.03、fisher_shift≈-0.0012。
+  - 机制与 WBCIC 同质（空间+频谱漂移，幅值稳定，可分性不塌），但 SHU 空间漂移**更重**（MMD 更大 0.356>0.238、CSP 更低 0.344<0.420）。
+  - 分层 high 9 / moderate 8 / stable 8；最漂移 sub-017/008/019，最稳定 sub-002/006/020。
+  - pair 非单调：01-04 MMD 最大(0.413)、02-03 最小(0.284)。
+  - 结果落 `1_session_drift/shu/{report,tables,figures}/`（含 14 图）+ `report/AI_ANALYSIS.md`（9 段，数字源自 tables）。
+- **Step 4 Phase 1**：3 个 GPU job（每 model 一个，job 21602-21604，gpu2node），within 10-fold + directed cross，seed 0。running。
+- **并行提交（2026-06-11 22:28）**：把后续所有可并行训练任务一次性提交（训练彼此独立，只有 summarize 有依赖）。
+  跨 gpu2node/gpu3node 交替分配。job ids 记于 `outputs/experiments/shu/_job_ids/shu_full_2228.txt`：
+  - **Phase 2a** multisource（ses-01+02→ses-03）：21610-21612（每 model 一个，含 5 seeds）。
+  - **Phase 2b** alignment：21613-21627（每 model×seed 一个，5 methods × single pairs）。
+  - **Phase 2c** prototype drift：21628-21642（每 model×seed 一个，20 有向对）。
+  - 已 smoke 确认 phase2a eegnet 正常启动（25 eligible / 0 skipped）。共 36 jobs（4 R / 32 PD）。
+- **待训练完成后（下一轮）**：① phase1 summarize → `2_baseline/shu/no_alignment_baseline/` + AI 分析；
+  ② phase2a summarize（base 路径已 config 化）；③ 解决 phase2b `baseline_cross_all` 列schema 适配后 summarize → `alignment_baseline/`；
+  ④ phase2c summarize → `4_experiments/shu/prototype_drift/`。每步写 AI 分析并同步 5 个 handoff 文件。
+- 状态：Phase 0 **done**；Phase 1/2a/2b/2c 训练 **submitted/running**，summarize+AI 分析 pending。
+
+## 2026-06-12 13:27 — 目录归属约束（summarize 前必读）
+
+- **Phase 1 baseline 与 Phase 2a multi-source 不是独立结果区**，是 no-alignment baseline 下的两个协议/子结果。
+- SHU baseline 最终报告/汇总表/图必须**统一归并**到 `2_baseline/shu/no_alignment_baseline/{report,tables,figures}/`
+  （与 WBCIC 的 `2_baseline/wbci_shu/no_alignment_baseline/` 结构一致：within + single-source cross + multi-source 合在一起）。
+- **禁止新建** `2_baseline/shu/phase1_baseline/` 或 `2_baseline/shu/phase2a_multisource/`。
+- 训练/汇总可分步：先 summarize single-source baseline（P1），再做 multi-source comparison（P2a，依赖 P1 的 cross 表），
+  但两者产物都落进 `no_alignment_baseline/`。Phase 2a 的角色是与 Phase 1 single-source cross baseline 对比。
+- 训练阶段不受影响（outputs/checkpoints 仍按 run_id 分 session_model_compare_v1 / session_multisource_v1）；
+  归并只发生在可读结果区 `2_baseline/shu/no_alignment_baseline/`。
+
+## 2026-06-11 23:15 — Seed 覆盖核查（无覆盖/无重复风险确认）
+
+只核查，未 summarize。结论：seed 配置正确，无重复跑 0-4 风险。
+- **Job 状态**：48 jobs。Phase 2a（21610-12）COMPLETED；21602-4 + 21613 RUNNING；其余 PENDING。无 FAILED（ExitCode 全 0:0）。
+- **21602-4（旧 seed0）**：日志明确 `seeds=[0]`（22:07 解析，早于 22:44 改 config）→ 仅 seed0。config 是进程启动时一次性读取，后改不影响在跑 job。
+- **21644-55（补交）**：`scontrol`/`sacct SubmitLine` 确认命令显式 `--seeds N`（CLI 覆盖 config），单 seed 限定 → **不会重复跑 0-4**。
+- **Phase 1 输出**：runs 目录仍空（seed0 job 还在 within 阶段，sub-009/25，CSV 在每 protocol×model 完成后才落盘）。提交层面 seed0(21602-4)+seed1-4(21644-55)=0-4，per-seed 文件名互不覆盖。
+- **Phase 2a**：COMPLETED，3 models × seeds 0-4，每 CSV 单 seed、25 行（25 subj，ses01+02→03），无重复。
+- **Phase 2b**：21613 running 日志 `seeds=[0]`、5 methods、tasks=500；21613-27 per model×seed → 0-4。
+- **Phase 2c**：21628-42 per model×seed（pending）→ 0-4。
+- **job id 记录**：补交 21644-55 原记于单独文件 `shu_phase1_seeds1-4_2244.txt`；本轮在 `shu_full_2228.txt` 末尾**追加**引用（未改历史行）。
+- **下一步**：仅等待训练跑完（受 QOS 4gpu/分区限速，分批）。无需补交/取消。完成后按 P1→P2a→P2b→P2c 做完整性核查，再 summarize。
+
+## 2026-06-11 22:44 — 修正 Phase 1 seed 覆盖（对齐 WBCIC 5-seed 标准）
+
+- **发现的 bug**：Phase 1 baseline 首批提交（21602-4）用 `--models X` 未带 `--seeds`，而 `shu_phase1_baseline.yaml`
+  原 `train.seeds: [0]` → **只跑了 seed 0**，不符合 WBCIC 标准主线（5 seeds）。
+- **修正**：① 把 `shu_phase1_baseline.yaml` 的 `train.seeds` 改为 `[0,1,2,3,4]`（标准化）；
+  ② 补提交 Phase 1 seeds 1-4，每 (model,seed) 一个 job（21644-21655，共 12 个），跨 gpu2node/gpu3node 交替。
+  per-seed CSV 命名（`{tag}__seed{sd}.csv`）天然不覆盖已在跑的 seed0，无需新 run_id。
+  id 记于 `outputs/experiments/shu/_job_ids/shu_phase1_seeds1-4_2244.txt`。
+- **seed 覆盖核查（提交层面）**：
+  - Phase 1：seed0=21602-4(running) + seed1-4=21644-55 → **0-4 覆盖**。
+  - Phase 2a：21610-12，config 内含 seeds [0-4] → **0-4 覆盖**。
+  - Phase 2b：21613-27（每 model×seed）→ **0-4 覆盖**。
+  - Phase 2c：21628-42（每 model×seed）→ **0-4 覆盖**。
+- **集群约束**：QOS=32cpu4gpu64g/partition，每 job -c8/gpu1 → 每分区最多 4 GPU 并发（双分区共 8）；其余排队（QOSMaxCpuPerUserLimit）。48 jobs 会分批跑完。
+- **纪律**：训练完成前**不执行 summarize、不写 AI_ANALYSIS、不更新 results.md 正式数值**。完成后顺序 summarize：P1→P2a→P2b→P2c，每步核验再写 AI 分析。
+
+## 2026-06-11 — SHU 接入 + 全项目改双数据集并列架构
+
+- **目录架构**：1/2/3/4/5 各结果区全部改为 `wbci_shu/` 与 `shu/` 并列；2_baseline 下保留
+  `no_alignment_baseline/` + `alignment_baseline/`，再到 `report/tables/figures/`。每一层目录都有 README
+  （生成器 `scripts/scaffold_readmes.py`）。现有 WBCIC 结果迁入 `wbci_shu/`，SHU 侧建空骨架。
+- **outputs/checkpoints 也并列**：`outputs/experiments/{wbci_shu,shu}/<run_id>/`、
+  `outputs/analysis/{wbci_shu,shu}/`、`checkpoints/{wbci_shu,shu}/<run_id>/`。5 个 WBCIC config 输出路径
+  全部加 `wbci_shu/` 前缀；已物理迁移现有 prototype_drift 工件。
+- **SHU 预处理完成**：入口=作者发布 per-session `.mat`（已带通/陷波/4s 切段/250Hz/32ch），仅做标签
+  {1,2}->{0,1} 归一化转存 `.npz`，不二次预处理。脚本 `scripts/preprocess_shu.py` +
+  `code/preprocessing/shu_mat.py`。输出 `/share/workspace2/moto_imagination/SHU/processed/npz_clean/`，
+  **125 session 全 ok / 25 subjects**，manifest 列与 WBCIC 一致。
+- **命名修正**：原 `mat_clean` 目录改名 `npz_clean`（实际存的是 npz，避免误导），manifest 路径与 config 同步。
+- **runner 数据集解耦**：`code/runners.py` 新增 `_resolve_manifest(cfg,P)`，manifest 由 config `data.manifest`
+  决定，WBCIC 缺省回退 paths.yaml。新增 4 个 SHU config `shu_phase{0,1,2b,2c}_*.yaml`（同一批 runner）。
+- **checkpoint 命名自文档化**：新增 `checkpoints/README.md`，说明任务前缀 within/cross/multisource/
+  single/multi/proto + dataset/run_id/method/model/sub/session/seed。
+- **验证**：9 个 config 全部 dry-run OK；SHU phase1（within 10 + cross 20 对）、phase2b（EA/RA 32ch 40 行全 ok）
+  CPU smoke 端到端通过。
+- **边界规则更新**：workspace2 仅 `processed/` 子树可写，raw 只读（AGENTS/STATUS/README 同步）。
+- 状态：SHU **data ready，实验 pending**（config 就绪，未跑全量）。下一步可直接对 SHU 开跑 Phase 0/1/2b/2c。
+
+---
+
+## 2026-06-11 — Phase 2c 全量完成 + AI 深度分析报告
+
+- Full Slurm 全部 COMPLETED（16 jobs exit 0，GPU 各约 1h，summarizer 15s）。验证：run_status.csv
+  4320 cells 全 ok；metrics 25920 行（25790 ok + 130 correct_only degenerate_empty_class）；
+  used_target_labels_for_training 全 False、n_target_labels_used_for_training≡0；ok 行无 NaN/Inf。
+- 关键结果（canonical label_based/euclidean, n=4320）：所有几何信号显著但中等。
+  separation_change ρ=0.389、fisher_change 0.359、drift_mean 0.352、neg_margin 0.313、
+  direction_cosine −0.237。多元标准化线性模型 R²≈0.35。
+- 机制结论：不是 centroid collapse，而是 within-class scatter 膨胀。源→目标：sep 8.45→11.78（更远）、
+  scatter 16.86→25.83(+53%)、Fisher 4.58→1.57(−66%)。即表征"弥散/糊化"。
+- 方法学发现：cosine 几何比 euclidean 更线性（separation_change cosine R²=0.176 vs euclidean 0.001）；
+  下游 prototype 方法应在 cosine/归一化空间做。
+- 漂移分层：low/mid/high drift tertile 的 acc_drop = 0.048 / 0.141 / 0.155 → 掉点集中在高漂移 cell。
+- 模型依赖：EEGNet/DeepConvNet 漂移信号清晰（drift ρ 0.56/0.49），FBCNet 很弱（direction_cosine≈0，
+  neg_margin 0.095）→ FBCNet 掉点是另一种几何成因，不能并入 prototype 结论。
+- 方向不对称复现：ses-03 作 source 最难（ses-03→01 0.150）；ses-02→03 最易（0.086）。
+- 写出 `4_experiments/prototype_drift/report/AI_ANALYSIS.md`（9 段，全部数字来自 tables，未捏造）。
+- 分叉判定：**qualified go**。Step 4 先做 cosine 空间 Oracle 上限诊断 + scatter/reliability 探针，
+  不无条件承诺 prototype adaptation；FBCNet 单独处理；drift 用作 online trigger。
+- 状态：Phase 2c **done/complete**。
+
+## 2026-06-11 — Phase 2c Prototype Drift Analysis 实现 + 全量 Slurm 提交（submitted/pending）
+
+- 新增 `code/configs/experiments/phase2c_prototype_drift.yaml`：3 models (eegnet/deepconvnet/fbcnet)、
+  5 seeds (0-4)、6 directed pairs、prototype_types=[label_based, confidence_weighted, correct_only]、
+  distances=[euclidean, cosine]；source-only 训练、target test-only、target_label_usage=offline_diagnostic_only。
+- 新增 `code/experiments/prototype_drift.py`：复用 session_splits/trainer/registry；对每个 subject×source×
+  target×model×seed 在 source 上训练（source-train 切 val 做 early stopping），冻结后提取 source_train/
+  source_val/target_test 的 penultimate embedding + logits/probs/pred/conf（fallback conf=max softmax），
+  计算 label/confidence/correct prototypes，输出 6 类漂移指标（drift / direction_cosine / separation /
+  margin(neg rate) / scatter / fisher）。加泄漏断言（source≠target、train/val 不交叠、
+  n_target_labels_used_for_training≡0）+ NaN/Inf fail-fast；degenerate（correct_only 空类）显式标 status，不写坏数。
+- 新增 `code/experiments/prototype_drift_summarize.py`：合并 per-(model,seed) CSV → 
+  prototype_drift_metrics.csv / prototype_table.csv / prototype_accuracy_correlation.csv（Pearson/Spearman/
+  linregress，按 model×ptype×dist + ALL 分组）/ trial_embeddings_index.csv / run_status.csv；7 张图
+  (matplotlib, 无 seaborn) + 诚实 15 段报告 + RUN_STATUS.md（失败/缺失明列，不伪装 complete）。
+  embedding 存 npz，CSV 只放索引/hash/path。已接入 `code/run.py --summarize`。
+- 新增 `scripts/slurm/{train_prototype_drift_gpu,summarize_prototype_drift_cpu}.sbatch` +
+  `submit_prototype_drift_full.sh`（gpu2node + mi_torch_cu118，fail-fast if no CUDA，1 GPU/job，logs/slurm）。
+- Smoke（subjects 1,2、eegnet、seed 0、3 epochs、CPU，隔离在 `outputs/experiments/prototype_drift_v1_smoke/`）：
+  12 cells / 72 metric rows / 0 failed；used_target_labels_for_training 全 False、n_target_labels_used_for_training≡0、
+  无 NaN/Inf、5 tables + 7 figures + report + RUN_STATUS 全生成 → 端到端通过。
+- Full：50 eligible subjects（47×6 + 3×2 = 288 cells/(model,seed)）× 3 models × 5 seeds = 4320 cells，
+  ~25920 metric rows。提交 15 GPU + 1 summarizer（afterany），job ids 21536-21551；eegnet 已 RUNNING，
+  其余 PENDING(QOS CPU limit)，summarizer PENDING(Dependency)。
+- 状态：**submitted/pending，未 complete**。完成判据：summarizer 跑完且 run_status.csv 全 ok。
+- 检查命令：`squeue -u $USER`；`cat outputs/experiments/prototype_drift_v1/full_job_ids.txt`；
+  完成后看 `4_experiments/prototype_drift/{report,tables,figures}/`。
+- 边界守护：未触碰 /share/workspace2；未覆盖 Phase 0/1/2a/2b 结果；新结果只进 prototype_drift_v1 / 
+  4_experiments/prototype_drift；不做 adaptation/online/memory/tool-routing/41-10/LOSO/fine-tune。
+- Next：等 jobs 跑完 → 读 tables + REPORT 写 AI 分析（prototype drift 是否成立 / 分叉到 Step 4 or 其他机制）。
+
 ## 2026-06-11 — 汇总器迁入 code/ + canonical 9 段报告
 
 - 新增 `code/summaries/{session,multisource,alignment}.py`：从 `backup/root_archive_2026-06-10/scripts/`

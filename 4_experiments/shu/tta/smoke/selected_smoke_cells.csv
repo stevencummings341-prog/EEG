@@ -1,0 +1,3 @@
+subject,drift_level,drift_score,source_session,target_session,selection_rule,npz_exists
+sub-002,stable,-1.089072,ses-01,ses-02,auto_from_drift_tertile+embedding_exists,True
+sub-017,high,1.188747,ses-01,ses-02,auto_from_drift_tertile+embedding_exists,True

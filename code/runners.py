@@ -62,6 +62,21 @@ def _abs(path_str: str) -> Path:
     return p if p.is_absolute() else (PROJECT_ROOT / p)
 
 
+def _resolve_manifest(cfg: Dict, P) -> Path:
+    """Dataset-agnostic manifest resolution.
+
+    优先用实验 config 里 `data.manifest`（绝对或相对仓库根路径）；缺省回退到
+    paths.yaml 的全局 `processed_manifest`（WBCIC-SHU 默认）。这样同一套 runner
+    可在 WBCIC-SHU / SHU 等不同数据集间切换，只改 config 不改代码。
+    """
+    m = (cfg.get("data") or {}).get("manifest")
+    # 仅当 manifest 看起来是一个文件路径时才覆盖（WBCIC config 里 manifest 可能是
+    # paths.yaml 的逻辑键名 "processed_manifest"，此时不覆盖，沿用 P.processed_manifest）。
+    if m and ("/" in str(m) or str(m).endswith(".csv")):
+        return _abs(str(m))
+    return P.processed_manifest
+
+
 def _build_spec(args: argparse.Namespace, train_cfg: Dict):
     from code.experiments.session_protocols import TrainSpec
 
@@ -136,7 +151,7 @@ def run_phase0_drift(cfg: Dict, cfg_path: Path, args: argparse.Namespace) -> Non
     out_dir.mkdir(parents=True, exist_ok=True)
 
     records = load_ok_sessions(
-        P.processed_manifest, subjects=subjects,
+        _resolve_manifest(cfg, P), subjects=subjects,
         status_filter=tuple(data_cfg.get("status_filter", ["ok"])), max_subjects=max_subjects,
     )
     logger.info("loaded %d ok sessions / %d subjects", len(records), len({r.subject for r in records}))
@@ -200,7 +215,7 @@ def run_phase1_baseline(cfg: Dict, cfg_path: Path, args: argparse.Namespace) -> 
     cuda_info = _cuda_info(device)
     logger.info("device=%s | cuda=%s", device, cuda_info)
     records = load_ok_sessions(
-        P.processed_manifest, subjects=_parse_list(args.subjects), sessions=_parse_list(args.sessions),
+        _resolve_manifest(cfg, P), subjects=_parse_list(args.subjects), sessions=_parse_list(args.sessions),
         status_filter=tuple(data_cfg.get("status_filter", ["ok"])), max_subjects=args.max_subjects,
     )
     n_subj = len({r.subject for r in records})
@@ -280,7 +295,7 @@ def run_phase2a_multisource(cfg: Dict, cfg_path: Path, args: argparse.Namespace)
     cuda_info = _cuda_info(device)
     logger.info("device=%s | cuda=%s", device, cuda_info)
     records = load_ok_sessions(
-        P.processed_manifest, subjects=_parse_list(args.subjects),
+        _resolve_manifest(cfg, P), subjects=_parse_list(args.subjects),
         status_filter=tuple(data_cfg.get("status_filter", ["ok"])), max_subjects=args.max_subjects,
     )
     logger.info("loaded %d ok sessions | models=%s | seeds=%s | %s -> %s",
@@ -372,7 +387,7 @@ def run_phase2b_alignment(cfg: Dict, cfg_path: Path, args: argparse.Namespace) -
     cuda_info = _cuda_info(device)
     logger.info("device=%s | cuda=%s", device, cuda_info)
     records = load_ok_sessions(
-        P.processed_manifest, subjects=_parse_list(args.subjects),
+        _resolve_manifest(cfg, P), subjects=_parse_list(args.subjects),
         status_filter=tuple(data_cfg.get("status_filter", ["ok"])), max_subjects=args.max_subjects,
     )
 
@@ -413,9 +428,128 @@ def run_phase2b_alignment(cfg: Dict, cfg_path: Path, args: argparse.Namespace) -
                 sum(1 for r in rows if r["status"] == "failed"), out_dir)
 
 
+# --------------------------------------------------------------------------- #
+# Phase 2c — prototype drift analysis (frozen-model diagnostic, GPU)
+# --------------------------------------------------------------------------- #
+def run_phase2c_prototype_drift(cfg: Dict, cfg_path: Path, args: argparse.Namespace) -> None:
+    from code.datasets.session_splits import load_ok_sessions
+    from code.experiments.prototype_drift import (
+        INDEX_COLUMNS, METRIC_COLUMNS, PROTOTYPE_COLUMNS, STATUS_COLUMNS,
+        run_prototype_drift,
+    )
+    from code.utils.config import save_config
+    from code.utils.io import save_json
+    from code.utils.logging_utils import get_logger
+    from code.utils.paths import load_paths
+
+    logger = get_logger("phase2c_prototype_drift")
+    t0 = time.time()
+    P = load_paths(_abs(args.paths), require_raw=False)
+    data_cfg = cfg.get("data", {})
+    train_cfg = cfg.get("train", {})
+    run_id = cfg.get("run_id", "prototype_drift_v1")
+    dataset = cfg.get("dataset", "wbci_shu")
+    task = cfg.get("task", "2C left vs right MI")
+    prototype_types = cfg.get("prototype_types", ["label_based", "confidence_weighted", "correct_only"])
+    distances = cfg.get("distances", ["euclidean", "cosine"])
+
+    models = _parse_list(args.models) or cfg.get("models", ["eegnet"])
+    seeds = _parse_int_list(args.seeds) or cfg.get("seeds") or train_cfg.get("seeds", [0])
+
+    spec = _build_spec(args, train_cfg)
+    device = _resolve_device(args.device or train_cfg.get("device", "auto"), logger)
+    data_dims = dict(
+        n_channels=data_cfg.get("n_channels", 58), n_times=data_cfg.get("n_times", 1000),
+        n_classes=data_cfg.get("n_classes", 2), sfreq=data_cfg.get("sfreq", 250),
+    )
+
+    out_cfg = cfg.get("output", {}) or {}
+    out_dir = _abs(args.out) if args.out else _abs(
+        out_cfg.get("run_dir", out_cfg.get("output_dir", "outputs/experiments/prototype_drift_v1")))
+    runs_dir = out_dir / "runs"
+    # Embeddings always nest under the (possibly overridden) run dir so a --out smoke
+    # run can never write into the full-run embeddings tree.
+    embed_dir = out_dir / "embeddings"
+    runs_dir.mkdir(parents=True, exist_ok=True)
+    embed_dir.mkdir(parents=True, exist_ok=True)
+    save_config(cfg, out_dir / "resolved_config.yaml")
+    ckpt_dir = None
+    if not args.no_save_ckpt:
+        ckpt_dir = _abs(args.ckpt_dir or out_cfg.get("checkpoint_dir", "checkpoints/prototype_drift_v1"))
+
+    cuda_info = _cuda_info(device)
+    logger.info("device=%s | cuda=%s", device, cuda_info)
+    records = load_ok_sessions(
+        _resolve_manifest(cfg, P), subjects=_parse_list(args.subjects), sessions=_parse_list(args.sessions),
+        status_filter=tuple(data_cfg.get("status_filter", ["ok"])), max_subjects=args.max_subjects,
+    )
+    n_subj = len({r.subject for r in records})
+    logger.info("loaded %d ok sessions / %d subjects | models=%s | seeds=%s | ptypes=%s | dists=%s",
+                len(records), n_subj, models, seeds, prototype_types, distances)
+
+    for model_name in models:
+        mp = dict((cfg.get("model_params", {}) or {}).get(model_name, {}))
+        for seed in seeds:
+            start = time.time()
+            res = run_prototype_drift(
+                records, model_name=model_name, model_params=mp, data_dims=data_dims,
+                spec=spec, seed=int(seed), device=device, prototype_types=prototype_types,
+                distances=distances, run_id=run_id, dataset=dataset, task=task,
+                embed_dir=embed_dir, ckpt_dir=ckpt_dir, logger=logger,
+            )
+            tag = f"{model_name}__seed{seed}"
+            _write_rows(res["metric_rows"], runs_dir / f"metrics__{tag}.csv", METRIC_COLUMNS)
+            _write_rows(res["prototype_rows"], runs_dir / f"prototypes__{tag}.csv", PROTOTYPE_COLUMNS)
+            _write_rows(res["index_rows"], runs_dir / f"embed_index__{tag}.csv", INDEX_COLUMNS)
+            _write_rows(res["status_rows"], runs_dir / f"status__{tag}.csv", STATUS_COLUMNS)
+            n_ok = sum(1 for s in res["status_rows"] if s["status"] == "ok")
+            n_failed = sum(1 for s in res["status_rows"] if s["status"] == "failed")
+            save_json({"run_id": run_id, "model": model_name, "seed": int(seed),
+                       "n_metric_rows": len(res["metric_rows"]),
+                       "n_cells_ok": n_ok, "n_cells_failed": n_failed,
+                       "prototype_types": prototype_types, "distances": distances,
+                       "spec": vars(spec), "data_dims": data_dims, "cuda": cuda_info,
+                       "elapsed_sec": round(time.time() - start, 1)},
+                      runs_dir / f"meta__{tag}.json")
+            logger.info("%s done: metric_rows=%d cells_ok=%d failed=%d (%.1fs)",
+                        tag, len(res["metric_rows"]), n_ok, n_failed, time.time() - start)
+    logger.info("ALL DONE in %.1fs | outputs in %s", time.time() - t0, out_dir)
+
+
+def run_phase3_tta(cfg: Dict, cfg_path: Path, args: argparse.Namespace) -> None:
+    """Phase 3 Round-1: model-agnostic TTA backend scaffold + minimal smoke.
+
+    Defaults to tiny CPU smoke (no full sweep). Heavy GPU / full ablation are
+    out of Round-1 scope.
+    """
+    from code.experiments.session_tta import run_session_tta
+    from code.utils.logging_utils import get_logger
+
+    logger = get_logger("phase3_tta")
+    # CLI safety overrides into round1 block
+    round1 = dict(cfg.get("round1") or {})
+    if getattr(args, "dry_run", False):
+        round1["dry_run"] = True
+    if getattr(args, "subjects", None):
+        # subjects CLI is informational for Round-1; auto-select remains default
+        round1["cli_subjects"] = args.subjects
+    cfg = dict(cfg)
+    cfg["round1"] = round1
+    logger.info(
+        "phase3_tta Round-1 starting (mode=%s max_cells=%s)",
+        round1.get("mode", "smoke"),
+        round1.get("max_cells", 4),
+    )
+    summary = run_session_tta(cfg, project_root=PROJECT_ROOT)
+    logger.info("phase3_tta finished: status=%s rows=%s",
+                summary.get("status"), summary.get("n_result_rows"))
+
+
 PHASE_RUNNERS = {
     "phase0_drift_diagnostic": run_phase0_drift,
     "phase1_baseline": run_phase1_baseline,
     "phase2a_multisource": run_phase2a_multisource,
     "phase2b_alignment": run_phase2b_alignment,
+    "phase2c_prototype_drift": run_phase2c_prototype_drift,
+    "phase3_tta": run_phase3_tta,
 }
