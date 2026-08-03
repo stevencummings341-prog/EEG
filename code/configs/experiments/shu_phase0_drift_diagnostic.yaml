@@ -1,0 +1,49 @@
+experiment:
+  name: "phase0_drift_diagnostic"     # 复用同一 phase runner（按 experiment.name 派发）
+  source_config: "configs/experiments/shu_phase0_drift_diagnostic.yaml"
+
+# =====================================================================
+# SHU 2022 — Phase 0 跨 session 漂移诊断。
+# 与 WBCIC 版同一 runner / 同一指标；仅数据集不同（32ch, 5 session）。
+# 数据入口 = SHU processed_manifest 指向的 per-session .npz（status=ok）。
+# 运行:
+#   python code/run.py --config code/configs/experiments/shu_phase0_drift_diagnostic.yaml --subjects 1,2
+# =====================================================================
+
+run_id: "shu_session_drift_v1"
+
+data:
+  name: "shu"
+  manifest: "/share/workspace2/moto_imagination/SHU/processed/npz_clean/processed_manifest.csv"
+  status_filter: ["ok"]
+  sfreq: 250
+  n_channels: 32
+  n_times: 1000
+
+bands:
+  mu: [8, 13]
+  beta: [13, 30]
+
+metrics:
+  - mmd
+  - coral
+  - mu_power_shift
+  - beta_power_shift
+  - ks
+  - erd_ers_corr
+  - csp_similarity
+  - rms_ratio
+  - fisher_shift
+
+params:
+  mmd_subsample: 100
+  csp_components: 4
+  erd_baseline_ratio: 0.25
+  seed: 0
+
+output:
+  output_dir: "outputs/analysis/shu/session_drift_v1"
+
+subset:
+  subjects: null
+  max_subjects: null

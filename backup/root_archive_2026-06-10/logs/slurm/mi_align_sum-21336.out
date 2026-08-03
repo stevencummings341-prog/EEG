@@ -1,3 +1,0 @@
-[summarize] rows=30150 ok=30150 failed=0 nan=0 complete=True
-[summarize] wrote tables to /share/home/yuan/SYX/eeg-mi-online/outputs/experiments/alignment_baseline_v1/cross_session/tables and report to /share/home/yuan/SYX/eeg-mi-online/outputs/experiments/alignment_baseline_v1/ALIGNMENT_BASELINE_REPORT.md
-Done: Tue Jun  9 19:14:18 CST 2026

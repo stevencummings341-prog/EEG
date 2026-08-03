@@ -1,0 +1,77 @@
+experiment:
+  name: "phase2b_alignment"           # 复用同一 phase runner
+  source_config: "configs/experiments/shu_phase2b_alignment.yaml"
+
+# =====================================================================
+# SHU 2022 — Phase 2b no-learning / 无监督 test-time alignment baseline。
+# 32ch, 5 session。仅跑 single-source 有向对（SHU 无 WBCIC 的 ses-01+02->ses-03
+# 多源约定，故 protocols 只含 single）。
+# FAIRNESS：模型只在 source session 训练；target 仅通过无标签 X 做统计对齐，
+#   y_test 只用于最终评估，绝不用于训练/验证/早停/选择。
+# 运行:
+#   python code/run.py --config code/configs/experiments/shu_phase2b_alignment.yaml \
+#       --models eegnet --subjects 1,2 --max-epochs 3 --protocols single --device cuda  # smoke
+# =====================================================================
+
+run_id: "shu_alignment_baseline_v1"
+experiment_id: "shu_alignment_baseline_v1"
+
+data:
+  name: "shu"
+  manifest: "/share/workspace2/moto_imagination/SHU/processed/npz_clean/processed_manifest.csv"
+  status_filter: ["ok"]
+  n_channels: 32
+  n_times: 1000
+  n_classes: 2
+  sfreq: 250
+
+methods:
+  - "session_zscore"
+  - "euclidean_alignment"
+  - "riemannian_alignment"
+  - "bn_statistics_adaptation"
+  - "filterbank_reweighting"
+
+models: ["eegnet", "deepconvnet", "fbcnet"]
+
+protocols: ["single"]
+
+alignment:
+  eps: 1.0e-5
+  shrinkage: 0.1
+  zscore_eps: 1.0e-8
+  filterbank:
+    bands: [[4.0, 8.0], [8.0, 13.0], [13.0, 30.0], [30.0, 40.0]]
+    taps: 125
+    w_min: 0.5
+    w_max: 2.0
+
+train:
+  batch_size: 16
+  lr: 0.001
+  weight_decay: 0.0
+  optimizer: "adam"
+  max_epochs: 100
+  early_stopping_patience: 20
+  early_stopping_metric: "val_loss"
+  val_fraction: 0.2
+  num_workers: 2
+  device: "cuda"
+  seeds: [0, 1, 2, 3, 4]
+
+model_params:
+  eegnet:      {F1: 8, D: 2, F2: 16, kernel_length: 64, dropout: 0.25}
+  deepconvnet: {dropout: 0.5, n_filters_1: 25}
+  fbcnet:      {n_bands: 9, band_width: 4, f_low: 4, f_high: 40, m: 32,
+                temporal_segments: 4, dropout: 0.5}
+
+eval:
+  metrics: ["accuracy", "balanced_accuracy", "macro_f1", "auc"]
+  calibration_metrics: ["nll", "brier", "ece"]
+
+output:
+  output_dir: "outputs/experiments/shu/alignment_baseline_v1"
+  checkpoint_dir: "checkpoints/shu/alignment_baseline_v1"
+  # SHU 无对齐参照（single-source cross 行）；summarizer 用它做 alignment_vs_baseline。
+  baseline_cross_all: "outputs/experiments/shu/session_model_compare_v1/cross_session/tables/results_cross_session_all.csv"
+  drift_per_subject: "outputs/analysis/shu/session_drift_v1/per_subject_drift_summary.csv"

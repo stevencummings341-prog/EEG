@@ -1,6 +1,0 @@
-Project : /share/home/yuan/SYX/eeg-mi-online | Env: mi_torch | Results: outputs/experiments/session_model_compare_v1 | Node: gpu01 | Sun Jun  7 21:38:58 CST 2026
-[env] python: /share/home/yuan/.conda/envs/mi_torch/bin/python
-[report] job states: {'21161': 'COMPLETED', '21162': 'COMPLETED', '21163': 'COMPLETED', '21164': 'COMPLETED', '21165': 'COMPLETED', '21166': 'COMPLETED', '21167': 'COMPLETED', '21168': 'COMPLETED', '21169': 'COMPLETED', '21170': 'COMPLETED', '21171': 'RUNNING'}
-[report] summarizer ok=True
-[report] DONE | incomplete=True | RUN_STATUS.md written
-Done: Sun Jun  7 21:39:02 CST 2026

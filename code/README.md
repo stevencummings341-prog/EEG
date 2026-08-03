@@ -11,7 +11,7 @@ status: "active"
 
 ## 1. Purpose
 
-新 P10 风格代码框架。人工入口是 `code/run.py`。
+模块化代码框架（数据集/模型/方法/实验分层）。人工入口是 `code/run.py`。
 
 ## 2. What Belongs Here
 

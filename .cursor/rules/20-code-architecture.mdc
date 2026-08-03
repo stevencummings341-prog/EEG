@@ -1,5 +1,5 @@
 ---
-description: P10-style code architecture rules
+description: Modular (layered) code architecture rules
 globs:
   - "code/**/*.py"
   - "code/configs/**/*.yaml"

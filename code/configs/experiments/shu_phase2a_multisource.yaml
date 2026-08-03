@@ -1,0 +1,64 @@
+experiment:
+  name: "phase2a_multisource"           # 复用同一 phase runner（按 experiment.name 派发）
+  source_config: "configs/experiments/shu_phase2a_multisource.yaml"
+
+# =====================================================================
+# SHU 2022 — Phase 2a 多源跨 session baseline（与 WBCIC 可比协议）。
+# train ses-01 + ses-02 -> test ses-03。32ch, 5 session。
+# 复用 WBCIC 同一 runner / 同一 trainer / 同一指标，仅数据集与路径不同。
+# 缺任一 ses-01/02/03（status=ok）的被试自动跳过并记录。
+#
+# 注意（最小补充版，未改 runner）：
+#   runner `run_phase2a_multisource` 的 CSV tag 与 summarizer 的 PROTOCOL 都硬编码为
+#   `multisource_0102_to_03`，因此本 config 仅承担 ses-01+02->ses-03 这一**可比**协议。
+#   SHU 特有的 ses-01+02+03->ses-04 / ...->ses-05 扩展需要 runner 支持参数化 tag，
+#   属于后续扩展，不混入第一版结论。
+# 运行:
+#   python code/run.py --config code/configs/experiments/shu_phase2a_multisource.yaml --device cuda
+# =====================================================================
+
+run_id: "shu_session_multisource_v1"
+
+data:
+  name: "shu"
+  manifest: "/share/workspace2/moto_imagination/SHU/processed/npz_clean/processed_manifest.csv"
+  status_filter: ["ok"]
+  n_channels: 32
+  n_times: 1000
+  n_classes: 2
+  sfreq: 250
+
+models: ["eegnet", "deepconvnet", "fbcnet"]
+
+multisource:
+  train_sessions: ["ses-01", "ses-02"]
+  test_session: "ses-03"
+
+train:
+  batch_size: 16
+  lr: 0.001
+  weight_decay: 0.0
+  optimizer: "adam"
+  max_epochs: 100
+  early_stopping_patience: 20
+  early_stopping_metric: "val_loss"
+  val_fraction: 0.2
+  num_workers: 2
+  device: "cuda"
+  seeds: [0, 1, 2, 3, 4]
+
+model_params:
+  eegnet:      {F1: 8, D: 2, F2: 16, kernel_length: 64, dropout: 0.25}
+  deepconvnet: {dropout: 0.5, n_filters_1: 25}
+  fbcnet:      {n_bands: 9, band_width: 4, f_low: 4, f_high: 40, m: 32,
+                temporal_segments: 4, dropout: 0.5}
+
+eval:
+  metrics: ["accuracy", "balanced_accuracy", "macro_f1", "auc"]
+  calibration_metrics: ["nll", "brier", "ece"]
+
+output:
+  output_dir: "outputs/experiments/shu/session_multisource_v1"
+  checkpoint_dir: "checkpoints/shu/session_multisource_v1"
+  # SHU baseline summaries（phase1 汇总后生成）；summarizer 用它算 multisource vs 最强单源。
+  baseline_summaries: "outputs/experiments/shu/session_model_compare_v1/summaries"

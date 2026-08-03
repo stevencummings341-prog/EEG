@@ -86,8 +86,8 @@ eval:
   calibration_metrics: ["nll", "brier", "ece"]
 
 output:
-  output_dir: "outputs/experiments/alignment_baseline_v1"
-  checkpoint_dir: "checkpoints/alignment_baseline_v1"
+  output_dir: "outputs/experiments/wbci_shu/alignment_baseline_v1"
+  checkpoint_dir: "checkpoints/wbci_shu/alignment_baseline_v1"
   # baseline_v1 none-alignment reference (single-source + multi-source cross rows).
-  baseline_cross_all: "outputs/experiments/baseline_v1/cross_session/tables/results_cross_session_all.csv"
-  drift_per_subject: "outputs/analysis/session_drift_v1/per_subject_drift_summary.csv"
+  baseline_cross_all: "outputs/experiments/wbci_shu/baseline_v1/cross_session/tables/results_cross_session_all.csv"
+  drift_per_subject: "outputs/analysis/wbci_shu/session_drift_v1/per_subject_drift_summary.csv"

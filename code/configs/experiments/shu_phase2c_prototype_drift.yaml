@@ -1,0 +1,96 @@
+experiment:
+  name: "phase2c_prototype_drift"     # 复用同一 phase runner
+  source_config: "configs/experiments/shu_phase2c_prototype_drift.yaml"
+
+# =====================================================================
+# SHU 2022 — Phase 2c Prototype Drift Analysis（诊断，非 adaptation）。
+# 32ch, 5 session（20 个有向 cross-session 对）。冻结 baseline 模型，提取嵌入，
+# 计算 class prototype 漂移与 acc 的关系。
+# FAIRNESS：模型只在 source session 训练；target labels 仅用于 OFFLINE 诊断分析，
+#   绝不用于训练/验证/早停/适应（n_target_labels_used_for_training 恒为 0）。
+# 运行:
+#   python code/run.py --config code/configs/experiments/shu_phase2c_prototype_drift.yaml \
+#       --models eegnet --subjects 1,2 --seeds 0 --max-epochs 3 --device cuda  # smoke
+# =====================================================================
+
+run_id: "shu_prototype_drift_v1"
+phase: "phase2c"
+
+dataset: "shu"
+task: "2C left vs right MI"
+
+data:
+  name: "shu"
+  manifest: "/share/workspace2/moto_imagination/SHU/processed/npz_clean/processed_manifest.csv"
+  status_filter: ["ok"]
+  n_channels: 32
+  n_times: 1000
+  n_classes: 2
+  sfreq: 250
+
+models: ["eegnet", "deepconvnet", "fbcnet"]
+seeds: [0, 1, 2, 3, 4]
+
+sessions: ["ses-01", "ses-02", "ses-03", "ses-04", "ses-05"]
+# 全部有向 cross-session 对（train -> test），5 session = 20 对。
+directed_pairs:
+  - ["ses-01", "ses-02"]
+  - ["ses-01", "ses-03"]
+  - ["ses-01", "ses-04"]
+  - ["ses-01", "ses-05"]
+  - ["ses-02", "ses-01"]
+  - ["ses-02", "ses-03"]
+  - ["ses-02", "ses-04"]
+  - ["ses-02", "ses-05"]
+  - ["ses-03", "ses-01"]
+  - ["ses-03", "ses-02"]
+  - ["ses-03", "ses-04"]
+  - ["ses-03", "ses-05"]
+  - ["ses-04", "ses-01"]
+  - ["ses-04", "ses-02"]
+  - ["ses-04", "ses-03"]
+  - ["ses-04", "ses-05"]
+  - ["ses-05", "ses-01"]
+  - ["ses-05", "ses-02"]
+  - ["ses-05", "ses-03"]
+  - ["ses-05", "ses-04"]
+
+use_status: "ok"
+target_label_usage: "offline_diagnostic_only"
+
+embedding_level:
+  main: "penultimate_embedding"
+  auxiliary: "logits"
+
+prototype_types: ["label_based", "confidence_weighted", "correct_only"]
+distances: ["euclidean", "cosine"]
+
+train:
+  batch_size: 16
+  lr: 0.001
+  weight_decay: 0.0
+  optimizer: "adam"
+  max_epochs: 100
+  early_stopping_patience: 20
+  early_stopping_metric: "val_loss"
+  val_fraction: 0.2
+  num_workers: 2
+  device: "cuda"
+  seeds: [0, 1, 2, 3, 4]
+
+model_params:
+  eegnet:      {F1: 8, D: 2, F2: 16, kernel_length: 64, dropout: 0.25}
+  deepconvnet: {dropout: 0.5, n_filters_1: 25}
+  fbcnet:      {n_bands: 9, band_width: 4, f_low: 4, f_high: 40, m: 32,
+                temporal_segments: 4, dropout: 0.5}
+
+eval:
+  metrics: ["accuracy", "balanced_accuracy", "macro_f1", "auc"]
+
+output:
+  readable_dir: "4_experiments/shu/prototype_drift"
+  output_dir: "outputs/experiments/shu/prototype_drift_v1"
+  run_dir: "outputs/experiments/shu/prototype_drift_v1"
+  embeddings_dir: "outputs/experiments/shu/prototype_drift_v1/embeddings"
+  checkpoint_dir: "checkpoints/shu/prototype_drift_v1"
+  slurm_log_dir: "logs/slurm"

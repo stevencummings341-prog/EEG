@@ -49,5 +49,5 @@ eval:
   calibration_metrics: ["nll", "brier", "ece"]
 
 output:
-  output_dir: "outputs/experiments/session_multisource_v1"
-  checkpoint_dir: "checkpoints/session_multisource_v1"
+  output_dir: "outputs/experiments/wbci_shu/session_multisource_v1"
+  checkpoint_dir: "checkpoints/wbci_shu/session_multisource_v1"

@@ -3,6 +3,12 @@ name: "shu"
 description: "SHU 2022 -- 25 subjects x 5 sessions x 32 EEG channels"
 paper: "Ma et al., Scientific Data, 2022"
 data_dir: "/share/workspace2/moto_imagination/SHU"
+# 正式训练入口 = 预处理后的 per-session .npz（由 scripts/preprocess_shu.py 生成）。
+# .mat 为作者发布的预处理数据（[n,32,1000] µV, 250Hz），直接归一化标签后落盘为 .npz。
+processed_root: "/share/workspace2/moto_imagination/SHU/processed/npz_clean"
+manifest: "/share/workspace2/moto_imagination/SHU/processed/npz_clean/processed_manifest.csv"
+status_filter:
+- ok
 n_channels: 32
 n_timepoints: 1000
 n_classes: 2

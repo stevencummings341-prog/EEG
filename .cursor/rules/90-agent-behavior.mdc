@@ -5,6 +5,6 @@ alwaysApply: true
 
 # Agent Behavior
 
-Before coding, read `AGENTS.md`, `CLAUDE.md`, and `0_docs/PROJECT_STATUS_CURRENT.md`. Preserve the research chain and do not jump ahead. Every new file needs a description in the nearest README and `0_docs/FILE_CATALOG.md`. Filesystem create/move/delete/rename operations must be logged in `01_Lab_Journal/operation_log.md`.
+Before coding, read `AGENTS.md`, `CLAUDE.md`, `0_docs/STATUS.md`, and `0_docs/ARCHITECTURE.md`. Preserve the research chain and do not jump ahead. Every new file needs a description in the nearest README and `0_docs/FILE_CATALOG.md`. Filesystem create/move/delete/rename operations must be logged in `0_docs/operation_log.md`.
 
 Never fabricate results. Keep Markdown frontmatter valid. Use clear English or Chinese comments for EEG-specific decisions.

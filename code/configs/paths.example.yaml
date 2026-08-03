@@ -1,0 +1,24 @@
+# Copy to paths.yaml and fill in paths for THIS machine:
+#   cp code/configs/paths.example.yaml code/configs/paths.yaml
+#
+# Env override: SHU_2C_ROOT overrides raw_data.shu_2c_root.
+# Never hard-code data paths in Python.
+
+raw_data:
+  # External, READ-ONLY WBCIC-SHU / SHU 2C dataset root (BIDS). Outside this project.
+  shu_2c_root: "/CHANGE/ME/WBCIC_SHU"
+  raw_subdir: "sourcedata/2C dataset"
+  derivatives_subdir: "derivatives/2C dataset_processeddata"
+
+processed_data:
+  # Relative paths resolve against project root; absolute paths used as-is.
+  paper_style_root: "outputs/processed_paper_style"
+  # Formal EOG/ECG-assisted clean tensors — must be under processed/ (writable).
+  eog_ecg_clean_root: "/CHANGE/ME/WBCIC_SHU/processed/eog_ecg_clean"
+
+manifests:
+  raw_manifest: "manifests/shu_2c_raw_manifest.csv"
+  processed_manifest: "/CHANGE/ME/WBCIC_SHU/processed/eog_ecg_clean/processed_manifest.csv"
+
+splits:
+  dir: "splits"

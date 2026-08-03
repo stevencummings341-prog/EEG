@@ -1,0 +1,59 @@
+experiment:
+  name: "phase1_baseline"             # 复用同一 phase runner
+  source_config: "configs/experiments/shu_phase1_baseline.yaml"
+
+# =====================================================================
+# SHU 2022 — Phase 1 baseline：within-session CV + single-source cross-session。
+# 32ch, 5 session（ses-01..ses-05），cross-session 自动枚举每被试 ok session 的有向对。
+# 数据入口 = SHU processed_manifest 指向的 per-session .npz（status=ok）。
+# 运行:
+#   python code/run.py --config code/configs/experiments/shu_phase1_baseline.yaml \
+#       --models eegnet --subjects 1,2 --folds 2 --max-epochs 3 --device cuda   # smoke
+# =====================================================================
+
+run_id: "shu_session_model_compare_v1"
+
+data:
+  name: "shu"
+  manifest: "/share/workspace2/moto_imagination/SHU/processed/npz_clean/processed_manifest.csv"
+  status_filter: ["ok"]
+  n_channels: 32
+  n_times: 1000
+  n_classes: 2
+  sfreq: 250
+
+protocols: ["within", "cross"]
+models: ["eegnet", "deepconvnet", "fbcnet"]
+
+within:
+  folds: 10
+
+cross:
+  directed_pairs: true
+
+train:
+  batch_size: 16
+  lr: 0.001
+  weight_decay: 0.0
+  optimizer: "adam"
+  max_epochs: 100
+  early_stopping_patience: 20
+  early_stopping_metric: "val_loss"
+  val_fraction: 0.2
+  num_workers: 2
+  device: "cuda"
+  seeds: [0, 1, 2, 3, 4]   # WBCIC 标准主线一致：5 seeds（mean±std across seeds）
+
+model_params:
+  eegnet:      {F1: 8, D: 2, F2: 16, kernel_length: 64, dropout: 0.25}
+  deepconvnet: {dropout: 0.5, n_filters_1: 25}
+  fbcnet:      {n_bands: 9, band_width: 4, f_low: 4, f_high: 40, m: 32,
+                temporal_segments: 4, dropout: 0.5}
+
+eval:
+  metrics: ["accuracy", "balanced_accuracy", "macro_f1", "auc"]
+  calibration_metrics: ["nll", "brier", "ece"]
+
+output:
+  output_dir: "outputs/experiments/shu/session_model_compare_v1"
+  checkpoint_dir: "checkpoints/shu/session_model_compare_v1"

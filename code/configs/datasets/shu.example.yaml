@@ -1,0 +1,18 @@
+# Copy to shu.yaml and set data_dir / processed_root / manifest for THIS machine:
+#   cp code/configs/datasets/shu.example.yaml code/configs/datasets/shu.yaml
+name: "shu"
+description: "SHU 2022 -- 25 subjects x 5 sessions x 32 EEG channels"
+paper: "Ma et al., Scientific Data, 2022"
+data_dir: "/CHANGE/ME/SHU"
+processed_root: "/CHANGE/ME/SHU/processed/npz_clean"
+manifest: "/CHANGE/ME/SHU/processed/npz_clean/processed_manifest.csv"
+status_filter:
+- ok
+n_channels: 32
+n_timepoints: 1000
+n_classes: 2
+sfreq: 250.0
+sessions_per_subject: 5
+electrode_system: "10-20/10-10"
+task: "2-class motor imagery: left vs right hand grasping"
+read_only: true

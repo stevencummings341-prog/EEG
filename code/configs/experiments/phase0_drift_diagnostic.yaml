@@ -51,7 +51,7 @@ params:
   seed: 0                 # RNG seed (MMD subsampling) for reproducibility
 
 output:
-  output_dir: "outputs/analysis/session_drift_v1"
+  output_dir: "outputs/analysis/wbci_shu/session_drift_v1"
 
 # Optional smoke-test subset. CLI --subjects / --max-subjects override these.
 subset:

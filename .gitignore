@@ -5,9 +5,15 @@
 /outputs/*
 /logs/*
 /checkpoints/*
+!/outputs/.gitkeep
+!/logs/.gitkeep
+!/checkpoints/.gitkeep
 wandb/
 runs/
 slog/
+
+# ===== local archive (large; keep on disk, do not push) =====
+/backup/*
 
 # ===== generated manifests & splits (contain absolute server paths) =====
 /manifests/*.csv
@@ -34,6 +40,7 @@ venv/
 
 # ===== large / binary data files (anywhere) =====
 *.bdf
+*.edf
 *.mat
 *.npy
 *.npz
@@ -44,11 +51,20 @@ venv/
 *.hdf5
 *.rar
 *.zip
+*.tar
+*.tar.gz
+*.7z
 *.pdf
 *.pptx
 *.ppt
 
-# ===== editor / OS =====
+# ===== editor / OS / IDE local =====
 .DS_Store
 *.swp
 .idea/
+*.local.yaml
+*.local.yml
+
+# ===== slurm / job noise =====
+*.out
+*.err

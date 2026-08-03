@@ -34,7 +34,9 @@ def summarize_phase(phase: str, cfg: Dict) -> None:
         report = _canonical.write_canonical_report(phase, out_dir)
     elif phase == "phase2a_multisource":
         out_dir = _abs(out_cfg.get("output_dir", "outputs/experiments/session_multisource_v1"))
-        base = _abs("outputs/experiments/session_model_compare_v1/summaries")
+        # Dataset-scoped baseline summaries (SHU vs WBCIC); config-driven, defaults to WBCIC.
+        base = _abs(out_cfg.get("baseline_summaries",
+                                "outputs/experiments/session_model_compare_v1/summaries"))
         _multisource.main(["--out", str(out_dir), "--baseline-summaries", str(base)])
         report = _canonical.write_canonical_report(phase, out_dir)
     elif phase == "phase2b_alignment":
@@ -46,6 +48,10 @@ def summarize_phase(phase: str, cfg: Dict) -> None:
         _alignment.main(["--out", str(out_dir), "--baseline-cross-all", str(_abs(base)),
                          "--drift-csv", str(_abs(drift))])
         report = _canonical.write_canonical_report(phase, out_dir)
+    elif phase == "phase2c_prototype_drift":
+        from code.experiments.prototype_drift_summarize import summarize_from_cfg
+        summarize_from_cfg(cfg)
+        return
     elif phase == "phase0_drift_diagnostic":
         print("[summarize] phase0 drift report is produced by the runner itself; nothing to do.")
         return

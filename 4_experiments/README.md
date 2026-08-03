@@ -3,28 +3,31 @@ title: "New Experiments"
 tags:
   - "#modality/eeg"
 created: "2026-06-10"
-updated: "2026-06-10"
+updated: "2026-06-11"
 status: "active"
 ---
 
-# New Experiments
+# 4_experiments — Phase 2c+ 新实验
 
-## 1. Purpose
+按 **数据集并列**：每个数据集一个子目录，下分各实验（如 prototype_drift），
+每个实验统一为 `report / tables / figures`。
 
-Phase 2c 及后续新实验入口，例如 prototype drift、cross-dataset、prototype adaptation。
+## 结构
 
-## 2. What Belongs Here
+```text
+4_experiments/
+├── wbci_shu/
+│   └── prototype_drift/
+│       ├── report/  tables/  figures/
+└── shu/
+    └── prototype_drift/
+        ├── report/  tables/  figures/
+```
 
-- 与本目录职责直接相关的文件。
-- 能帮助后来的人理解实验、代码或结果的索引说明。
-- 必要时放 README、manifest、报告或轻量配置；大型数据和 checkpoint 不放在文档目录。
+每一层目录均有 `README.md`。
 
-## 3. Update Rules
+## 约定
 
-每个实验一个子目录，包含 README、config 链接、输出清单、核心结论；未运行不要写 done。
-
-## 4. Related Files
-
-- `AGENTS.md`: 唯一权威灵魂记忆。
-- `0_docs/STRUCTURE_AND_FILE_GUIDE.md`: 全项目结构和文件职责说明。
-- `0_docs/FILE_CATALOG.md`: 新增文件索引。
+- 每个实验一个子目录，包含 README、输出清单、核心结论；未运行不要写 done。
+- 已完成结果只读；复跑用新 `run_id`。
+- 命名规范见 `AGENTS.md` / `CLAUDE.md` 第 9 节。

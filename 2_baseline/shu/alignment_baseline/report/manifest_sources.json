@@ -1,0 +1,25 @@
+{
+  "experiment_id": "alignment_baseline_v1",
+  "baseline_none_reference_source": "/share/home/yuan/SYX/eeg-mi-online/outputs/experiments/shu/session_model_compare_v1/cross_session/tables/results_cross_session_all.csv",
+  "drift_levels_source": "/share/home/yuan/SYX/eeg-mi-online/outputs/analysis/shu/session_drift_v1/per_subject_drift_summary.csv",
+  "n_run_csvs": 75,
+  "n_rows_total": 45000,
+  "n_align_rows": 37500,
+  "n_none_rows": 7500,
+  "n_ok": 45000,
+  "n_failed": 0,
+  "n_nan_acc": 0,
+  "trained_methods_present": [
+    "bn_statistics_adaptation",
+    "euclidean_alignment",
+    "filterbank_reweighting",
+    "riemannian_alignment",
+    "session_zscore"
+  ],
+  "models_present": [
+    "deepconvnet",
+    "eegnet",
+    "fbcnet"
+  ],
+  "complete": true
+}

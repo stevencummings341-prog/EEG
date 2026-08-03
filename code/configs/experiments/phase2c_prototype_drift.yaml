@@ -1,0 +1,105 @@
+experiment:
+  name: "phase2c_prototype_drift"
+  source_config: "configs/experiments/phase2c_prototype_drift.yaml"
+
+# =====================================================================
+# Phase 2c — Prototype Drift Analysis (DIAGNOSTIC, not adaptation).
+#
+# Goal: test whether the cross-session accuracy drop (Phase 1 ~10pp; Phase 2b
+# shows statistical alignment is insufficient) can be explained by drift of the
+# task representation (class prototypes) in the model's penultimate embedding
+# space. This is a frozen-model diagnostic; NO adaptation, NO online, NO memory,
+# NO tool routing, NO 41/10 cross-subject pretraining, NO fine-tuning.
+#
+# FAIRNESS / NO-LEAKAGE RULE (enforced in code, see code/experiments/prototype_drift.py):
+#   * The model trains ONLY on the SOURCE session (train + a val slice carved from
+#     source train for early stopping). The TARGET session is test-only.
+#   * Target labels are used ONLY for offline diagnostic analysis (computing target
+#     prototypes / metrics), NEVER for training, validation, early stopping, tuning,
+#     or adaptation. n_target_labels_used_for_training is ALWAYS 0.
+#   * Same data filter (status=ok), same model params, same trainer recipe as Phase 1.
+# =====================================================================
+
+run_id: "prototype_drift_v1"
+phase: "phase2c"
+
+dataset: "wbci_shu"
+task: "2C left vs right MI"
+
+data:
+  variant: "eog_ecg_clean"          # -> paths.eog_ecg_clean_root
+  manifest: "processed_manifest"    # -> paths.processed_manifest
+  status_filter: ["ok"]             # ONLY status=ok sessions
+  n_channels: 58
+  n_times: 1000
+  n_classes: 2
+  sfreq: 250
+
+models: ["eegnet", "deepconvnet", "fbcnet"]
+seeds: [0, 1, 2, 3, 4]
+
+sessions: ["ses-01", "ses-02", "ses-03"]
+# All DIRECTED cross-session pairs (train_session -> test_session). For a subject
+# with all 3 ok sessions this enumerates the 6 pairs below; a subject with only 2
+# ok sessions runs the available directed pairs among its ok sessions; a subject
+# with <2 ok sessions is skipped (consistent with the Phase 1 cross-session
+# protocol, which uses every subject with >=2 ok sessions).
+directed_pairs:
+  - ["ses-01", "ses-02"]
+  - ["ses-01", "ses-03"]
+  - ["ses-02", "ses-01"]
+  - ["ses-02", "ses-03"]
+  - ["ses-03", "ses-01"]
+  - ["ses-03", "ses-02"]
+
+use_status: "ok"
+
+# Target labels are used ONLY for offline diagnostic analysis, not for training
+# or adaptation.
+target_label_usage: "offline_diagnostic_only"
+
+embedding_level:
+  main: "penultimate_embedding"     # model's flatten features before the linear head
+  auxiliary: "logits"               # logits + softmax probability + prediction + confidence
+
+# Prototype definitions (computed for both SOURCE-train and TARGET-test, per class):
+#   label_based         : mean(z_i | y_i = class)
+#   confidence_weighted : confidence-weighted mean of z_i within class
+#   correct_only        : mean(z_i | y_i = class AND prediction_i = class)
+prototype_types: ["label_based", "confidence_weighted", "correct_only"]
+
+# Distance metrics used for drift / separation / margin / scatter metrics.
+distances: ["euclidean", "cosine"]
+
+train:
+  batch_size: 16
+  lr: 0.001
+  weight_decay: 0.0
+  optimizer: "adam"
+  max_epochs: 100            # Phase 1 baseline recipe; CLI --max-epochs overrides (smoke uses 3)
+  early_stopping_patience: 20
+  early_stopping_metric: "val_loss"   # monitored on a SOURCE-train val slice only
+  val_fraction: 0.2          # carved from SOURCE train only (never target)
+  num_workers: 2
+  device: "cuda"             # GPU via Slurm only; fail-fast if cuda unavailable
+  seeds: [0, 1, 2, 3, 4]
+
+# Per-model structural hyperparameters (identical to Phase 1 / Phase 2b).
+model_params:
+  eegnet:      {F1: 8, D: 2, F2: 16, kernel_length: 64, dropout: 0.25}
+  deepconvnet: {dropout: 0.5, n_filters_1: 25}
+  fbcnet:      {n_bands: 9, band_width: 4, f_low: 4, f_high: 40, m: 32,
+                temporal_segments: 4, dropout: 0.5}
+
+eval:
+  metrics: ["accuracy", "balanced_accuracy", "macro_f1", "auc"]
+
+output:
+  # Readable layer (report / tables / figures) synced here by the summarizer.
+  readable_dir: "4_experiments/wbci_shu/prototype_drift"
+  # Heavy per-run layer (per-run metric CSVs, embedding npz, run status).
+  output_dir: "outputs/experiments/wbci_shu/prototype_drift_v1"
+  run_dir: "outputs/experiments/wbci_shu/prototype_drift_v1"
+  embeddings_dir: "outputs/experiments/wbci_shu/prototype_drift_v1/embeddings"
+  checkpoint_dir: "checkpoints/wbci_shu/prototype_drift_v1"
+  slurm_log_dir: "logs/slurm"
