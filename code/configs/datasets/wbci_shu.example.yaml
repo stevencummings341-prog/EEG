@@ -1,4 +1,4 @@
-# Portable placeholder. Prefer machine-local:
+# Copy to machine-local file (gitignored) and fill paths:
 #   cp code/configs/datasets/wbci_shu.example.yaml code/configs/datasets/wbci_shu.local.yaml
 name: wbci_shu
 description: WBCIC-SHU 2025 -- 2C subset, 51 subjects x 3 sessions x 58 EEG channels

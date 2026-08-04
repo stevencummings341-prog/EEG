@@ -4,7 +4,7 @@ tags:
   - "#pipeline/5_dl_model"
   - "#modality/eeg"
 created: "2026-06-10"
-updated: "2026-07-12"
+updated: "2026-08-04"
 status: "active"
 ---
 
@@ -102,9 +102,9 @@ python code/run.py --config code/configs/experiments/shu_phase2c_prototype_drift
 | `backup/root_archive_2026-06-10/` | 保留，历史可追溯，不要删。 |
 | `backup/legacy_snapshot_2026-06-10/` | 与 root_archive 有重叠，确认 root_archive 完整后可删此快照。 |
 | 阶段目录里的结果 | 是从 backup 复制来的可读副本，保留。 |
-| `/share/home/yuan/SYX/eeg-mi-online` + `/share/home/yuan/SYX/backups` | 明确保留。 |
-| `/share/home/yuan/SYX` 其他目录 | 删前先复制到 `/share/home/yuan/SYX/backups/`，不要直接 rm。 |
+| 本项目克隆目录 + 本机备份目录 | 明确保留。 |
+| 本机账号下其他无关目录 | 删前先备份，不要直接 rm。 |
 
 ## 7. 外部数据边界
 
-WBCIC-SHU `/share/workspace2/moto_imagination/WBCIC_SHU` 与 SHU `/share/workspace2/moto_imagination/SHU` 的 **raw 部分只读**（禁止写入/改名/删除）。唯一允许写的是各自的 `processed/` 子树（预处理 npz+manifest 输出）：`WBCIC_SHU/processed/eog_ecg_clean/`、`SHU/processed/npz_clean/`。
+外部路径由本机 `code/configs/paths.local.yaml` / `datasets/*.local.yaml` 配置（仓库内为 `/CHANGE/ME` 占位，见 `SETUP.md`）。**raw 只读**；唯一允许写外部盘的是 local 配置显式指向的 `processed/` 子树。换机不要把填好的 `*.local.yaml` 推到 GitHub。

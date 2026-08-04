@@ -15,7 +15,7 @@ run_id: "shu_session_model_compare_v1"
 
 data:
   name: "shu"
-  manifest: "/share/workspace2/moto_imagination/SHU/processed/npz_clean/processed_manifest.csv"
+  manifest: "shu_processed_manifest"
   status_filter: ["ok"]
   n_channels: 32
   n_times: 1000

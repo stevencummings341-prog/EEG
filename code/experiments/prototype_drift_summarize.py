@@ -576,14 +576,10 @@ def summarize_from_cfg(cfg: Dict) -> Dict[str, object]:
     out_cfg = cfg.get("output", {}) or {}
     run_dir = _abs(out_cfg.get("run_dir", out_cfg.get("output_dir", "outputs/experiments/prototype_drift_v1")))
     readable_dir = _abs(out_cfg.get("readable_dir", "4_experiments/prototype_drift"))
-    # Config key is `data.manifest` (consistent with code/runners.py:_resolve_manifest);
-    # `manifest_path` kept as a legacy fallback. Without this, non-WBCIC datasets (e.g. SHU)
-    # silently fall back to the WBCIC manifest and build_run_status compares against the wrong grid.
-    data_cfg = cfg.get("data", {}) or {}
-    manifest_path = data_cfg.get("manifest") or data_cfg.get("manifest_path")
-    if not manifest_path:
-        from code.utils.paths import load_paths
-        manifest_path = str(load_paths(require_raw=False).processed_manifest)
+    # Config key is `data.manifest` (logical key or path). Resolved via paths.resolve_manifest_path
+    # so SHU never silently falls back to the WBCIC manifest.
+    from code.utils.paths import resolve_manifest_path
+    manifest_path = str(resolve_manifest_path(cfg))
     models = cfg.get("models", MODELS)
     seeds = [int(s) for s in (cfg.get("seeds") or cfg.get("train", {}).get("seeds", [0]))]
     status_filter = tuple(cfg.get("data", {}).get("status_filter", ["ok"]))

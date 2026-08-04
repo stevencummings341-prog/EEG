@@ -1,9 +1,9 @@
 """SHU 2022 dataset adapter.
 
-The external dataset at `/share/workspace2/moto_imagination/SHU` is treated as
-read-only. This adapter indexes BIDS-like EDF/MAT/events files and exposes their
-metadata; converting raw sessions into standardized `.npz` must be done by an
-explicit preprocessing experiment that writes inside this project only.
+External SHU raw root comes from dataset / paths config (`data_dir`), never
+hard-coded. That tree is read-only. This adapter indexes BIDS-like EDF/MAT/events
+files and exposes their metadata; converting raw sessions into standardized
+`.npz` must be done by an explicit preprocessing experiment.
 """
 from __future__ import annotations
 

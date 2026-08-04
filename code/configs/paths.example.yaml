@@ -1,8 +1,12 @@
-# Copy to paths.yaml and fill in paths for THIS machine:
-#   cp code/configs/paths.example.yaml code/configs/paths.yaml
+# Copy to a MACHINE-LOCAL file (gitignored) and fill real paths:
+#   cp code/configs/paths.example.yaml code/configs/paths.local.yaml
 #
-# Env override: SHU_2C_ROOT overrides raw_data.shu_2c_root.
-# Never hard-code data paths in Python.
+# Load order: paths.local.yaml > paths.yaml
+# Env overrides:
+#   SHU_2C_ROOT              -> raw_data.shu_2c_root (WBCIC-SHU)
+#   SHU_ROOT                 -> shu.raw_root
+#   SHU_PROCESSED_MANIFEST   -> manifests.shu_processed_manifest
+# Never hard-code data paths in Python. Do NOT commit filled *.local.yaml.
 
 raw_data:
   # External, READ-ONLY WBCIC-SHU / SHU 2C dataset root (BIDS). Outside this project.
@@ -16,9 +20,16 @@ processed_data:
   # Formal EOG/ECG-assisted clean tensors — must be under processed/ (writable).
   eog_ecg_clean_root: "/CHANGE/ME/WBCIC_SHU/processed/eog_ecg_clean"
 
+# SHU 2022 (Ma et al.) — optional until you run SHU experiments.
+shu:
+  raw_root: "/CHANGE/ME/SHU"
+  npz_clean_root: "/CHANGE/ME/SHU/processed/npz_clean"
+  manifest: "/CHANGE/ME/SHU/processed/npz_clean/processed_manifest.csv"
+
 manifests:
   raw_manifest: "manifests/shu_2c_raw_manifest.csv"
   processed_manifest: "/CHANGE/ME/WBCIC_SHU/processed/eog_ecg_clean/processed_manifest.csv"
+  shu_processed_manifest: "/CHANGE/ME/SHU/processed/npz_clean/processed_manifest.csv"
 
 splits:
   dir: "splits"

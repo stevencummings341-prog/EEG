@@ -3,7 +3,7 @@ title: "File Catalog"
 tags:
   - "#modality/eeg"
 created: "2026-06-10"
-updated: "2026-07-12"
+updated: "2026-08-04"
 status: "active"
 ---
 
@@ -72,7 +72,12 @@ status: "active"
 | `scripts/build_drift_report.py` | session/dataset 无关的 drift per-pair/per-subject 表+图+报告构建器（泛化 legacy WBCIC-only 版）。 |
 | `scripts/make_baseline_cross_all.py` | Phase 2b baseline schema 适配器：Phase 1 cross（accuracy/train_session）→ alignment 口径 `results_cross_session_all.csv`（acc/train_sessions/training_scope），数据集无关。 |
 | `scripts/scaffold_readmes.py` | 双数据集结果树各层 README 生成器。 |
-| `scripts/slurm/shu_gpu.sbatch` | SHU 通用 GPU 训练 Slurm 脚本（config + passthrough，mi_torch_cu118）。 |
+| `code/configs/paths.example.yaml` / `paths.yaml` | 路径模板与仓库占位；真实路径在 `paths.local.yaml`。 |
+| `code/configs/paths.local.yaml` | **本机**路径（gitignore，不推送）。 |
+| `code/configs/datasets/{shu,wbci_shu}.example.yaml` | 数据集路径模板。 |
+| `code/configs/datasets/{shu,wbci_shu}.local.yaml` | **本机**数据集路径（gitignore）。 |
+| `scripts/slurm/_common.sh` | Slurm 共用：自动探测 PROJECT_ROOT + conda activate。 |
+| `scripts/slurm/shu_gpu.sbatch` | 通用 GPU 训练 Slurm 脚本（config + passthrough，mi_torch_cu118）。 |
 | `scripts/slurm/shu_cpu.sbatch` | SHU 通用 CPU Slurm 脚本（Phase 0 drift / `--summarize`）。 |
 | `checkpoints/README.md` | checkpoint 命名规范（dataset/run_id/method/model/任务前缀/sub/session/seed）。 |
 | `scripts/slurm/train_prototype_drift_gpu.sbatch` | Phase 2c 单 (model,seed) GPU 训练 job。 |

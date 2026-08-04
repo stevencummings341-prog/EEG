@@ -5,6 +5,6 @@ alwaysApply: true
 
 # Data Paths
 
-External datasets are read-only: `/share/workspace2/moto_imagination/WBCIC_SHU` and `/share/workspace2/moto_imagination/SHU`. Never create, modify, rename, or delete files there.
+External dataset locations come from machine-local configs (`code/configs/paths.local.yaml`, `datasets/*.local.yaml`), never from hard-coded absolute paths in Python or experiment YAMLs. Treat configured RAW trees as read-only.
 
-All runnable configs live under `code/configs/`. WBCIC processed data use the external manifest; SHU raw EDF/MAT/events are indexed read-only. New processed outputs must be written inside this project unless the user explicitly approves another safe output path.
+All runnable configs live under `code/configs/`. Experiment manifests use logical keys (`processed_manifest` / `shu_processed_manifest`). New processed outputs must follow the local path config; do not invent external write locations unless the user explicitly approves a safe path. Do not commit filled `*.local.yaml`.

@@ -3,7 +3,7 @@ title: "Operation Log"
 tags:
   - "#modality/eeg"
 created: "2026-06-10"
-updated: "2026-07-06"
+updated: "2026-08-04"
 status: "active"
 ---
 
@@ -11,6 +11,7 @@ status: "active"
 
 | Time | Action | Path | Note |
 |:---|:---|:---|:---|
+| 2026-08-04 | CREATE | `code/configs/paths.local.yaml`, `datasets/{shu,wbci_shu}.local.yaml`, `scripts/slurm/_common.sh` | 跨机便携：本机路径 local 化；Slurm 去硬编码 PROJECT_ROOT。 |
 | 2026-07-12 | CREATE | `3_online_adaptation/PRETRAINED_MODEL_INTEGRATION_CONTRACT.md` | Pretrained-model integration contract (authoritative). |
 | 2026-07-12 | CREATE | `code/configs/experiments/phase3_tta_full_a0.yaml` | Opt-in WBCIC full A0 replay config. |
 | 2026-07-12 | CREATE | `code/tta/README.md` | TTA package overview. |

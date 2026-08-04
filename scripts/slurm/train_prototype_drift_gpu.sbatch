@@ -5,6 +5,7 @@
 #
 # Usage:
 #   sbatch -J proto_drift__eegnet_s0 scripts/slurm/train_prototype_drift_gpu.sbatch eegnet 0
+# Optional mail: sbatch --mail-user=you@example.com -J ...
 # Positional args: $1 = model (eegnet|deepconvnet|fbcnet), $2 = seed (int).
 #SBATCH -o logs/slurm/%x-%j.out
 #SBATCH -e logs/slurm/%x-%j.err
@@ -14,12 +15,11 @@
 #SBATCH --mem=24G
 #SBATCH -t 16:00:00
 #SBATCH --mail-type=FAIL,END
-#SBATCH --mail-user=125090599@link.cuhk.edu.cn
 
 set -euo pipefail
 
-PROJECT_ROOT="/share/home/yuan/SYX/eeg-mi-online"
-MI_ENV="${MI_ENV:-mi_torch_cu118}"
+# shellcheck disable=SC1091
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_common.sh"
 MODEL="${1:?model required (eegnet|deepconvnet|fbcnet)}"
 SEED="${2:?seed required (int)}"
 
@@ -30,16 +30,9 @@ echo "Env    : $MI_ENV"
 echo "Model  : $MODEL | Seed: $SEED"
 echo "Node   : $(hostname) | Start: $(date)"
 
-source /share/software/anaconda3/2024.10/etc/profile.d/conda.sh
-conda activate "$MI_ENV"
-
+mi_activate_conda
 nvidia-smi || true
-python - <<'PY'
-import torch
-print(f"[cuda-check] torch={torch.__version__} cuda_build={torch.version.cuda} cuda_avail={torch.cuda.is_available()}")
-if not torch.cuda.is_available():
-    raise SystemExit(2)
-PY
+mi_cuda_failfast
 
 python -u code/run.py \
   --config code/configs/experiments/phase2c_prototype_drift.yaml \

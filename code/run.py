@@ -103,7 +103,11 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true", help="resolve config and print plan only")
     parser.add_argument("--summarize", action="store_true",
                         help="aggregate existing run outputs into tables/figures + canonical REPORT.md")
-    parser.add_argument("--paths", default="code/configs/paths.yaml", help="paths.yaml location")
+    parser.add_argument(
+        "--paths",
+        default="code/configs/paths.yaml",
+        help="paths config (auto-prefers paths.local.yaml if present)",
+    )
     parser.add_argument("--device", help="cuda | cpu | auto")
     parser.add_argument("--models", help="comma-separated model names")
     parser.add_argument("--methods", help="comma-separated alignment methods (phase2b)")

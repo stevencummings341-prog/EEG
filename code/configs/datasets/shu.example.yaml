@@ -1,5 +1,6 @@
-# Copy to shu.yaml and set data_dir / processed_root / manifest for THIS machine:
-#   cp code/configs/datasets/shu.example.yaml code/configs/datasets/shu.yaml
+# Copy to machine-local file (gitignored) and fill paths:
+#   cp code/configs/datasets/shu.example.yaml code/configs/datasets/shu.local.yaml
+# Runtime prefers shu.local.yaml over shu.yaml.
 name: "shu"
 description: "SHU 2022 -- 25 subjects x 5 sessions x 32 EEG channels"
 paper: "Ma et al., Scientific Data, 2022"
@@ -16,3 +17,40 @@ sessions_per_subject: 5
 electrode_system: "10-20/10-10"
 task: "2-class motor imagery: left vs right hand grasping"
 read_only: true
+source_files:
+  eeg: "sub-*_ses-*_task_motorimagery_eeg.edf|mat"
+  events: "sub-*_ses-*_task_motorimagery_events.tsv"
+  metadata: "dataset_description.json, participants.tsv, task-motorimagery_channels.tsv"
+channels:
+  - "FP1"
+  - "FP2"
+  - "FZ"
+  - "F3"
+  - "F4"
+  - "F7"
+  - "F8"
+  - "FC1"
+  - "FC2"
+  - "FC5"
+  - "FC6"
+  - "CZ"
+  - "C3"
+  - "C4"
+  - "T3"
+  - "T4"
+  - "A1"
+  - "A2"
+  - "CP1"
+  - "CP2"
+  - "CP5"
+  - "CP6"
+  - "PZ"
+  - "P3"
+  - "P4"
+  - "T5"
+  - "T6"
+  - "PO3"
+  - "PO4"
+  - "OZ"
+  - "O1"
+  - "O2"

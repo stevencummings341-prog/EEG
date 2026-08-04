@@ -14,7 +14,7 @@ run_id: "shu_session_drift_v1"
 
 data:
   name: "shu"
-  manifest: "/share/workspace2/moto_imagination/SHU/processed/npz_clean/processed_manifest.csv"
+  manifest: "shu_processed_manifest"
   status_filter: ["ok"]
   sfreq: 250
   n_channels: 32

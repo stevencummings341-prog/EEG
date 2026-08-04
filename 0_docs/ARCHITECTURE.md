@@ -4,7 +4,7 @@ tags:
   - "#pipeline/5_dl_model"
   - "#modality/eeg"
 created: "2026-06-10"
-updated: "2026-07-12"
+updated: "2026-08-04"
 status: "active"
 ---
 
@@ -37,7 +37,7 @@ eeg-mi-online/
 └── results.md              # 结果速查表
 ```
 
-> `/share/home/yuan/SYX` 下现在只有本项目 `eeg-mi-online/` + `backups/` + 无关的 `run_test.sh`（另一个项目 AADSurvey 的模板）。旧的 `P10_MI泛化研究/`、根目录 `CLAUDE.md`、以及本项目的 `HANDOFF.md` / `CHATGPT_DIRECTOR_BRIEF.md` 已删除——项目已收敛为单一自洽文件夹。
+> 项目根 = 本仓库克隆路径（跨机可变）。本机数据路径在 `code/configs/*.local.yaml`。权威记忆仍是根目录 `AGENTS.md`。
 
 ## 2. 根目录文件
 
@@ -117,3 +117,11 @@ flowchart TD
 ## 6. backup 说明
 
 `backup/root_archive_2026-06-10/` 保存清理前的 `src/scripts/configs/docs/outputs/checkpoints/logs/manifests/splits/tests`；`backup/legacy_snapshot_2026-06-10/` 是更早的轻量快照。两者都用于历史追溯，不要删除。
+
+
+## Portable path configs
+
+- `code/configs/paths.example.yaml` + `paths.local.yaml`（本机，gitignore）
+- `code/configs/datasets/{shu,wbci_shu}.example.yaml` + `*.local.yaml`
+- Experiment YAMLs use logical keys `processed_manifest` / `shu_processed_manifest`
+- Slurm scripts auto-detect project root via `scripts/slurm/_common.sh`

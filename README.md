@@ -43,11 +43,11 @@ eeg-mi-online/
 ## 2. 运行入口
 
 ```bash
-cd /share/home/yuan/SYX/eeg-mi-online
+cd /path/to/this/repo   # 任意克隆路径
 python code/run.py --dry-run --config code/configs/experiments/phase1_baseline.yaml
 ```
 
-`code/run.py` 已直连 `code/` 模块（含 Phase 0/1/2a/2b/2c runner），可直接训练与 `--summarize`。GPU 任务走 Slurm + `mi_torch_cu118`，先 smoke 再 full。
+`code/run.py` 已直连 `code/` 模块（含 Phase 0/1/2a/2b/2c runner），可直接训练与 `--summarize`。GPU 任务走 Slurm + `mi_torch_cu118`，先 smoke 再 full。本机数据路径写在 `code/configs/*.local.yaml`（见 `SETUP.md`）。
 
 SHU 直接开跑（同一批 runner，仅 config 不同）：
 
@@ -71,7 +71,7 @@ SHU 预处理（若需重生成）：`python scripts/preprocess_shu.py`。
 
 ## 4. 数据边界
 
-外部 raw 数据只读：WBCIC-SHU `/share/workspace2/moto_imagination/WBCIC_SHU`，SHU `/share/workspace2/moto_imagination/SHU`。唯一允许写的 workspace2 位置是各数据集的 `processed/` 子树（预处理 npz+manifest）：`WBCIC_SHU/processed/eog_ecg_clean/`、`SHU/processed/npz_clean/`。
+外部 raw / processed 路径由本机 `code/configs/paths.local.yaml`（及 `datasets/*.local.yaml`）配置，**不进 Git**。仓库内只有 `/CHANGE/ME/...` 占位。raw 只读；唯一允许写外部盘的位置是各数据集的 `processed/` 子树（若你的 local 配置指向共享盘 processed）。
 
 ## 5. 上传 GitHub / 换机继续跑
 

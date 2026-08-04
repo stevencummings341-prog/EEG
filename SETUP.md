@@ -5,6 +5,8 @@
 本仓库**不含**：原始 EEG、预处理 `.npz`、模型权重、以及 `outputs/` / `logs/` / `checkpoints/` / `backup/`。  
 这些需在目标机挂共享盘、从原服务器拷贝，或重新预处理生成。
 
+**跨机同步原则**：Git 里只放占位路径与逻辑键；本机真实路径写在 `*.local.yaml`（已 gitignore）。
+
 ---
 
 ## 0. 新机器访问私有仓库（二选一）
@@ -105,38 +107,39 @@ pip install --index-url https://download.pytorch.org/whl/cu121 torch torchvision
 
 ---
 
-## 3. 改机器相关路径（必做）
+## 3. 本机路径配置（必做，不进 Git）
 
-仓库里的绝对路径默认指向**原集群**（如 `/share/workspace2/moto_imagination/...`）。换机必须改。
-
-| 文件 | 作用 |
-|:---|:---|
-| `code/configs/paths.yaml` | WBCIC-SHU raw / processed / manifest |
-| `code/configs/datasets/shu.yaml` | SHU 2022 `data_dir` / `processed_root` / `manifest` |
-| `code/configs/datasets/wbci_shu.yaml` | WBCIC-SHU 数据集声明（若含绝对路径一并改） |
-
-从模板复制再改（推荐新机器第一次配置）：
+仓库内 `paths.yaml` / `datasets/*.yaml` 只有 `/CHANGE/ME/...` 占位符。每台机器复制为 `*.local.yaml` 再填真实路径：
 
 ```bash
-cp code/configs/paths.example.yaml code/configs/paths.yaml
-cp code/configs/datasets/shu.example.yaml code/configs/datasets/shu.yaml
-# 用编辑器把 /CHANGE/ME/... 改成新机器上的真实路径
-# 同时检查并修改 code/configs/datasets/wbci_shu.yaml
+cp code/configs/paths.example.yaml code/configs/paths.local.yaml
+cp code/configs/datasets/shu.example.yaml code/configs/datasets/shu.local.yaml
+cp code/configs/datasets/wbci_shu.example.yaml code/configs/datasets/wbci_shu.local.yaml
+# 编辑三个 *.local.yaml，把 /CHANGE/ME/... 换成本机真实路径
 ```
 
-也可用环境变量覆盖 WBCIC raw 根：
+加载顺序：`*.local.yaml` > 同名占位文件。实验 YAML 用逻辑键（可跨机提交）：
+
+| 逻辑键 | 含义 |
+|:---|:---|
+| `processed_manifest` | WBCIC processed manifest（来自 paths.local.yaml） |
+| `shu_processed_manifest` | SHU processed manifest |
+
+也可用环境变量覆盖：
 
 ```bash
 export SHU_2C_ROOT=/your/path/WBCIC_SHU
+export SHU_ROOT=/your/path/SHU
+export SHU_PROCESSED_MANIFEST=/your/path/SHU/processed/npz_clean/processed_manifest.csv
 ```
 
-**不要**把填好本机路径的 `paths.yaml` / `shu.yaml` 误推到 GitHub（会污染别人的路径）；本机改完留在本地即可。
+**不要**把填好的 `*.local.yaml` 推到 GitHub。
 
 ---
 
 ## 4. 数据与权重
 
-- **Raw（只读）**：放在 `paths.yaml` / `shu.yaml` 指向的外部目录。  
+- **Raw（只读）**：放在 `paths.local.yaml` / `shu.local.yaml` 指向的外部目录。  
 - **Processed**：需要 `processed_manifest.csv` + 各 session 的 `.npz`，或在本机重跑：
   - SHU：`python scripts/preprocess_shu.py`
   - WBCIC：见 `0_docs/`、`code/README.md` 中的预处理说明  
@@ -155,16 +158,27 @@ mkdir -p outputs logs checkpoints
 
 ```bash
 conda activate mi_torch_cu118
-cd /path/to/EEG   # 换成你的克隆路径
+cd /path/to/EEG   # 换成你的克隆路径（任意目录均可）
 
 python code/run.py --dry-run --config code/configs/experiments/phase1_baseline.yaml
 ```
 
-正式跑示例（需 GPU + 数据就绪）：
+GPU 训练走 Slurm（脚本会自动探测项目根，无需改绝对路径）：
 
 ```bash
-python code/run.py --config code/configs/experiments/shu_phase1_baseline.yaml --device cuda
-python code/run.py --config code/configs/experiments/phase1_baseline.yaml --device cuda
+mkdir -p logs/slurm
+# 可选：export CONDA_ROOT=/path/to/anaconda3
+# 可选：sbatch --mail-user=you@example.com ...
+sbatch -J smoke_p1 scripts/slurm/shu_gpu.sbatch \
+  code/configs/experiments/phase1_baseline.yaml \
+  --models eegnet --protocol within --subjects 1,2 --folds 2 --max-epochs 3
+```
+
+正式跑示例：
+
+```bash
+sbatch -J shu_p1 scripts/slurm/shu_gpu.sbatch \
+  code/configs/experiments/shu_phase1_baseline.yaml --device cuda
 ```
 
 更多入口见根目录 `README.md`。
@@ -178,19 +192,19 @@ cd /path/to/EEG
 git pull
 ```
 
+本机 `*.local.yaml` 不会被 pull 覆盖（未跟踪）。若上游改了 `*.example.yaml` schema，对照合并到你的 local 文件即可。
+
 若用了 SSH 别名且 remote 还不是别名，可设：
 
 ```bash
 git remote set-url origin git@github.com-stevencummings:stevencummings341-prog/EEG.git
 ```
 
-本地改过的 `paths.yaml` / dataset yaml 若与上游冲突，保留本机路径后再合并其它文件。
-
 ---
 
-## 7. 原集群（本仓库推送机）备忘
+## 7. 原集群备忘（可选）
 
 - 专用钥匙：`~/.ssh/id_ed25519_stevencummings`  
 - SSH Host：`github.com-stevencummings`  
 - remote：`git@github.com-stevencummings:stevencummings341-prog/EEG.git`  
-- 旧钥匙 `id_ed25519` 仍绑定其它 GitHub 账号（`LiaoEuan`），推本仓库请用上面的别名，不要混用。
+- 旧钥匙 `id_ed25519` 仍可能绑定其它 GitHub 账号，推本仓库请用上面的别名，不要混用。

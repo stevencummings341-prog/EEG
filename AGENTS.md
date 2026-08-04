@@ -77,17 +77,17 @@ Phase 4+: Memory / Online test-then-update / Agent
 
 ## 3. Current Verified Facts
 
-- WBCIC-SHU 2C processed entry:
+- WBCIC-SHU / SHU 路径由本机 `code/configs/paths.local.yaml`（及 `datasets/*.local.yaml`）配置；仓库内只有 `/CHANGE/ME` 占位。实验 config 用逻辑键 `processed_manifest` / `shu_processed_manifest`。
+- 原集群（历史事实）WBCIC processed entry 曾位于：
   `/share/workspace2/moto_imagination/WBCIC_SHU/processed/eog_ecg_clean/processed_manifest.csv`
 - WBCIC usable sessions: 148 ok / 5 failed.
 - WBCIC tensor convention: `X [trials, 58, 1000]`, `y [trials]`, labels normalized to `{0,1}`.
-- SHU 2022 raw source: `/share/workspace2/moto_imagination/SHU`（read-only，.edf/.mat/.tsv）。
-- **SHU 2022 processed entry（已完成）**：
-  `/share/workspace2/moto_imagination/SHU/processed/npz_clean/processed_manifest.csv`
+- SHU 2022 raw / processed（历史事实，原集群）：
+  `/share/workspace2/moto_imagination/SHU` 与 `.../processed/npz_clean/processed_manifest.csv`
   - 入口=作者发布的 per-session `.mat`（已带通/陷波/4s 切段），仅做标签归一化 {1,2}->{0,1} 转存 `.npz`，不再二次预处理。
   - 125 session 全 ok / 25 subjects。tensor: `X [trials, 32, 1000]`, `y [trials]∈{0,1}`。
   - 生成脚本：`scripts/preprocess_shu.py`（核心 `code/preprocessing/shu_mat.py`）。
-- runner 数据集无关：manifest 由 config `data.manifest` 解耦（`code/runners.py:_resolve_manifest`），WBCIC 缺省回退 paths.yaml。
+- runner 数据集无关：manifest 由 `code.utils.paths.resolve_manifest_path` 解耦（逻辑键或路径），优先 `paths.local.yaml`。
 - 输出/权重按数据集作用域：`outputs/.../{wbci_shu,shu}/<run_id>/`、`checkpoints/{wbci_shu,shu}/<run_id>/`。
 - Completed result: no-learning alignment is insufficient; best BN-stat gain is small and below +2pp.
 - **SHU 结果（2026-07-06 全部完成）**：P1 within/cross(5-seed) EEGNet 0.611/0.538、DeepConvNet 0.606/0.536、FBCNet 0.553/0.508（cross 近 chance）；P2a ses01+02→03 EEGNet 0.544/DeepConvNet 0.558/FBCNet 0.512；P2b 无对齐 0.5274、最佳 session_zscore +1.42pp、无方法过 +2pp；P2c scatter 15.7→38.3(+144%)/Fisher 1.96→0.79(−60%)、fisher_change ρ=0.43、cosine>euclidean、FBCNet 弱。可读区 `2_baseline/shu/{no_alignment_baseline,alignment_baseline}/`、`4_experiments/shu/prototype_drift/`，各含 AI_ANALYSIS.md。
@@ -106,14 +106,11 @@ Phase 4+: Memory / Online test-then-update / Agent
 
 ## 4. Hard Scope
 
-1. Write only inside `/share/home/yuan/SYX/eeg-mi-online` unless the user explicitly says otherwise.
-   现在 `/share/home/yuan/SYX` 下只有本项目 `eeg-mi-online/` + `backups/` + 无关的 `run_test.sh`
-   （另一个项目 AADSurvey 的 Slurm 模板，与本项目无关，不要用它）。旧的 `P10_MI泛化研究/` 与根目录
-   `CLAUDE.md` 已被删除，不再是参考源——本项目自身即唯一权威。
-2. Treat the RAW sources `/share/workspace2/moto_imagination/WBCIC_SHU`（sourcedata/derivatives）和 `/share/workspace2/moto_imagination/SHU`（.edf/.mat/.tsv）as read-only。禁止改名/删除/写入 raw。
-3. 唯一允许写 workspace2 的位置是各数据集的 `processed/` 子树（预处理 npz+manifest 输出）：
-   `WBCIC_SHU/processed/eog_ecg_clean/`、`SHU/processed/npz_clean/`。其余 workspace2 路径只读。
+1. Write only inside **this repository's project root** (wherever it is cloned) unless the user explicitly says otherwise. 换机入口见根目录 `SETUP.md`。
+2. Treat external RAW trees configured in `paths.local.yaml` / dataset `*.local.yaml` as read-only（sourcedata/derivatives / raw EDF/MAT）。禁止改名/删除/写入 raw。
+3. 唯一允许写外部盘的位置是各数据集的 `processed/` 子树（预处理 npz+manifest 输出），且必须由本机 local 配置显式指向。其余外部数据路径只读。
 4. Do not overwrite completed `*_v1` outputs/checkpoints.
+5. Do not commit filled `*.local.yaml`（本机路径）；Git 只保留 `*.example.yaml` 与占位 `paths.yaml` / dataset yaml。
 
 ## 5. Directory Routing
 
@@ -250,7 +247,7 @@ Recommended future strategy:
 
 ## 10. What Not To Do
 
-- Do not write to `/share/workspace2`.
+- Do not write to external RAW trees; only write `processed/` if local config explicitly points there.
 - Do not fabricate results.
 - Do not silently run heavy jobs on login node.
 - Do not collapse future work into current status.

@@ -19,7 +19,7 @@ task: "2C left vs right MI"
 
 data:
   name: "shu"
-  manifest: "/share/workspace2/moto_imagination/SHU/processed/npz_clean/processed_manifest.csv"
+  manifest: "shu_processed_manifest"
   status_filter: ["ok"]
   n_channels: 32
   n_times: 1000

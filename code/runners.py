@@ -63,18 +63,9 @@ def _abs(path_str: str) -> Path:
 
 
 def _resolve_manifest(cfg: Dict, P) -> Path:
-    """Dataset-agnostic manifest resolution.
-
-    优先用实验 config 里 `data.manifest`（绝对或相对仓库根路径）；缺省回退到
-    paths.yaml 的全局 `processed_manifest`（WBCIC-SHU 默认）。这样同一套 runner
-    可在 WBCIC-SHU / SHU 等不同数据集间切换，只改 config 不改代码。
-    """
-    m = (cfg.get("data") or {}).get("manifest")
-    # 仅当 manifest 看起来是一个文件路径时才覆盖（WBCIC config 里 manifest 可能是
-    # paths.yaml 的逻辑键名 "processed_manifest"，此时不覆盖，沿用 P.processed_manifest）。
-    if m and ("/" in str(m) or str(m).endswith(".csv")):
-        return _abs(str(m))
-    return P.processed_manifest
+    """Dataset-agnostic manifest resolution（逻辑键或真实路径，见 paths.resolve_manifest_path）。"""
+    from code.utils.paths import resolve_manifest_path
+    return resolve_manifest_path(cfg, P)
 
 
 def _build_spec(args: argparse.Namespace, train_cfg: Dict):

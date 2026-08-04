@@ -5,7 +5,7 @@
 依赖: numpy, scipy, pyyaml
 
 数据入口为作者提供的 per-session `.mat`（见 code/preprocessing/shu_mat.py 说明）。
-输出（默认写 workspace2，不写仓库；与 WBCIC processed 同惯例）:
+输出（默认写 dataset config 的 processed_root；与 WBCIC processed 同惯例）:
   <out_root>/<sub>/<ses>/<sub>_<ses>_task-motorimagery_eeg.npz
   <out_root>/<sub>/<ses>/meta.json
   <out_root>/processed_manifest.csv
@@ -14,6 +14,8 @@
   python scripts/preprocess_shu.py --dry-run                 # 只枚举，不落盘
   python scripts/preprocess_shu.py --subjects 1              # 单被试
   python scripts/preprocess_shu.py                           # 全量 (25 人 × 5 session)
+
+路径来自 datasets/shu.local.yaml（或 shu.yaml）；勿在脚本里写死集群绝对路径。
 """
 from __future__ import annotations
 
@@ -34,7 +36,6 @@ from code.preprocessing.shu_mat import load_shu_session_mat  # noqa: E402
 from code.utils.io import save_json, save_session_npz  # noqa: E402
 
 _PATTERN = re.compile(r"^(sub-\d+)_+(ses-\d+)_task_motorimagery_eeg\.mat$")
-DEFAULT_OUT_ROOT = "/share/workspace2/moto_imagination/SHU/processed/npz_clean"
 
 
 def _norm_sub(s: str) -> str:
@@ -45,22 +46,37 @@ def _norm_sub(s: str) -> str:
     return f"sub-{int(s):03d}"
 
 
+def _default_dataset_config() -> Path:
+    from code.utils.paths import prefer_local_config
+    return prefer_local_config(CODE_ROOT / "configs" / "datasets" / "shu.yaml")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="Preprocess SHU 2022 .mat -> npz + manifest")
-    ap.add_argument("--dataset-config",
-                    default=str(CODE_ROOT / "configs" / "datasets" / "shu.yaml"))
-    ap.add_argument("--out-root", default=DEFAULT_OUT_ROOT)
+    ap.add_argument("--dataset-config", default=None,
+                    help="shu dataset yaml (default: shu.local.yaml if present else shu.yaml)")
+    ap.add_argument("--out-root", default=None,
+                    help="output root (default: processed_root from dataset config)")
     ap.add_argument("--subjects", help="逗号分隔，如 1,2 或 sub-001")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
-    cfg = yaml.safe_load(Path(args.dataset_config).read_text(encoding="utf-8"))
+    dataset_cfg_path = Path(args.dataset_config) if args.dataset_config else _default_dataset_config()
+    cfg = yaml.safe_load(dataset_cfg_path.read_text(encoding="utf-8"))
     data_dir = Path(cfg["data_dir"])
     channels = list(cfg.get("channels", []))
     sfreq = int(float(cfg.get("sfreq", 250.0)))
     n_ch = int(cfg.get("n_channels", 32))
     n_times = int(cfg.get("n_timepoints", 1000))
-    out_root = Path(args.out_root)
+    if args.out_root:
+        out_root = Path(args.out_root)
+    else:
+        out_root = Path(cfg.get("processed_root") or cfg.get("npz_clean_root") or "")
+        if not str(out_root) or "CHANGE/ME" in str(out_root):
+            raise SystemExit(
+                "out-root 未设置或仍是占位符。请填写 datasets/shu.local.yaml 的 processed_root，"
+                "或传 --out-root。"
+            )
 
     subj_filter = {_norm_sub(s) for s in args.subjects.split(",")} if args.subjects else None
 

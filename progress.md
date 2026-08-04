@@ -7,6 +7,19 @@ Format per entry: date, what was done, decisions made, open questions, next step
 
 ---
 
+## 2026-08-04 — 跨机便携路径改造（portable local configs）
+
+- **目标**：去掉仓库内硬编码绝对路径，方便 GitHub 云端同步、多服务器继续开发。
+- **做法**：
+  1. 本机路径改为 `*.local.yaml`（gitignore）；仓库保留 `*.example.yaml` + 占位 `paths.yaml` / dataset yaml。
+  2. SHU 实验 config 的 `data.manifest` 改为逻辑键 `shu_processed_manifest`；`paths.py` 新增 `resolve_manifest_path`。
+  3. Slurm 脚本经 `scripts/slurm/_common.sh` 自动探测项目根；去掉硬编码 `/share/home/yuan/...` 与 mail-user。
+  4. `preprocess_shu.py` 默认 out-root 来自 `shu.local.yaml`，不再写死 workspace2。
+- **本机**：已生成指向当前共享盘的 `paths.local.yaml` / `shu.local.yaml` / `wbci_shu.local.yaml`。
+- **下一步**：需要时 `git add` 便携改动并 push（不要提交 `*.local.yaml`）。
+
+---
+
 ## 2026-07-12 — Phase 3 Pretrained-Model Readiness Round（工程验收，非科研裁决）
 
 - **目标**：在学长真实预训练模型交付前，把 TTA 后端从 “embedding replay 已跑通” 提升到

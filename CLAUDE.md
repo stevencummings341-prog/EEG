@@ -3,7 +3,7 @@ title: "CLAUDE.md — 兼容入口（指向 AGENTS.md）"
 tags:
   - "#modality/eeg"
 created: "2026-06-12"
-updated: "2026-07-06"
+updated: "2026-08-04"
 status: "active"
 ---
 
@@ -24,8 +24,8 @@ status: "active"
 
 ## 最关键的三条（细节见 AGENTS.md）
 
-- 工作根目录固定 `/share/home/yuan/SYX/eeg-mi-online`；唯一人工入口 `python code/run.py --config code/configs/experiments/<phase>.yaml`。
-- 外部 raw 数据 `/share/workspace2/moto_imagination/{WBCIC_SHU,SHU}` 只读；不编造结果；GPU 走 Slurm + `mi_torch_cu118`，禁登录节点跑重活。
+- 工作根目录 = 本仓库克隆路径（任意机器任意目录）；唯一人工入口 `python code/run.py --config code/configs/experiments/<phase>.yaml`。
+- 外部 raw/processed 路径写在本机 `*.local.yaml`（gitignore）；不编造结果；GPU 走 Slurm + `mi_torch_cu118`，禁登录节点跑重活。
 - 每做一件事立刻同步文档（`progress.md` / `0_docs/operation_log.md` / `0_docs/FILE_CATALOG.md` / 最近 README），知识不许只留在聊天里。
 
-注意：`/share/home/yuan/SYX` 下现在只有本项目 `eeg-mi-online/`（+ `backups/` + 无关的 `run_test.sh`）；旧的根目录 `CLAUDE.md` 与 `P10_MI泛化研究/` 已删除。本项目唯一权威是本目录的 `AGENTS.md`。
+注意：换机按根目录 `SETUP.md` 配置环境与 `*.local.yaml`；本目录的 `AGENTS.md` 是唯一权威。
