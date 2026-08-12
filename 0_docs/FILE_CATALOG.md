@@ -72,6 +72,8 @@ status: "active"
 | `code/models/paper_baselines/` | **DSGNet 论文 Table II 的已发表 baseline（只用各自作者官方仓库）**。`_official/`=官方源码原样（EEGNet/EEGNeX 的 Keras 仅供核对不执行；`EEGDeformer.py` 是官方 PyTorch，直接执行）、`eegnet_official_torch.py` / `eegnex_official_torch.py`=1:1 移植、`keras_compat.py`=TF same padding / max_norm / glorot 初始化、`adapter.py`=项目 dict 契约、`README.md`=出处/保真证据/偏差/**排除清单及理由**（EEG-Inception、MDGEEG、EEG-DG、DSGNet 无完整官方码）。 |
 | `code/configs/models/{eegnet_official,eegnex,eeg_deformer}.yaml` | 三个 baseline 的结构超参（**全部上游作者默认值**）。 |
 | `code/configs/experiments/paper_baseline_3c_821.yaml` | **7 模型统一对比 run**：WBCIC 3C、8:2:1 跨被试、论文 recipe（Adam 1e-4/batch 128/500ep）+ 早停 patience 100 + 三曲线。 |
+| `scripts/slurm/submit_paper_baseline_821.sh` | 提交/续跑 `paper_baseline_3c_821_v1`：每未完成 fold 一个 job + `--models` 只跑缺的模型（QOS 单 job 上限 48h，无法加长）。 |
+| `4_experiments/wbci_shu/foundation_cross_subject/HANDOFF_821_RUN.md` | **821 run 交接文档**：实验设定、当前 50/77 进度与阶段数字、参数/代码位置、换账号要拷哪些产物（数据 2.0G + outputs 14M 必需，checkpoints 8.8G 可精简）、续跑与进度查询命令、8 条坑。 |
 | `scripts/plot_three_curves.py` | 从 `result.json` 的 `history` 画 per-epoch train/val/test 三曲线（per-cell + 跨折均值）。 |
 | `scripts/summarize_cross_subject.py` | 跨被试 run 汇总：`tables/{per_cell,per_model,vs_paper}.csv` + `REPORT_TABLE.md`（内嵌论文 Table II SHUv5 数字作对照）。 |
 | `code/configs/experiments/{foundation_cross_subject,shu_foundation_cross_subject}.yaml` | **端到端主线双数据集配置**（WBCIC 58ch / SHU 32ch，分开跑；协议段标注 pending_advisor_confirmation）。 |

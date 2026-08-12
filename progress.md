@@ -7,6 +7,28 @@ Format per entry: date, what was done, decisions made, open questions, next step
 
 ---
 
+## 2026-08-12 夜 — 821 run 暂停 + 全量代码 push + 换账号交接文档
+
+- 用户要切到同集群另一个账号继续跑，先 `scancel 37966-37973`（队列只剩无关的 `37978 erp-all-scratch`）。
+  进度定格 **50/77**：三个小 baseline 11/11；`atcnet` 8/11（缺 fold 5/8/10，有 `last.pt`）；
+  `dualcd_s4_flatten` / `s4erp` / `dualcd_transformer` 各 3/11（只有 fold 0–2）。
+- **push commit `ad0c5d2`** 到 `origin/main`：端到端主线全部代码首次进 Git（5 个 foundation 模型、
+  4 个官方 baseline、`e2e_trainer.py`、`cross_subject_protocols.py`、7 个 model YAML、
+  821/ATCNet 实验 config、submit/summarize/plot 脚本、tests、论文 PDF）。已核对：无
+  `*.local.yaml`、无权重、无 `outputs/`、无 >2MB 二进制。
+- **新增交接文档** `4_experiments/wbci_shu/foundation_cross_subject/HANDOFF_821_RUN.md`。
+  关键结论：三曲线 `history` 与所有指标都在 `outputs/.../cells/*/result.json`（汇总/绘图脚本只读
+  `cells/`），所以换账号**必拷 = 3C 数据 2.0G + run outputs 14M**，`checkpoints/` 8.8G 只需拷
+  ATCNet 三个断点（6M）；`dualcd_s4_flatten` fold3/4/6 的 541MB 残局（只训了 ~25min）不值得拷。
+- 单折耗时实测（排 job 用）：transformer 6.98h / flatten 4.84h / atcnet 2.06h / s4erp 0.74h /
+  deformer 0.55h / eegnex 0.46h / eegnet_official 0.22h。剩余 ≈ **107 GPU·小时**。
+- 阶段数字（**折数不同，不可比，勿外传**）：eegnex 0.6991(n=11)、eeg_deformer 0.6849(n=11)、
+  eegnet_official 0.6636(n=11)、atcnet 0.7273(n=8)、s4erp 0.7541(n=3)、
+  dualcd_transformer 0.7156(n=3)、dualcd_s4_flatten 0.7137(n=3)。
+- 下一步：新账号 `git pull` → 配 `paths.local.yaml` → rsync 三份产物 → `bash scripts/slurm/submit_paper_baseline_821.sh`。
+
+---
+
 ## 2026-08-12 — `paper_baseline_3c_821_v1` 续跑重提（QOS 墙时封顶 48h）
 
 - 状态：原先 4 卡（36928–36931）仅 g1 COMPLETED；g2–g4 TIMEOUT@48h。进度 **50/77**；队列曾空。
