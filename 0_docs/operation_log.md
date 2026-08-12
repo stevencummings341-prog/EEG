@@ -162,3 +162,5 @@ status: "active"
 | 2026-08-04 13:55:00 | UPDATE | `0_docs/FILE_CATALOG.md` / `inbox/README.md` | 新增 inbox 段与调研报告索引条目。 |
 | 2026-08-12 23:50:00 | CREATE | `4_experiments/wbci_shu/foundation_cross_subject/HANDOFF_821_RUN.md` | `paper_baseline_3c_821_v1` 换账号交接文档：实验设定（7 模型 / 8:2:1 跨被试 / 论文 recipe / 三曲线）、当前 50/77 进度与阶段数字（标注 n 不同不可比）、参数与代码位置索引、rsync 拷贝清单（数据 2.0G + outputs 14M 必需；checkpoints 8.8G 可只拷 ATCNet 断点 6M，因 history/指标都在 `result.json`）、续跑与进度查询命令、QOS 48h 上限说明、8 条坑。 |
 | 2026-08-12 23:50:00 | UPDATE | `4_experiments/wbci_shu/foundation_cross_subject/README.md` / `0_docs/FILE_CATALOG.md` / `progress.md` | 索引交接文档与 821 submit 脚本条目。 |
+| 2026-08-13 00:30:00 | CHMOD | `/share/home/Zihang`（项目外，用户批准） | `700 -> 711`（`chmod o+x`）：让同集群另一账号能穿过家目录读 `MI/` 下的 run 产物；未给 r 位故仍无法列目录。**搬完需 `chmod o-x` 收回。** |
+| 2026-08-13 00:30:00 | UPDATE | `4_experiments/wbci_shu/foundation_cross_subject/HANDOFF_821_RUN.md` | 补 §4.0 权限根因与已执行状态、§4.3.1 manifest `npz_path` 绝对路径坑与「重跑生成」决定、§8.9 坑条目。 |

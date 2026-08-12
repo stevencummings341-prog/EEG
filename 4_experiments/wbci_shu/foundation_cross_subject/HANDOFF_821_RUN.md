@@ -129,19 +129,20 @@ dualcd_transformer   Acc 0.7156±0.0957  F1 0.7155  n=3
 
 ### 4.0 ⚠ 先解决「新账号读不到旧账号目录」
 
-旧账号的**家目录**是 `drwx------`（700，仅本人），而它下面的 `MI/` 及各级子目录**本来就是**
+旧账号的**家目录**原本是 `drwx------`（700，仅本人），而它下面的 `MI/` 及各级子目录**本来就是**
 `drwxrwxr-x`。也就是说别的账号是被家目录这一层挡住的，不是被项目目录挡住的。
 
-```bash
-# 在旧账号执行：只给「穿过」权限，不给列目录（others 拿到 x，没有 r）
-chmod o+x /share/home/Zihang
-namei -l /share/home/Zihang/MI/outputs/processed/wbci_shu_3c_mat_clean   # 复查
+**✅ 2026-08-13 已执行 `chmod o+x /share/home/Zihang`**，现在是 `drwx-----x`：其他账号能**穿过**
+家目录按完整路径读到 `MI/` 下的内容，但**列不出**家目录本身（没给 r 位）。所以新账号现在可以直接
+rsync，无需再做任何权限操作。
 
-# 拷完之后收回
+```bash
+# 搬完之后在旧账号收回（务必别忘）
 chmod o-x /share/home/Zihang
+ls -ld /share/home/Zihang        # 应回到 drwx------
 ```
 
-不想动家目录权限的话，另一条路：`/share/workspace2` 是 `drwxrwxrwt`（全局可写 + sticky，
+不想动家目录权限的话，备选路线：`/share/workspace2` 是 `drwxrwxrwt`（全局可写 + sticky，
 约 8.4 T 空余），可以在那里开一个临时中转目录放打包文件，拷完删掉。
 
 **不要为此往 GitHub 传数据**：单个 npz 最大 63 MB，超 50 MiB Git 就会警告，2 G 进仓库是永久
@@ -186,7 +187,7 @@ manifests:
 | B | run 输出 `outputs/experiments/wbci_shu/paper_baseline_3c_821_v1/` | 14 M | **必须**，这是「哪些 cell 已完成」的唯一凭据，也存着已完成折的指标 + 三曲线 history |
 | C | 权重 `checkpoints/wbci_shu/paper_baseline_3c_821_v1/` | 8.8 G | **可选**，见下 |
 
-#### 4.3.1 ⚠ A 优先「重跑生成」而不是「拷贝」
+#### 4.3.1 ⚠ A 走「重跑生成」，不要拷贝（2026-08-13 已定）
 
 `processed_manifest.csv` 的 `npz_path` 列是**绝对路径**，而 `code/datasets/session_splits.py`
 直接拿这一列喂 `load_session_npz()`，**不会**按当前项目根重新拼路径。所以把 manifest 原样拷到
@@ -223,10 +224,11 @@ mkdir -p "$NEW/outputs/processed" \
          "$NEW/outputs/experiments/wbci_shu" \
          "$NEW/checkpoints/wbci_shu"
 
-# A. 数据（2.0G）— 优先用 §4.3.1 的重跑；真要拷再用这条，且拷完必须 sed 改 manifest
-rsync -ah --info=progress2 \
-  "$OLD/outputs/processed/wbci_shu_3c_mat_clean/" \
-  "$NEW/outputs/processed/wbci_shu_3c_mat_clean/"
+# A. 数据（2.0G）— 已定为在新账号重跑生成（§4.3.1），不走这条。
+#    万一非要拷，拷完必须 sed 改 manifest 的 npz_path：
+# rsync -ah --info=progress2 \
+#   "$OLD/outputs/processed/wbci_shu_3c_mat_clean/" \
+#   "$NEW/outputs/processed/wbci_shu_3c_mat_clean/"
 
 # B. run 输出（14M，必须）
 rsync -ah --info=progress2 \
