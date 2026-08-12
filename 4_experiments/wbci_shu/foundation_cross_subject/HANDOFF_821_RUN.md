@@ -127,6 +127,27 @@ dualcd_transformer   Acc 0.7156±0.0957  F1 0.7155  n=3
 
 新账号项目根记作 `$NEW`（例：`/share/home/<新号>/MI`）。旧账号根 = `/share/home/Zihang/MI`。
 
+### 4.0 ⚠ 先解决「新账号读不到旧账号目录」
+
+旧账号的**家目录**是 `drwx------`（700，仅本人），而它下面的 `MI/` 及各级子目录**本来就是**
+`drwxrwxr-x`。也就是说别的账号是被家目录这一层挡住的，不是被项目目录挡住的。
+
+```bash
+# 在旧账号执行：只给「穿过」权限，不给列目录（others 拿到 x，没有 r）
+chmod o+x /share/home/Zihang
+namei -l /share/home/Zihang/MI/outputs/processed/wbci_shu_3c_mat_clean   # 复查
+
+# 拷完之后收回
+chmod o-x /share/home/Zihang
+```
+
+不想动家目录权限的话，另一条路：`/share/workspace2` 是 `drwxrwxrwt`（全局可写 + sticky，
+约 8.4 T 空余），可以在那里开一个临时中转目录放打包文件，拷完删掉。
+
+**不要为此往 GitHub 传数据**：单个 npz 最大 63 MB，超 50 MiB Git 就会警告，2 G 进仓库是永久
+膨胀（要清得重写历史）；而且完全没必要 —— 数据可按 §4.3.1 在新账号重跑生成，真正需要搬的只有
+~20 M 的 run 状态。
+
 ### 4.1 先对齐代码
 
 ```bash
@@ -141,23 +162,58 @@ cd "$NEW"
 ls code/configs/paths.local.yaml || cp code/configs/paths.example.yaml code/configs/paths.local.yaml
 ```
 
-本 run 只用一个逻辑键，确认它在 `paths.local.yaml` 的 `manifests:` 段里：
+本 run 只关心两个键：
 
 ```yaml
+raw_data:
+  shu_2c_root: "/share/workspace2/moto_imagination/WBCIC_SHU"
 manifests:
   wbci_3c_processed_manifest: "outputs/processed/wbci_shu_3c_mat_clean/processed_manifest.csv"
 ```
 
-这是**项目内相对路径**，所以只要把数据拷到 `$NEW/outputs/processed/wbci_shu_3c_mat_clean/` 就不用改配置。
-（旧账号的 `paths.local.yaml` 也可以直接 `cp` 过去，其余键指向 `/share/workspace2/...` 共享盘，两个号只要都能读就没问题。）
+- `shu_2c_root` 指向共享盘上的官方数据（`/share/workspace2/moto_imagination/WBCIC_SHU`，全局可读、
+  只读使用）。3C 源目录由脚本自动拼成 `<root>/derivatives/3C dataset_processeddata`，**不依赖旧账号**。
+- `wbci_3c_processed_manifest` 是**项目内相对路径**，所以数据放在 `$NEW/outputs/processed/wbci_shu_3c_mat_clean/`
+  就不用改配置。
+
+旧账号的 `paths.local.yaml` 直接 `cp` 过去也可以（其余键都指向 `/share/workspace2/...` 共享盘）。
 
 ### 4.3 三份要拷的东西
 
 | # | 内容 | 大小 | 必要性 |
 |:--|:---|---:|:---|
-| A | 3C 预处理数据 `outputs/processed/wbci_shu_3c_mat_clean/` | 2.0 G | **必须**，否则没数据可训 |
+| A | 3C 预处理数据 `outputs/processed/wbci_shu_3c_mat_clean/` | 2.0 G | **必须**，但**建议新账号自己重跑生成，而不是拷**，见 §4.3.1 |
 | B | run 输出 `outputs/experiments/wbci_shu/paper_baseline_3c_821_v1/` | 14 M | **必须**，这是「哪些 cell 已完成」的唯一凭据，也存着已完成折的指标 + 三曲线 history |
 | C | 权重 `checkpoints/wbci_shu/paper_baseline_3c_821_v1/` | 8.8 G | **可选**，见下 |
+
+#### 4.3.1 ⚠ A 优先「重跑生成」而不是「拷贝」
+
+`processed_manifest.csv` 的 `npz_path` 列是**绝对路径**，而 `code/datasets/session_splits.py`
+直接拿这一列喂 `load_session_npz()`，**不会**按当前项目根重新拼路径。所以把 manifest 原样拷到
+新账号，它会去读 `/share/home/Zihang/MI/outputs/...` —— 要么报文件不存在，要么悄悄依赖旧账号的盘。
+（同类问题 `AGENTS.md` 里已记过一次：WBCIC `embed_index__*.csv` 的失效 `npz_path`。）
+
+官方 3C 源数据在共享盘上是**全局可读**的（`/share/workspace2/moto_imagination/WBCIC_SHU/derivatives`
+= `drwxrwxr-x`），预处理只是「读官方 `.mat` → 标签归一化 → 转存 `.npz`」，确定性、无随机性。
+所以新账号直接自己生成，manifest 里写的就是它自己的正确路径：
+
+```bash
+cd "$NEW"
+python scripts/preprocess_wbci_3c.py --dry-run   # 先看计划
+python scripts/preprocess_wbci_3c.py             # 生成 33 session npz + manifest
+# 自检：应 33 行 ok，且 npz_path 指向 $NEW
+wc -l outputs/processed/wbci_shu_3c_mat_clean/processed_manifest.csv
+rg -c "$NEW" outputs/processed/wbci_shu_3c_mat_clean/processed_manifest.csv
+```
+
+**若坚持拷贝 A**，拷完必须重写路径列，否则会读到旧账号：
+
+```bash
+sed -i "s#/share/home/Zihang/MI#$NEW#g" \
+  "$NEW/outputs/processed/wbci_shu_3c_mat_clean/processed_manifest.csv"
+```
+
+#### 4.3.2 rsync 命令
 
 ```bash
 NEW=/share/home/<新号>/MI          # ← 改成真实路径
@@ -167,7 +223,7 @@ mkdir -p "$NEW/outputs/processed" \
          "$NEW/outputs/experiments/wbci_shu" \
          "$NEW/checkpoints/wbci_shu"
 
-# A. 数据（2.0G，必须）
+# A. 数据（2.0G）— 优先用 §4.3.1 的重跑；真要拷再用这条，且拷完必须 sed 改 manifest
 rsync -ah --info=progress2 \
   "$OLD/outputs/processed/wbci_shu_3c_mat_clean/" \
   "$NEW/outputs/processed/wbci_shu_3c_mat_clean/"
@@ -207,6 +263,8 @@ cd "$NEW"
 find outputs/experiments/wbci_shu/paper_baseline_3c_821_v1/cells -name result.json | wc -l
 # 应存在
 ls outputs/processed/wbci_shu_3c_mat_clean/processed_manifest.csv
+# manifest 的 npz_path 必须指向 $NEW；这里应该没有任何输出
+rg -c '/share/home/Zihang/MI' outputs/processed/wbci_shu_3c_mat_clean/processed_manifest.csv
 # 不该报错，且计划里已完成的 cell 会被识别
 python code/run.py --dry-run --config code/configs/experiments/paper_baseline_3c_821.yaml
 ```
@@ -284,6 +342,8 @@ python scripts/plot_three_curves.py      --run outputs/experiments/wbci_shu/pape
 6. `outputs/.../runs/*.csv` 是带 `--tag-suffix` 的分片汇总，**不是**权威结果；权威只认 `cells/*/result.json`（汇总脚本也只读它）。
 7. 别把 `eegnet_official`（本 run 的官方 EEGNet）和 `eegnet`（Phase 0–2c 用的项目内变体）搞混。
 8. `*.local.yaml` **永远不要提交**。
+9. **`processed_manifest.csv` 的 `npz_path` 是绝对路径且被直接使用**（`code/datasets/session_splits.py`
+   不做重定根）。换机 / 换账号后必须确认它指向当前项目根，否则会读到别人的盘或直接报错。详见 §4.3.1。
 
 ---
 

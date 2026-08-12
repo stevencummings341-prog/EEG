@@ -25,7 +25,19 @@ Format per entry: date, what was done, decisions made, open questions, next step
 - 阶段数字（**折数不同，不可比，勿外传**）：eegnex 0.6991(n=11)、eeg_deformer 0.6849(n=11)、
   eegnet_official 0.6636(n=11)、atcnet 0.7273(n=8)、s4erp 0.7541(n=3)、
   dualcd_transformer 0.7156(n=3)、dualcd_s4_flatten 0.7137(n=3)。
-- 下一步：新账号 `git pull` → 配 `paths.local.yaml` → rsync 三份产物 → `bash scripts/slurm/submit_paper_baseline_821.sh`。
+- **换账号权限问题定位**：新账号访问不到旧目录，卡点是**家目录** `/share/home/Zihang` = `drwx------`(700)，
+  而它下面 `MI/` 及各级子目录本来就是 `drwxrwxr-x`。解法 `chmod o+x /share/home/Zihang`（只给穿过、
+  不给列目录，用完 `chmod o-x` 收回）；备选是 `/share/workspace2`（`drwxrwxrwt`，8.4T 空余）中转。
+  **不走 GitHub 传数据**：单 npz 最大 63 MB，超 50 MiB Git 警告，2 G 进仓库永久膨胀，且完全没必要。
+- **新发现的坑（已补进交接文档 §4.3.1 + §8.9）**：`processed_manifest.csv` 的 `npz_path` 是绝对路径，
+  `code/datasets/session_splits.py` 直接拿它 `load_session_npz()`，**不重定根**。所以换账号后拷 manifest
+  会读到旧账号的盘。正解：新账号自己跑 `python scripts/preprocess_wbci_3c.py` 重新生成那 2 G
+  （官方 3C 源 `/share/workspace2/moto_imagination/WBCIC_SHU/derivatives/3C dataset_processeddata`
+  是 `drwxrwxr-x` 全局可读，预处理确定性无随机），manifest 自动写成新账号路径；真要拷则必须 `sed` 改路径列。
+  同类问题 `AGENTS.md` 已记过一次（WBCIC `embed_index__*.csv`）。
+- 下一步：新账号 `git pull` → 配 `paths.local.yaml`（只需 `shu_2c_root` + `wbci_3c_processed_manifest`）
+  → 重跑 3C 预处理 → 搬 ~20 M run 状态（outputs 14 M + atcnet 三个断点 6 M）
+  → `bash scripts/slurm/submit_paper_baseline_821.sh`。
 
 ---
 
