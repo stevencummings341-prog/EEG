@@ -132,14 +132,14 @@ dualcd_transformer   Acc 0.7156±0.0957  F1 0.7155  n=3
 旧账号的**家目录**原本是 `drwx------`（700，仅本人），而它下面的 `MI/` 及各级子目录**本来就是**
 `drwxrwxr-x`。也就是说别的账号是被家目录这一层挡住的，不是被项目目录挡住的。
 
-**✅ 2026-08-13 已执行 `chmod o+x /share/home/Zihang`**，现在是 `drwx-----x`：其他账号能**穿过**
-家目录按完整路径读到 `MI/` 下的内容，但**列不出**家目录本身（没给 r 位）。所以新账号现在可以直接
-rsync，无需再做任何权限操作。
+**✅ 2026-08-13 曾短暂 `chmod o+x`（`drwx-----x`）方便新账号 rsync；同日已 `chmod o-x` 收回，现为 `drwx------`。**
+若还需再搬文件，在旧账号临时重新开放：
 
 ```bash
-# 搬完之后在旧账号收回（务必别忘）
-chmod o-x /share/home/Zihang
-ls -ld /share/home/Zihang        # 应回到 drwx------
+chmod o+x /share/home/Zihang     # 临时开放穿过
+# …新账号 rsync 完…
+chmod o-x /share/home/Zihang     # 立刻收回
+ls -ld /share/home/Zihang        # 应是 drwx------
 ```
 
 不想动家目录权限的话，备选路线：`/share/workspace2` 是 `drwxrwxrwt`（全局可写 + sticky，
