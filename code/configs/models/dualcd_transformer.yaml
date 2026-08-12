@@ -1,0 +1,19 @@
+# UnifiedDINODualCD_Transformer — original ERP-Benchmark architecture:
+# Transformer backbone + flatten pooling + DINO/DualCD. Reference point for the
+# "S4 replaces Transformer" claim; heaviest variant (~67M params at n_times=1000)
+# and O(L^2) attention over 487 patches, so it is the slowest per epoch.
+name: "dualcd_transformer"
+d_model: 128
+n_layers: 6
+n_heads: 8
+d_ff: 256
+dropout: 0.1
+
+lambda_intra: 0.5
+dino_out_dim: 256
+proto_k: 5
+teacher_momentum: 0.996
+warmup_epochs: 5
+
+view_low_band: [8.0, 13.0]
+view_high_band: [13.0, 30.0]

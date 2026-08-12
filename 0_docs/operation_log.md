@@ -3,7 +3,7 @@ title: "Operation Log"
 tags:
   - "#modality/eeg"
 created: "2026-06-10"
-updated: "2026-08-04"
+updated: "2026-08-10"
 status: "active"
 ---
 
@@ -11,6 +11,36 @@ status: "active"
 
 | Time | Action | Path | Note |
 |:---|:---|:---|:---|
+| 2026-08-09 | CREATE | `code/models/atcnet/{__init__,adapter,_atcnet_raw,_bd_modules}.py` + `{README,UPSTREAM_README}.md` | 搬入 ATCNet（braindecode 上游 + 官方 README），接项目 dict 契约。 |
+| 2026-08-09 | CREATE | `code/configs/models/atcnet.yaml` | ATCNet 上游默认超参。 |
+| 2026-08-09 | UPDATE | `code/models/registry.py`, `code/configs/experiments/foundation_cross_subject_wbci_3c.yaml` | 注册 `atcnet` 并加入 3C 论文对齐实验（同 run_id，续跑跳过已完成 55 cells）。 |
+| 2026-08-09 | DELETE | `code/models/atcnet/{_atcnet_raw,_bd_modules}.py`, `UPSTREAM_README.md`；`outputs/experiments/wbci_shu/foundation_3c_atcnet_smoke/`；`checkpoints/wbci_shu/foundation_3c_atcnet_smoke/`；`.../foundation_3c_loso_paper_v1/{cells,}/atcnet__fold0__seed0` | 作废 braindecode 版 ATCNet（用户要求改用官方仓库实现）。 |
+| 2026-08-09 | CREATE | `code/models/atcnet/_official_keras/{models,attention_models}.py,LICENSE,UPSTREAM_README.md` | 官方 Altaheri/EEG-ATCNet 源码原样留存（供逐行核对）。 |
+| 2026-08-10 | CREATE | `code/models/paper_baselines/` (`__init__`, `adapter`, `keras_compat`, `eegnet_official_torch`, `eegnex_official_torch`, `README.md`, `_official/{EEGModels_arl_keras.py,BenchmarkModels_eegnex_keras.py,EEGDeformer.py,LICENSE_*}`) | 搬入 DSGNet 论文 baseline 的**官方**源码 + 1:1 移植（EEGNet/EEGNeX/EEG-Deformer）。 |
+| 2026-08-10 | CREATE | `code/configs/models/{eegnet_official,eegnex,eeg_deformer}.yaml` | 三个 baseline 的上游默认超参。 |
+| 2026-08-10 | CREATE | `code/configs/experiments/paper_baseline_3c_821.yaml` | 7 模型统一对比 run（8:2:1 + 论文 recipe + 早停 + 三曲线）。 |
+| 2026-08-10 | CREATE | `scripts/{plot_three_curves,summarize_cross_subject}.py` | 三曲线绘图 + 汇总/论文对照表。 |
+| 2026-08-10 | CREATE | `scripts/slurm/submit_paper_baseline_821.sh` | 四卡提交（按 fold 切 3+3+3+2，每 job 全部 7 模型）。 |
+| 2026-08-10 | CREATE | `outputs/experiments/wbci_shu/paper_baseline_3c_821_{v1,smoke,smoke2}/` + `checkpoints/wbci_shu/paper_baseline_3c_821_{v1,smoke,smoke2}/` | 7 模型统一对比 run 及其 smoke 产物。 |
+| 2026-08-10 | UPDATE | `code/training/e2e_trainer.py`, `code/experiments/cross_subject_protocols.py`, `code/runners.py`, `code/models/registry.py` | per-epoch train/val/test 三曲线（test 仅监控）；注册 3 个官方 baseline。 |
+| 2026-08-09 | CREATE | `code/models/atcnet/atcnet_torch.py` | 官方 `ATCNet_` 的 1:1 PyTorch 移植（BCI-IV-2a 参数量 113,732 与官方一致）。 |
+| 2026-08-09 | CREATE | `code/configs/experiments/atcnet_3c_loso_paper_recipe.yaml` | ATCNet arm B：严格论文 recipe（Adam 1e-4/batch 128/500 ep/无早停），用于量化 recipe 差距。 |
+| 2026-08-09 | CREATE | `outputs/experiments/wbci_shu/atcnet_3c_loso_paper_recipe_v1/` + `checkpoints/wbci_shu/atcnet_3c_loso_paper_recipe_v1/` | arm B 产出目录（与 arm A 分开，避免 `cell_signature` 冲突）。 |
+| 2026-08-07 | CREATE | `4_experiments/wbci_shu/foundation_cross_subject/{README,DSGNET_SHUv5_3C_ANCHOR}.md` | 3C 可读区 + DSGNet Table II 对标锚点。 |
+| 2026-08-07 | CREATE | `inbox/papers/dsgnet_jbhi2026_{FullText.pdf,extracted.txt}` | DSGNet JBHI 2026 论文 PDF + 文本摘录（对标 SHUv5 3C）。 |
+| 2026-08-07 | CREATE | `outputs/experiments/wbci_shu/foundation_3c_loso_paper_v1/` + `checkpoints/wbci_shu/foundation_3c_loso_paper_v1/` | 论文对齐 LOSO 新 run（session val）；不覆盖旧 `foundation_3c_loso_v1`。 |
+| 2026-08-07 | UPDATE | `code/experiments/cross_subject_protocols.py`, `code/runners.py`, `foundation_cross_subject_wbci_3c.yaml`, `tests/foundation/test_cross_subject_protocol.py` | 新增 `val_mode=sessions`（train ses1–2 / val ses3）。 |
+| 2026-08-04 | CREATE | `code/models/eeg_foundation/{__init__,s4_layers,pooling,encoders,losses,models,adapter}.py` + `README.md` | 学长 `models_eeg_foundation/` 包移植进模型层 + 项目契约包装（adapter 为新增）。 |
+| 2026-08-04 | CREATE | `code/configs/models/{s4erp,dualcd_s4_pos,dualcd_s4_timepatch,dualcd_s4_flatten,dualcd_transformer}.yaml` | 5 个端到端模型的结构超参。 |
+| 2026-08-04 | CREATE | `code/training/e2e_trainer.py` | 可断点续跑训练器：只存 best/last、原子写入、DualCD 钩子。 |
+| 2026-08-04 | CREATE | `code/experiments/cross_subject_protocols.py` | 跨被试协议（LOSO / subject k-fold / holdout）+ 泄漏断言 + best/last 双评测。 |
+| 2026-08-04 | CREATE | `code/configs/experiments/{foundation_cross_subject,shu_foundation_cross_subject}.yaml` | 端到端主线双数据集配置（分开训练）。 |
+| 2026-08-04 | CREATE | `tests/foundation/{__init__.py,test_eeg_foundation_contract.py,test_cross_subject_protocol.py}` | 32 个 CPU 测试（模型契约 + 协议/续跑/泄漏）。 |
+| 2026-08-04 | CREATE | `FOUNDATION_E2E_ROUTE_PLAN.md` | 新主线权威路线（端到端 × 跨被试）。 |
+| 2026-08-04 | CREATE | `4_experiments/CROSS_SUBJECT_PROTOCOL_MEMO.md` | 发学长的协议讨论备忘（7 个待确认问题）。 |
+| 2026-08-04 | CREATE | `inbox/cross_subject_protocol_research.md` | 跨被试协议文献调研（SHU 2022 + WBCIC-SHU 2025）。 |
+| 2026-08-04 | UPDATE | `code/models/registry.py`, `code/runners.py`, `code/run.py` | 注册 5 模型 + `foundation_cross_subject` runner + 4 个新 CLI 开关。 |
+| 2026-08-04 | CREATE | `outputs/experiments/shu/foundation_cross_subject_smoke/`, `checkpoints/shu/foundation_cross_subject_smoke/` | 真实数据 CPU smoke 产物（隔离目录，不进 v1）。 |
 | 2026-08-04 | CREATE | `code/configs/paths.local.yaml`, `datasets/{shu,wbci_shu}.local.yaml`, `scripts/slurm/_common.sh` | 跨机便携：本机路径 local 化；Slurm 去硬编码 PROJECT_ROOT。 |
 | 2026-07-12 | CREATE | `3_online_adaptation/PRETRAINED_MODEL_INTEGRATION_CONTRACT.md` | Pretrained-model integration contract (authoritative). |
 | 2026-07-12 | CREATE | `code/configs/experiments/phase3_tta_full_a0.yaml` | Opt-in WBCIC full A0 replay config. |
@@ -128,3 +158,5 @@ status: "active"
 | 2026-07-08 23:55:00 | UPDATE | `PHASE3_ROUTE_PLAN.md` | 升级 v2.1 批准版：学长批准 A0/A1 + 新增 §2.5 七条硬约束并逐 Phase 落实。 |
 | 2026-07-08 23:55:00 | UPDATE | `code/configs/experiments/{phase3_tta,shu_phase3_tta}.yaml` | 硬约束1：readable_dir 由 3_online_adaptation/*/tta 改为 4_experiments/*/tta。 |
 | 2026-07-08 23:55:00 | UPDATE | `3_online_adaptation/PHASE3_TTA_DESIGN.md` / `AGENTS.md` / `progress.md` / `0_docs/STATUS.md` | 同步批准状态 + 7 条硬约束 + 结果目录定死。 |
+| 2026-08-04 13:55:00 | CREATE | `inbox/cross_subject_protocol_research.md` | 跨被试实验协议文献调研报告（citation-grounded，纯文献，不含本项目新结果）：SHU 2022 + WBCIC-SHU 2025 的使用论文清单、跨被试协议细节、可参考准确率区间、数据集陷阱，以及 3 个候选协议方案（LOSO / 5-fold subject-grouped / 固定划分）与算力代价对比。关键结论：两数据集均无官方跨被试划分；WBCIC-SHU 仅 18 引用且只有 EDAPT 一篇真正做跨被试（zero-shot EEGNet 0.81 / DeepConvNet 0.85）；SHU 2022 未核实到任何 primary source 的 zero-shot LOSO 数字。 |
+| 2026-08-04 13:55:00 | UPDATE | `0_docs/FILE_CATALOG.md` / `inbox/README.md` | 新增 inbox 段与调研报告索引条目。 |

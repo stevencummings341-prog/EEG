@@ -102,6 +102,7 @@ class Paths:
     shu_raw_root: Path
     shu_npz_clean_root: Path
     shu_processed_manifest: Path
+    wbci_3c_processed_manifest: Path
     splits_dir: Path
 
     # --- 原始数据（只读）---
@@ -223,6 +224,10 @@ def load_paths(config_path: str | Path | None = None, require_raw: bool = True) 
     if _is_placeholder(shu_manifest):
         shu_manifest = "outputs/external_missing/SHU/processed/npz_clean/processed_manifest.csv"
 
+    wbci_3c_manifest = man.get("wbci_3c_processed_manifest")
+    if _is_placeholder(wbci_3c_manifest):
+        wbci_3c_manifest = "outputs/processed/wbci_shu_3c_mat_clean/processed_manifest.csv"
+
     return Paths(
         raw_root=raw_root,
         raw_subdir=raw.get("raw_subdir", "sourcedata/2C dataset"),
@@ -234,6 +239,7 @@ def load_paths(config_path: str | Path | None = None, require_raw: bool = True) 
         shu_raw_root=_resolve(shu_raw),
         shu_npz_clean_root=_resolve(shu_npz),
         shu_processed_manifest=_resolve(shu_manifest),
+        wbci_3c_processed_manifest=_resolve(wbci_3c_manifest),
         splits_dir=_resolve(spl.get("dir", "splits")),
     )
 
@@ -242,8 +248,9 @@ def resolve_manifest_path(cfg: Dict[str, Any], P: Optional[Paths] = None) -> Pat
     """从实验 config 解析 processed manifest（逻辑键或真实路径）。
 
     支持:
-      - data.manifest = "processed_manifest"           -> WBCIC (paths.yaml)
+      - data.manifest = "processed_manifest"           -> WBCIC 2C (paths.yaml)
       - data.manifest = "shu_processed_manifest"       -> SHU
+      - data.manifest = "wbci_3c_processed_manifest"   -> WBCIC 3C (11 subjects)
       - data.name = "shu" 且未给文件路径              -> SHU
       - 含 `/` 或以 `.csv` 结尾的字符串               -> 绝对/相对项目根路径
     """
@@ -256,17 +263,21 @@ def resolve_manifest_path(cfg: Dict[str, Any], P: Optional[Paths] = None) -> Pat
     if m in (None, "", "processed_manifest"):
         if name in ("shu", "shu_2022"):
             return P.shu_processed_manifest
+        if name in ("wbci_shu_3c", "wbci_3c", "wbcic_3c"):
+            return P.wbci_3c_processed_manifest
         return P.processed_manifest
     if m in ("shu_processed_manifest", "shu_manifest"):
         return P.shu_processed_manifest
+    if m in ("wbci_3c_processed_manifest", "wbci_shu_3c_processed_manifest"):
+        return P.wbci_3c_processed_manifest
 
     m_str = str(m)
     if "/" in m_str or m_str.endswith(".csv"):
         return _resolve(m_str)
     # Unknown logical key: fail clearly rather than silently using WBCIC.
     raise ValueError(
-        f"未知 data.manifest={m!r}。请用 processed_manifest / shu_processed_manifest，"
-        "或填写指向 processed_manifest.csv 的路径。"
+        f"未知 data.manifest={m!r}。请用 processed_manifest / shu_processed_manifest / "
+        "wbci_3c_processed_manifest，或填写指向 processed_manifest.csv 的路径。"
     )
 
 

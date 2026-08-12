@@ -48,6 +48,7 @@ from ..utils.io import load_session_npz
 from ..utils.seed import set_seed
 from .metrics import (
     auc_binary,
+    auc_multiclass,
     brier_score,
     classification_metrics,
     expected_calibration_error,
@@ -82,9 +83,18 @@ def load_session_tensors(npz_path: str | Path) -> Tuple[torch.Tensor, torch.Tens
 
 
 def evaluate_predictions(y_true: np.ndarray, y_pred: np.ndarray, probs: np.ndarray) -> Dict[str, float]:
-    """Accuracy / Balanced Accuracy / Macro-F1 / AUC / NLL / Brier / ECE."""
+    """Accuracy / Balanced Accuracy / Macro-F1 / AUC / NLL / Brier / ECE.
+
+    AUC: binary uses P(class=1); multiclass (C>=3) uses macro-OVR.
+    """
     m = classification_metrics(y_true, y_pred)
-    m["auc"] = auc_binary(y_true, probs[:, 1])
+    probs = np.asarray(probs)
+    if probs.ndim != 2:
+        raise ValueError(f"probs must be [N,C], got shape {probs.shape}")
+    if probs.shape[1] <= 2:
+        m["auc"] = auc_binary(y_true, probs[:, min(1, probs.shape[1] - 1)])
+    else:
+        m["auc"] = auc_multiclass(y_true, probs)
     m["nll"] = negative_log_likelihood(y_true, probs)
     m["brier"] = brier_score(y_true, probs)
     m["ece"] = expected_calibration_error(y_true, probs)

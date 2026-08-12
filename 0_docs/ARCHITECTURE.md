@@ -29,7 +29,8 @@ eeg-mi-online/
 ├── inbox/                  # 临时输入材料
 ├── AGENTS.md               # 唯一灵魂记忆（先读这个）
 ├── CLAUDE.md               # Claude Code 兼容入口（内容指向 AGENTS.md）
-├── PHASE3_ROUTE_PLAN.md    # Phase 3 路线 v2.1（Oracle 先裁决）
+├── FOUNDATION_E2E_ROUTE_PLAN.md  # 当前主线路线：端到端基础模型 × 跨被试
+├── PHASE3_ROUTE_PLAN.md    # Phase 3 路线 v2.1（Oracle 先裁决；paused 不废弃）
 ├── README.md               # 人类快速入口
 ├── proposal.md             # 项目提案
 ├── progress.md             # 进度日记（运行记忆，逐条追加）
@@ -45,6 +46,8 @@ eeg-mi-online/
 |:---|:---|
 | `AGENTS.md` | 唯一权威灵魂记忆：身份、研究链、当前事实、规则、边界。 |
 | `CLAUDE.md` | Claude Code 兼容入口；内容只是指向 `AGENTS.md`。 |
+| `FOUNDATION_E2E_ROUTE_PLAN.md` | **当前主线路线**（2026-08-04）：5 个 S4/DINO-DualCD 模型 × 跨被试 × 双数据集分开训练；融合成果、运行方式、checkpoint/续跑契约、7 个待确认协议问题。 |
+| `PHASE3_ROUTE_PLAN.md` | 上一条主线（跨 session 修复 / Oracle 先裁决）；**paused，不是废弃**。 |
 | `README.md` | 项目入口和结构总览。 |
 | `proposal.md` | 项目提案与研究动机。 |
 | `progress.md` | 进度日记，等价于过去的 PROGRESS.md，逐条追加，最新在上。 |
@@ -91,15 +94,17 @@ flowchart TD
 |:---|:---|
 | `code/run.py` | 统一入口。`--dry-run` 解析配置；完整训练需直连 `code/experiments` 或临时恢复兼容层。 |
 | `code/configs/datasets/` | 数据集路径与元信息：`wbci_shu.yaml`、`shu.yaml`。 |
-| `code/configs/models/` | 模型超参：`eegnet/deepconvnet/fbcnet/cap_eegnet.yaml`。 |
-| `code/configs/experiments/` | 阶段实验配置：WBCIC `phase0/1/2a/2b/2c/3` + SHU `shu_phase*` + opt-in `phase3_tta_full_a0`。 |
+| `code/configs/models/` | 模型超参：`eegnet/deepconvnet/fbcnet/cap_eegnet.yaml` + 端到端 5 件套 `s4erp/dualcd_s4_pos/dualcd_s4_timepatch/dualcd_s4_flatten/dualcd_transformer.yaml`。 |
+| `code/configs/experiments/` | 阶段实验配置：WBCIC `phase0/1/2a/2b/2c/3` + SHU `shu_phase*` + opt-in `phase3_tta_full_a0` + **端到端主线 `{foundation_cross_subject,shu_foundation_cross_subject}.yaml`**。 |
 | `code/datasets/` | `base.py`、`registry.py`、`wbci_shu.py`、`shu.py`、`channel_mapping.py`、`session_splits.py`、`shu_dataset.py`。 |
 | `code/models/` | EEGNet / DeepConvNet / FBCNet / CAP-EEGNet + `registry.py`，统一 `{logits, features, confidence}`。 |
+| `code/models/eeg_foundation/` | **端到端主线 5 模型**（学长包移植）：`s4_layers/pooling/encoders/losses/models.py` + `adapter.py`（项目契约 + DualCD 训练钩子 + per-trial 归一化）。移植偏差记于该目录 `README.md` §4。 |
 | `code/methods/` | `session_alignment.py`、`bn_adaptation.py`；`t3a.py` 为 `code.tta.methods` 薄 re-export。 |
 | `code/tta/` | **Phase 3 model-agnostic TTA backend**：adapters（`AdapterCapabilities` + typed errors）/ feature_sources（replay + live inference）/ methods / oracle（`run_label_free` strips target truth）/ eval / report。不绑定 EEGNet；预训练模型通过新 adapter 接入。 |
-| `code/experiments/` | `session_drift.py`、`session_protocols.py`、`session_multisource_protocols.py`、`session_alignment_protocols.py`、`prototype_drift.py`、`prototype_drift_summarize.py`、`session_tta.py`(Phase 3)、`metrics.py`、`data_quality.py`。 |
+| `code/experiments/` | `session_drift.py`、`session_protocols.py`、`session_multisource_protocols.py`、`session_alignment_protocols.py`、`prototype_drift.py`、`prototype_drift_summarize.py`、`session_tta.py`(Phase 3)、**`cross_subject_protocols.py`（端到端主线：被试级 LOSO/k-fold/holdout + 泄漏断言 + best/last 双评测）**、`metrics.py`、`data_quality.py`。 |
 | `scripts/slurm/` | `train_prototype_drift_gpu.sbatch`、`summarize_prototype_drift_cpu.sbatch`、`submit_prototype_drift_full.sh`（GPU 走 gpu2node + mi_torch_cu118）。 |
-| `code/training/` | `trainer.py`，model-agnostic 训练/预测。 |
+| `code/training/` | `trainer.py`（Phase 0–2c，**冻结**）+ **`e2e_trainer.py`**（端到端主线：非 CE 损失钩子、只存 `best.pt`/`last.pt`、断点续跑、原子写入）。 |
+| `tests/foundation/` | 端到端主线测试（32 passed, CPU）：模型契约 + 跨被试协议/续跑/泄漏守卫。 |
 | `code/preprocessing/` | 预处理逻辑：WBCIC `eog_ecg_clean.py/pipeline.py`；SHU `shu_mat.py`（.mat→npz）。入口脚本 `scripts/preprocess_shu.py`、`scripts/scaffold_readmes.py`。 |
 | `code/utils/` | `config/io/logging/paths/seed`。 |
 | `code/visualization/` | 报告/QC 绘图。 |

@@ -1,0 +1,8 @@
+# EEGNeX (Chen et al. 2024) — OFFICIAL authors' implementation, ported to PyTorch.
+# Source: https://github.com/chenxiachan/EEGNeX (`BenchmarkModels.py::EEGNeX_8_32`),
+#   vendored at code/models/paper_baselines/_official/BenchmarkModels_eegnex_keras.py
+# Cited as [20] in the DSGNet paper (Table II: SHUv5 Acc 0.6488).
+# Upstream `EEGNeX_8_32` exposes NO structural hyperparameters — filter counts, kernel
+# sizes, dilations, pooling and dropout are all hard-coded in the released code. There is
+# therefore nothing to configure here beyond the data dims injected by the experiment layer.
+name: "eegnex"

@@ -7,6 +7,274 @@ Format per entry: date, what was done, decisions made, open questions, next step
 
 ---
 
+## 2026-08-12 — `paper_baseline_3c_821_v1` 续跑重提（QOS 墙时封顶 48h）
+
+- 状态：原先 4 卡（36928–36931）仅 g1 COMPLETED；g2–g4 TIMEOUT@48h。进度 **50/77**；队列曾空。
+- 试加长到 96h/72h/60h → 全部 `QOSMaxWallDurationPerJobLimit`；本集群 **MaxWall=48h**，无法加长。
+- 对策：改 `scripts/slurm/submit_paper_baseline_821.sh` 为 **每未完成 fold 一 job** + `--models` 只跑缺 `result.json` 的模型（大模型 + ATCNet 续跑）。
+- 已提交 **37966–37973**（fold 3–10，`-t 48:00:00`，PENDING）。已完成：三小 baseline 11/11；ATCNet 8/11；三大模型仅 fold 0–2。
+
+---
+
+## 2026-08-10 — ATCNet arm A/B 全完成；差距分解落地
+
+- arm A job 36481：11/11 ok，`foundation_3c_loso_paper_v1` + atcnet。
+  Acc **0.7129±0.1322** / F1 **0.7074±0.1417**（vs 论文 ATCNet 0.6834 / DSGNet 0.6856）。
+- arm B job 36504：11/11 ok，`atcnet_3c_loso_paper_recipe_v1`，ALL DONE 19:22，约 20.5h。
+  Acc **0.6891±0.1284** / F1 **0.6828±0.1383**。
+- Gap 分解（Acc）：模型（flatten−A）**= −5.30pp**；recipe（B−A）**= −2.38pp**（我们的 recipe 更好）；
+  论文 ATC − B **= −0.57pp**（B 略高于论文，实现/预处理剩余差基本闭合）。
+- 同 recipe 下 5 个 foundation 均低于 ATCNet(A)；最好 flatten 0.6599。难被试 sub-011 两边都 ~0.41–0.42。
+- 锚点文档已更新：`4_experiments/wbci_shu/foundation_cross_subject/DSGNET_SHUv5_3C_ANCHOR.md`。
+- 下一步（待用户定）：写正式 AI 分析 / 决定是否继续调 foundation / 是否接 DSGNet 复现。
+
+---
+
+## 2026-08-09 夜 — arm B 开启早停 + 修掉「续跑重置 patience」的 bug
+
+
+- 用户要求 arm B 的 500 epoch 加早停。原设置 `early_stopping_patience: 0` = **没有早停**
+  （当初因为论文未提就关掉了）。现改为 **100**，依据：官方 ATCNet 仓库
+  `main_TrainValTest.py` L413 的 `train_conf['patience']=100`（其 EarlyStopping 回调被注释掉，
+  但这个值是官方写的），且 100/500 与 arm A 的 25/100 是同一 1:5 比例，两条 arm 停机条件可比。
+- **`code/training/e2e_trainer.py` bug fix**：续跑时 `patience` 从 0 重新开始，等于每次被抢占
+  都白送一整个 patience 窗口，续跑的 run 会比不中断的 run 训得更久。改为从 checkpoint 重建：
+  `patience = max(0, start_epoch - best_epoch)`（`best_epoch`/`history` 本来就存在 `last.pt` 里）。
+- checkpoint 契约**本来就满足**用户要求：每 cell 只有 `best.pt` + `last.pt`，`last.pt` 带
+  optimizer / scheduler / RNG / history，可断点续跑（已实测确认：arm B fold0 的
+  `last.pt` epoch=153 / best_epoch=145 / best macro_f1=0.7336）。
+- arm B 重新提交 job **36504**（取消 36494），从 fold0 epoch 153 续跑，patience 重建为 8。
+- 说明：model selection 仍用 `macro_f1`（与 arm A 一致），**没有**跟随官方的
+  `ModelCheckpoint(monitor='val_loss', mode='min')`，这样 A/B 之间只差优化器/batch/epoch/调度，
+  归因更干净。官方另有 `ReduceLROnPlateau(factor=0.9, patience=20)`，DSGNet 论文未提，未启用。
+
+---
+
+## 2026-08-10 — 统一对比 run：7 模型 × 8:2:1 × 论文 recipe × 三曲线（已提交四卡）
+
+**目标**：一个 run 里所有模型同协议同配方，且带学长要的 train/val/test 三曲线。
+run_id = `paper_baseline_3c_821_v1`，config `code/configs/experiments/paper_baseline_3c_821.yaml`。
+
+**① 三曲线（代码改动）**
+- `e2e_trainer.py`：新增 `train_eval_loader` / `test_loader` 两个**只做监控**的 loader，
+  每 epoch 评一次写进 `history` 的 `train_eval` / `test`。**test 绝不参与模型选择**：
+  `best.pt`、早停、`best_score` 只读 val，守卫写在代码+docstring 里。
+  train 曲线取**训练集的固定子集（默认 2000 trial）在 eval 模式**下测，才和 val/test 可比
+  （train 模式带 dropout 不可比）；`train_loss` 仍是全量真实训练损失。
+- 日志新增紧凑三曲线行：`acc(train/val/test)=0.4065/0.3967/0.3522`。
+- 绘图 `scripts/plot_three_curves.py`（per-cell + 跨折均值，均值按最短 fold 截断）。
+- 汇总 `scripts/summarize_cross_subject.py` → `tables/{per_cell,per_model,vs_paper}.csv`
+  + `REPORT_TABLE.md`（内嵌论文 Table II SHUv5 数字）。
+
+**② baseline 只用官方代码**（`code/models/paper_baselines/`，出处/偏差/排除理由见其 README）
+- ✅ EEGNet [18] `vlawhern/arl-eegmodels`（Keras→1:1 移植；逐层核对参数量 3,700）
+- ✅ EEGNeX [20] `chenxiachan/EEGNeX`（Keras→1:1 移植；上游无可配结构超参）
+- ✅ EEG-Deformer [23] `yi-ding-cs/EEG-Deformer`（**官方就是 PyTorch，原样执行**）
+- ✅ ATCNet [24]（8/9 已完成，官方 Keras→移植，参数量 113,732 与官方一致）
+- ❌ EEG-Inception [27]：无官方发布（braindecode 那版自己声明未经原作者核对）
+- ❌ MDGEEG [35]：占位仓库无代码
+- ❌ EEG-DG [38]：**发布代码不完整**——入口 `import Shallow_Inception_Network_2source`
+  但仓库无此文件；`DG_Network` 写死 2 个源域（我们有 8 个训练被试）；`Dist_Loss` 全程
+  detach 到 numpy 无梯度。改了就不是复现，故按用户规则排除。
+- ❌ DSGNet：仅架构预览。其论文数字（0.6856/0.6833）只作引用对照。
+- 我们的模型跑 3 个：`dualcd_s4_flatten` / `s4erp` / `dualcd_transformer`。
+
+**③ 协议与配方**
+- 划分：8:2:1 跨被试（LOSO，10 个非测试被试里 2 个做验证、8 个训练，每人 3 session；
+  trial 数正好 7199:1800:900）。
+- 配方：论文 §IV-A（Adam 1e-4 / batch 128 / max 500 epochs / 无 scheduler / 无 wd /
+  无梯度裁剪）+ **早停 patience 100**（论文是固定 500，这是记录在案的偏差）。
+- **梯度累积（新增）**：两个 67M 模型在 batch 128 下 OOM（smoke 实测）。加
+  `train.micro_batch_per_model`（flatten 32×accum4、transformer 16×accum8），
+  **优化器仍看到 batch 128**；唯一差异是 BN 统计量落在 micro-batch 上，已在 config 注明。
+  `micro_batch_size` 已计入 `cell_signature`。
+
+**④ 验证**：smoke1（7 模型 × fold0 × 3ep）5 通过 + 2 OOM（暴露问题）→ 加累积后
+smoke2 两个大模型均通过（flatten 83s/ep、transformer 145s/ep）。三曲线在 5 个 cell 的
+`history` 里齐全。
+
+**⑤ Slurm 四卡**（按 fold 切分，每 job 跑全部 7 模型，各 <48h；同命令续跑）：
+**36928** folds 0-2、**36929** folds 3-5、**36930** folds 6-8、**36931** folds 9-10。
+记录 `outputs/experiments/wbci_shu/paper_baseline_3c_821_v1/parallel_job_ids.txt`。
+
+---
+
+## 2026-08-09 夜 — ATCNet 加第二条 arm：**严格论文 recipe**（把模型差距和配方差距分开）
+
+- 问题：我们 6 个模型用统一 recipe（AdamW+cosine / batch 64 / ≤100 ep / patience 25），
+  论文用 Adam 1e-4 / batch 128 / 500 ep。**划分协议一致，配方不一致**，所以不能直接说
+  「我们比 DSGNet 差 X pp 是模型差距」。
+- 方案（用户选定）：ATCNet 跑两条 arm，**只有 recipe 不同**。
+  - arm A `foundation_3c_loso_paper_v1`（models=[atcnet]，job 36481）= 我们的 recipe
+    → 与 5 个 foundation 严格同条件可比。
+  - arm B `atcnet_3c_loso_paper_recipe_v1`（新 config
+    `code/configs/experiments/atcnet_3c_loso_paper_recipe.yaml`）= 论文 recipe：
+    Adam lr=1e-4 / batch 128 / 500 epochs / 无 scheduler / 无 weight decay / 无梯度裁剪 /
+    **不早停**（论文未提这些，一律关掉而不是继承我们的默认）。
+    → 与论文自己的数字可比。Slurm：smoke **36493** → 全量 **36494**（`afterok`）。
+- `arm B - arm A` = **recipe 差距**；`论文 0.6834 - arm B` = 剩余的实现/预处理差距。
+- 指标口径（用户选定）：只用 **Acc / macro-F1**，不补 Kappa。
+
+---
+
+## 2026-08-09 晚 — ATCNet 改用**官方仓库**实现（作废 braindecode 版）
+
+- 用户要求：必须来自官方 <https://github.com/Altaheri/EEG-ATCNet>。**第一版（braindecode
+  PyTorch 移植）已作废**：取消 job 36474、删除 `_atcnet_raw.py` / `_bd_modules.py` 及其
+  smoke 产物与 `atcnet__fold0__seed0` cell。55 个 foundation cell 未受影响。
+- **官方版落地**（`code/models/atcnet/`）：
+  - `_official_keras/{models,attention_models}.py` + `LICENSE` + `UPSTREAM_README.md`
+    = 官方仓库**原样**（Keras，不执行，供逐行核对）。
+  - `atcnet_torch.py` = 官方 `ATCNet_` 的 **1:1 PyTorch 移植**（Keras 跑不进本项目管线）。
+    逐层对齐：`Conv_block_` / `mha_block` / `TCN_block_`、Keras 初始化
+    （Conv2D/Dense glorot_uniform、TCN Conv1D he_uniform）、`max_norm(0.6)` 核约束、
+    L2 penalty（conv 0.009 / dense 0.5）。
+  - `adapter.py` = `{logits, features, confidence}` 契约 + 用 trainer 的
+    `uses_custom_loss` 钩子把官方 L2 加回 loss（Keras 是自动折进 loss 的）。
+- **保真证据**：用官方 BCI-IV-2a 维度（22ch/1125/4 类）参数量 = **113,732**，
+  与官方 README 结果表**完全一致**。我们的维度（58ch/1000/3 类）= 114,719，
+  `Tc=17 / Tw=13 / F2=32 / 5 windows`。
+- **偏差**（仅 6 条机械性差异，逐条见 `code/models/atcnet/README.md` §3）：数据布局、
+  even kernel 的 `same` padding 取整方向、softmax→logits、attention 限定 `mha`、
+  L2 由 training_step 加、Keras `MultiHeadAttention`（key_dim 8 ≠ embed 32）需自写。
+- **协议**：与 5 个 foundation **完全相同**（同 run_id `foundation_3c_loso_paper_v1`、同
+  LOSO session 划分、同 trainer recipe）。**优化器 recipe 与论文不同**（论文 Adam 1e-4 /
+  batch 128 / 500 epochs；官方仓库 Adam 1e-3 / batch 64 / 500 epochs；我们 AdamW+cosine /
+  batch 64 / ≤100 epochs / patience 25）——写报告必须说明。
+- Slurm：smoke **36480**（fold0 / 2 epochs / 隔离输出）→ 全量 **36481**（`afterok`）。
+
+---
+
+## 2026-08-09 — foundation_3c_loso_paper_v1 全量完成（55/55）
+
+- 协议：DSGNet/SHUv5 对齐 LOSO（train ses1–2 / val ses3 / test=留一被试全 session）。
+- 5 models × 11 folds × seed0 **全部 ok**；汇总 CSV：
+  `outputs/experiments/wbci_shu/foundation_3c_loso_paper_v1/runs/cross_subject__all_models.csv`
+- **LOSO mean Acc / F1**（vs 论文 DSGNet 0.6856 / 0.6833）：
+  - dualcd_s4_flatten **0.6599 / 0.6569**（最好，−2.6pp Acc）
+  - s4erp 0.6477 / 0.6463（−3.8pp）
+  - dualcd_transformer 0.6340 / 0.6326（−5.2pp；batch16 才跑通）
+  - dualcd_s4_timepatch 0.6107 / 0.6091（−7.5pp）
+  - dualcd_s4_pos 0.4511 / 0.4132（远弱）
+- 共同难点：sub-011 全模型 ~0.32–0.39；sub-007 最强（flatten 0.868）。
+- 结论：**同协议下 5 个 foundation 均未超过论文 DSGNet**；最接近是 flatten。
+
+---
+
+## 2026-08-07 晚 — 续跑 foundation_3c_loso_paper_v1（4 GPU）
+
+- 前一轮 35878–35881 在 ~2h 被 CANCELLED；当时完成 13/55（s4erp 11/11 Acc mean 0.6477；
+  timepatch/flatten 各 fold0；pos/transformer 未完成）。
+- 重新提交（resume，同 out/ckpt）：**35989** s4erp+pos、**35990** timepatch、
+  **35991** flatten(40G)、**35992** transformer(40G)。
+- 记录追加：`outputs/experiments/wbci_shu/foundation_3c_loso_paper_v1/parallel_job_ids.txt`
+
+---
+
+## 2026-08-07 — 对齐 DSGNet 论文协议，重跑 WBCIC 3C LOSO（5 foundation）
+
+- **对标论文**：Lou et al., IEEE JBHI 2026，[doi:10.1109/jbhi.2026.3689121](https://doi.org/10.1109/jbhi.2026.3689121)
+  （PDF：`inbox/papers/dsgnet_jbhi2026_FullText.pdf` + 根目录同名副本；摘录
+  `inbox/papers/dsgnet_jbhi2026_extracted.txt`）。只做其中 **SHUv5 = WBCIC-SHU 三分类 11 人**。
+- **论文协议（已落地）**：LOSO；非测试被试 **ses-01+02 → train，ses-03 → val**；测试被试
+  **三 session 全测**。实测 fold0：`n_train=5999 / n_val=3000 / n_test=900`（sub-010/ses-01=299）。
+- **工程**：新增 `val_mode=sessions`（`cross_subject_protocols.py`）；config
+  `foundation_cross_subject_wbci_3c.yaml` → `run_id=foundation_3c_loso_paper_v1`
+  （**不复用**旧 `foundation_3c_loso_v1`，旧=留 2 个 val 被试，与论文不一致）。
+- **对标数字（论文 Table II，SHUv5，LOSO mean）**：DSGNet Acc **0.6856** / F1 **0.6833** /
+  Kappa **0.5284**；次强 ATCNet Acc 0.6834。本轮只跑 5 个 foundation；DSGNet 复现仍 deferred。
+- **测试**：session-val 相关 5 passed；dry-run OK。
+- **Slurm 4 GPU 并行**（记录：`outputs/experiments/wbci_shu/foundation_3c_loso_paper_v1/parallel_job_ids.txt`）：
+  - **35878** `s4erp,dualcd_s4_pos`（32G）
+  - **35879** `dualcd_s4_timepatch`（32G）
+  - **35880** `dualcd_s4_flatten`（40G）
+  - **35881** `dualcd_transformer`（40G）
+- 网格：5 models × 11 LOSO folds × seed 0 = 55 cells；同命令可续跑。
+
+---
+
+## 2026-08-05 — 4 GPU 并行拆分 3C LOSO
+
+- 取消单体 job **35359**（已完成 s4erp 11/11 + dualcd_s4_pos 5/11；若继续会抢后面三模型）。
+- 新提交（同 out/ckpt，per-model CSV，互不覆盖）:
+  - **35433** `dualcd_s4_pos`（续跑剩余 folds）
+  - **35434** `dualcd_s4_timepatch`
+  - **35435** `dualcd_s4_flatten`（40G）
+  - **35436** `dualcd_transformer`（40G）
+- 记录：`outputs/experiments/wbci_shu/foundation_3c_loso_v1/parallel_job_ids.txt`
+
+---
+
+## 2026-08-04 — WBCIC 3C LOSO 全量开跑（仅 5 个 foundation；DSGNet 暂不做）
+
+
+- 用户指示：不管 DSGNet，直接跑五个模型。
+- Slurm job **35359**（`e2e_3c_loso`）：`foundation_cross_subject_wbci_3c.yaml`，48h / 32G / gpu2node。
+- 修复 `scripts/slurm/shu_gpu.sbatch`：用 `SLURM_SUBMIT_DIR` 找 `_common.sh`（避免 spool 拷贝路径失效）。
+- 产出：`outputs/experiments/wbci_shu/foundation_3c_loso_v1/` + `checkpoints/wbci_shu/foundation_3c_loso_v1/`；同命令可续跑。
+- 网格：5 models × 11 LOSO folds × seed 0 = 55 cells。
+
+---
+
+## 2026-08-04 — 学长锁定先跑 WBCIC 3C LOSO（11 人）+ 5 foundation + DSGNet
+
+
+- **协议锁定**：三分类 11 人；LOSO；只存 best+last；断点续跑。二分类 5 折/seed 41–45 **本轮不做**。
+- **3C 数据**：`scripts/preprocess_wbci_3c.py` 从官方 `derivatives/3C dataset_processeddata` `.mat`
+  转到 `outputs/processed/wbci_shu_3c_mat_clean/`（外部 processed/ 只读）。33 session 全 ok
+  （含 sub-010/ses-01 的 299 trial）。标签 {1,2,3}->{0,1,2}。
+- **实验 config**：`code/configs/experiments/foundation_cross_subject_wbci_3c.yaml`（dry-run OK）。
+- **多类支持**：`normalize_labels` / `evaluate_predictions` 支持 3 类 AUC（macro-OVR）。
+- **DSGNet**：GitHub 仅架构预览（`temp_*.py`，*full code upon acceptance*）；源文件已拷到
+  `code/models/dsgnet/_*.py`，**尚未**注册进 runner。需向学长确认是否有完整训练代码/超参。
+- **下一步**：① 问清 DSGNet 完整代码来源；② 接入 `dsgnet` 到 registry；③ Slurm GPU smoke → 全量 LOSO。
+
+---
+
+## 2026-08-04 — 主线换轨：端到端基础模型 × 跨被试（学长包融合完成，实验未跑）
+
+- **学长新指示**：「先简化任务，先不搞在线学习，先直接搞端到端的模型」——用指定的 **5 个模型**
+  （`models_eeg_foundation/` 包：S4ERP + UnifiedDINODualCD_{S4_Pos, S4_Timepatch, S4_Flatten, Transformer}），
+  在 WBCIC-SHU 与 SHU 上**分开训练（不合并）**，做**跨被试**实验；要求**只存最后一个 epoch + 最优模型**
+  两个 checkpoint，且**支持断点续跑**。
+- **Phase 3 → paused（不是废弃）**：`code/tta/`、`4_experiments/*/tta/`、`PHASE3_ROUTE_PLAN.md` 全部保留。
+- **融合（done）**：
+  1. `code/models/eeg_foundation/`：学长 5 个源文件原样移植（模型数学未改），新增 `adapter.py` 做
+     项目契约（`[B,C,T]` 输入 + `{logits, features, confidence}` 输出）与 DualCD 训练钩子
+     （`uses_custom_loss` / `training_step` / `after_optimizer_step`）。**4 处偏差**逐条记在该目录 README §4
+     （最实质的一条：原包 README 让用户设 `multi_view.low_freq` 但代码里没人读，已改成真参数，
+     MI config 用 mu/beta 8–13 / 13–30 Hz）。
+  2. `code/training/e2e_trainer.py`：新训练器。只写 `best.pt` + `last.pt`；`last.pt` 带
+     optimizer/scheduler/RNG/history；原子写入；`cell_signature` 防「换了划分还复用输出目录」；
+     每 epoch 按 `epoch_seed_base+epoch` 重设种子，使续跑与一口气跑完可比。
+     **`trainer.py` 一行未改**（Phase 0–2c 可复现）。
+  3. `code/experiments/cross_subject_protocols.py`：被试级 `loso` / `kfold_subject` / `holdout`；
+     验证集默认取留出的**训练被试**；per-trial z-score（fit-free 无泄漏）；best 与 last 都在每个
+     留出被试上评测（CSV 里 `accuracy...` vs `last_accuracy...`）。
+  4. runner `foundation_cross_subject` + config `{foundation_cross_subject,shu_foundation_cross_subject}.yaml`
+     + 5 个 model YAML + 4 个新 CLI 开关（`--split-protocol/--folds-subset/--monitor/--no-resume`）。
+- **验证**：`tests/foundation/` **32 passed（CPU）**，含泄漏守卫、续跑守卫、配置漂移守卫。
+  真实 SHU 数据 CPU smoke 跑通「加载→池化→划分→训练→双 checkpoint」。
+- **参数量实测**（`n_times=1000`/2 类，@58ch / @32ch）：`s4erp` 1.37M/0.94M、`dualcd_s4_pos` 3.17M/2.32M、
+  `dualcd_s4_timepatch` 4.48M/3.63M、`dualcd_s4_flatten` 66.9M/66.0M、`dualcd_transformer` 67.9M/67.0M。
+  与学长表格对照：flatten 两个 + Transformer 在 32ch 下吻合 0.4% 以内；`pos`/`timepatch` 实测高 10–16%
+  （学长那两行疑似按 ERP 配置 C=21/T=170 量的）。**文档一律以实测为准，不照抄表格。**
+- **实测教训**：CPU 上 `s4erp` 单 epoch 734 s（15 s/步，瓶颈是 128 通道 × 1000 点的空间卷积），
+  所以**正式 smoke 也必须上 GPU**；已按规矩改走 Slurm（`scripts/slurm/shu_gpu.sbatch`，job 35295 排队中）。
+- **内存**：被试数据常驻 ≈6.9 GB（WBCIC）/1.6 GB（SHU）；训练集用 `ConcatDataset` 拼接**不拷贝**
+  （若用 `torch.cat` 每个 cell 会再多约 5.5 GB）。WBCIC 全量 Slurm 建议 `--mem=32G`。
+- **文献调研（done）**：`inbox/cross_subject_protocol_research.md`。关键事实：两个数据集都**没有**官方
+  跨被试划分、两篇数据集论文都**没做**零样本跨被试；WBCIC-SHU 唯一可对标是 **EDAPT（J Neural Eng 2026，
+  2-fold 被试划分，零样本 EEGNet 0.81 / DeepConvNet 0.85）**；**SHU 2022 没有任何可验证的已发表跨被试数字**
+  且有地板效应（作者跨 session 53.7%，chance 51.4–53.7%，p>0.05）。
+- **待办（阻塞点）**：协议参数还没定，`4_experiments/CROSS_SUBJECT_PROTOCOL_MEMO.md` 里 7 个问题
+  **需要发给学长确认**（LOSO vs 5-fold、是否严格零样本、session 池化、是否加 EA arm、epoch 预算、
+  先跑哪几个模型、SHU 近 chance 怎么写）。**确认前不产出任何被当作结果的数字。**
+- **下一步**：等 GPU smoke 出单 epoch 耗时/显存 → 学长拍板协议 → 改 config → 全量（可断点续跑）→
+  summarize（summarizer 待写）→ AI 分析报告。
+
+---
+
 ## 2026-08-04 — 跨机便携路径改造（portable local configs）
 
 - **目标**：去掉仓库内硬编码绝对路径，方便 GitHub 云端同步、多服务器继续开发。

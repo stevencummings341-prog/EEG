@@ -1,0 +1,129 @@
+experiment:
+  name: "foundation_cross_subject"      # same runner; 3C data + LOSO(8:2:1) + n_classes=3
+  source_config: "configs/experiments/paper_baseline_3c_821.yaml"
+
+# =====================================================================
+# WBCIC-SHU THREE-CLASS (11 subjects) — 8:2:1 cross-subject, PAPER RECIPE, 3 curves.
+#
+# One run, one recipe, seven models, so every number in the final table is comparable:
+#
+#   published baselines (official author code only, see code/models/paper_baselines/README.md)
+#     eegnet_official  [18] arl-eegmodels          paper Table II SHUv5 Acc 0.6492
+#     eegnex           [20] chenxiachan/EEGNeX     paper Table II SHUv5 Acc 0.6488
+#     eeg_deformer     [23] yi-ding-cs/EEG-Deformer  paper Table II SHUv5 Acc 0.6529
+#     atcnet           [24] Altaheri/EEG-ATCNet    paper Table II SHUv5 Acc 0.6834 (best baseline)
+#   ours
+#     dualcd_s4_flatten / s4erp / dualcd_transformer
+#
+#   Excluded because no complete official code exists: EEG-Inception [27], MDGEEG [35],
+#   EEG-DG [38], DSGNet (reasons recorded in code/models/paper_baselines/README.md).
+#   DSGNet's published numbers (Acc 0.6856 / F1 0.6833) stay a paper-quoted reference only.
+#
+# SPLIT — 8:2:1 by SUBJECT (advisor, 2026-08-09 "夸(跨)被试的"):
+#   LOSO over the 11 subjects; of the 10 non-test subjects, 2 are validation subjects and 8
+#   are training subjects, each contributing all 3 sessions. Trial counts land on exactly
+#   8:2:1 (7199 : 1800 : 900). This is NOT the DSGNet paper's own split (which validates on
+#   session 3 of the same subjects) — that variant lives in
+#   foundation_cross_subject_wbci_3c.yaml. Both test the held-out subject's 3 sessions.
+#
+# RECIPE — the DSGNet paper's, §IV-A: "trained using the Adam optimizer with a learning rate
+#   of 0.0001. For standard classification experiments, a batch size of 128 and 500 training
+#   epochs are used." No scheduler / weight decay / gradient clipping is stated, so all are
+#   off. Early stopping IS enabled (advisor request) — the paper trains a fixed 500 epochs,
+#   so patience=100 is our documented deviation; it saves compute and every model still gets
+#   100 epochs of no improvement before stopping.
+#
+# CURVES — per-epoch train / val / test accuracy are logged for the 3-curve figure. The test
+#   curve is MONITORING ONLY: best.pt and early stopping read the val loader alone (guard in
+#   code/training/e2e_trainer.py). `curves: true` costs ~5-10% extra time per epoch.
+#
+# Run (GPU / Slurm; never on the login node):
+#   python code/run.py --dry-run --config code/configs/experiments/paper_baseline_3c_821.yaml
+#   # 4-GPU split by model group, see scripts/slurm/submit_paper_baseline_821.sh
+# =====================================================================
+
+run_id: "paper_baseline_3c_821_v1"
+
+data:
+  name: "wbci_shu_3c"
+  variant: "mat_clean_3c"
+  manifest: "wbci_3c_processed_manifest"
+  status_filter: ["ok"]
+  n_channels: 58
+  n_times: 1000
+  n_classes: 3                         # {0,1,2} <- official {1,2,3}
+  sfreq: 250
+
+models: ["eegnet_official", "eegnex", "eeg_deformer", "atcnet",
+         "dualcd_s4_flatten", "s4erp", "dualcd_transformer"]
+
+cross_subject:
+  protocol: "loso"               # 11 folds, one held-out test subject each
+  n_folds: 11                    # ignored for loso
+  split_seed: 0
+  val_mode: "subjects"           # 8:2:1 -> validation = 2 held-out TRAINING subjects
+  n_val_subjects: 2
+
+train:
+  # ---- DSGNet paper recipe: do not "improve" these ----
+  optimizer: "adam"
+  lr: 0.0001
+  batch_size: 128
+  max_epochs: 500
+  weight_decay: 0.0               # not stated in the paper
+  scheduler: "none"               # not stated in the paper
+  grad_clip_norm: 0.0             # not stated in the paper
+  early_stopping_patience: 100    # deviation: paper trains a fixed 500 epochs
+  # ---- shared across models so the table is comparable ----
+  monitor: "macro_f1"             # best.pt selection, on the VALIDATION subjects only
+  monitor_mode: "max"
+  normalization: "per_sample_zscore"   # per-trial, fit-free: no statistic crosses the split
+  num_workers: 2
+  amp: false
+  device: "cuda"
+  seeds: [0]
+  # ---- per-epoch train/val/test curves (monitoring only) ----
+  curves: true
+  train_eval_max_trials: 2000     # capped train subset, eval mode, for a comparable curve
+  # ---- gradient accumulation: keeps the paper's effective batch 128 on models whose
+  # activations do not fit in 24 GB (the 67M-param DualCD variants OOM'd at batch 64).
+  # The optimizer therefore still sees batch 128 for EVERY model; the one difference is
+  # that BatchNorm statistics for these two are computed over the micro-batch. Documented
+  # deviation — do not silently drop the effective batch instead.
+  micro_batch_per_model:
+    dualcd_s4_flatten: 32
+    dualcd_transformer: 16
+
+model_params:
+  # ===== published baselines: upstream author defaults, NOT tuned =====
+  eegnet_official: {dropoutRate: 0.5, kernLength: 64, F1: 8, D: 2, F2: 16, norm_rate: 0.25}
+  eegnex: {}                       # upstream exposes no structural hyperparameters
+  eeg_deformer: {temporal_kernel: 51, num_kernel: 64, deformer_depth: 4,
+                 heads: 16, mlp_dim: 16, dim_head: 16, deformer_dropout: 0.25}
+  atcnet: {eegn_F1: 16, eegn_D: 2, eegn_kernelSize: 64, eegn_poolSize: 7,
+           eegn_dropout: 0.3, attention: "mha",
+           tcn_depth: 2, tcn_kernelSize: 4, tcn_filters: 32, tcn_dropout: 0.3,
+           n_windows: 5, fuse: "average", use_official_l2: true}
+  # ===== ours =====
+  dualcd_s4_flatten: {d_model: 128, n_layers: 4, state_dim: 8, d_ff: 256, dropout: 0.1,
+                      lambda_intra: 0.5, dino_out_dim: 256, proto_k: 5,
+                      teacher_momentum: 0.996, warmup_epochs: 5,
+                      view_low_band: [8.0, 13.0], view_high_band: [13.0, 30.0]}
+  s4erp: {d_model: 128, n_layers: 4, state_dim: 8, d_ff: 256, dropout: 0.1}
+  dualcd_transformer: {d_model: 128, n_layers: 6, n_heads: 8, d_ff: 256, dropout: 0.1,
+                       lambda_intra: 0.5, dino_out_dim: 256, proto_k: 5,
+                       teacher_momentum: 0.996, warmup_epochs: 5,
+                       view_low_band: [8.0, 13.0], view_high_band: [13.0, 30.0]}
+
+eval:
+  metrics: ["accuracy", "balanced_accuracy", "macro_f1", "auc"]
+  calibration_metrics: ["nll", "brier", "ece"]
+  report_scope: "per_test_subject"
+
+checkpoints:
+  keep: ["best", "last"]
+  resume: true
+
+output:
+  output_dir: "outputs/experiments/wbci_shu/paper_baseline_3c_821_v1"
+  checkpoint_dir: "checkpoints/wbci_shu/paper_baseline_3c_821_v1"

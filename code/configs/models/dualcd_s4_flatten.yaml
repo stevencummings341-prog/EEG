@@ -1,0 +1,19 @@
+# UnifiedDINODualCD_S4_Flatten — S4 backbone + flatten pooling + DINO/DualCD.
+# Heavy (~66M params at n_times=1000): feature_dim = patch_num * d_model = 487*128 = 62336,
+# so the DINO projection heads dominate the parameter count. Needs a GPU; if it OOMs,
+# lower train.batch_size in the experiment config before touching d_model.
+name: "dualcd_s4_flatten"
+d_model: 128
+n_layers: 4
+state_dim: 8
+d_ff: 256
+dropout: 0.1
+
+lambda_intra: 0.5
+dino_out_dim: 256
+proto_k: 5
+teacher_momentum: 0.996
+warmup_epochs: 5
+
+view_low_band: [8.0, 13.0]
+view_high_band: [13.0, 30.0]

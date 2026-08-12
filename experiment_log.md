@@ -4,11 +4,31 @@ tags:
   - "#pipeline/4_analysis"
   - "#modality/eeg"
 created: "2026-06-10"
-updated: "2026-07-06"
+updated: "2026-08-04"
 status: "active"
 ---
 
 # Experiment Log
+
+## 2026-08-04 -- 端到端基础模型 × 跨被试：融合完成，**实验未跑（无任何结果数字）**
+
+学长换轨：不做在线学习，改用其交付的 5 个模型（S4ERP + UnifiedDINODualCD_{S4_Pos,S4_Timepatch,
+S4_Flatten,Transformer}）在 WBCIC-SHU 与 SHU 上**分开**做端到端训练 + **跨被试**评测；只存 best + last
+两个 checkpoint；必须支持断点续跑。
+
+本轮**只做工程融合与验证，没有跑任何正式实验，因此本文件不新增任何结果数字**：
+`code/models/eeg_foundation/`（学长包移植 + 项目契约 adapter）、`code/training/e2e_trainer.py`
+（best/last + 断点续跑 + 配置漂移守卫）、`code/experiments/cross_subject_protocols.py`
+（被试级 LOSO/k-fold/holdout + 泄漏断言）、runner `foundation_cross_subject` + 双数据集 config +
+5 个 model YAML。`tests/foundation/` 32 passed（CPU）。
+
+工程侧实测（**不是实验结果**）：`s4erp` 在 SHU 32ch/1000 点下实测 944,898 参数、feature_dim 62336
+（与学长参数量表一致）；真实 SHU manifest 下 6 被试各 469–492 trial（每 session 90–100 不等，
+类别不保证 50/50）；CPU 单 epoch 734 s ⟹ 正式 smoke 必须上 GPU（Slurm job 35295 排队中）。
+
+**阻塞点**：协议参数未定。`4_experiments/CROSS_SUBJECT_PROTOCOL_MEMO.md` 的 7 个问题需学长拍板后
+才开跑；文献调研见 `inbox/cross_subject_protocol_research.md`（关键：两数据集都无官方跨被试划分；
+WBCIC-SHU 唯一对标 EDAPT 零样本 EEGNet 0.81 / DeepConvNet 0.85；SHU 无可验证跨被试数字且有地板效应）。
 
 ## 2026-07-06 -- SHU Phase 1/2a/2b/2c summarize + AI 分析（done，与 WBCIC 齐平）
 

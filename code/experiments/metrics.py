@@ -38,6 +38,22 @@ def auc_binary(y_true: np.ndarray, prob_pos: np.ndarray) -> float:
     return float(roc_auc_score(y_true, np.asarray(prob_pos).ravel()))
 
 
+def auc_multiclass(y_true: np.ndarray, probs: np.ndarray) -> float:
+    """多分类 macro-OVR AUC。类别不足或 sklearn 失败时返回 nan。"""
+    from sklearn.metrics import roc_auc_score
+
+    y_true = np.asarray(y_true).ravel()
+    probs = np.asarray(probs)
+    if probs.ndim != 2 or probs.shape[0] != y_true.size:
+        return float("nan")
+    if len(np.unique(y_true)) < 2:
+        return float("nan")
+    try:
+        return float(roc_auc_score(y_true, probs, multi_class="ovr", average="macro"))
+    except ValueError:
+        return float("nan")
+
+
 def expected_calibration_error(y_true, probs, n_bins: int = 15) -> float:
     """ECE：把样本按预测置信度分箱，统计 |置信度 - 准确率| 的加权平均。
 

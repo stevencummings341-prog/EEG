@@ -4,7 +4,7 @@ tags:
   - "#pipeline/5_dl_model"
   - "#modality/eeg"
 created: "2026-06-10"
-updated: "2026-08-04"
+updated: "2026-08-10"
 status: "active"
 ---
 
@@ -14,7 +14,26 @@ status: "active"
 
 ## 1. 一句话现状
 
-WBCIC-SHU 与 SHU 2022 双数据集 Phase 0–2c 均已完成。**Phase 3 已达 pretrained-model-ready 工程态（2026-07-12）**：Round-1 scaffold + mock live-inference 验证 + **WBCIC full A0 complete（4320/4320, max\|Δ\|=0）** + SHU no_tta replay smoke + 交接契约。**真实预训练模型尚未接入**；**formal Oracle / full T3A 未跑**。下一步：学长 checkpoint → 新 adapter → preflight/live smoke → Phase 3B Oracle。路线见 `PHASE3_ROUTE_PLAN.md` + `3_online_adaptation/PHASE3_TTA_DESIGN.md` + `PRETRAINED_MODEL_INTEGRATION_CONTRACT.md`。
+**2026-08-10：WBCIC 3C 论文对齐 LOSO 已完成**——5 foundation（`foundation_3c_loso_paper_v1`）+
+ATCNet arm A（同 recipe）+ arm B（论文 recipe，`atcnet_3c_loso_paper_recipe_v1`）全部 11/11 ok。
+对标 DSGNet Acc **0.6856** / ATCNet **0.6834**。实测：ATCNet(A) **0.7129**、ATCNet(B) **0.6891**、
+最好 foundation flatten **0.6599**。差距分解见 `DSGNET_SHUv5_3C_ANCHOR.md`。旧 run
+`foundation_3c_loso_v1`（subject-val）不作对比。DSGNet 本仓复现仍 deferred。
+路线见 `FOUNDATION_E2E_ROUTE_PLAN.md`；论文 PDF `inbox/papers/dsgnet_jbhi2026_FullText.pdf`。
+
+**2026-08-10 新增，运行中：统一对比 run `paper_baseline_3c_821_v1`（四卡 36928-36931）。**
+7 个模型同一 run / 同划分 / 同配方：4 个已发表 baseline（EEGNet [18] / EEGNeX [20] /
+EEG-Deformer [23] / ATCNet [24]，**只用各自作者官方代码**，出处与偏差见
+`code/models/paper_baselines/README.md`）+ 我们 3 个（flatten / s4erp / transformer）。
+划分 = **8:2:1 跨被试**；配方 = **论文 recipe**（Adam 1e-4 / batch 128 / max 500ep）+ 早停
+patience 100；新增 **per-epoch train/val/test 三曲线**（test 仅监控，模型选择只看 val）。
+两个 67M 模型用**梯度累积**保持等效 batch 128（`train.micro_batch_per_model`）。
+EEG-Inception [27]、MDGEEG [35]、EEG-DG [38]、DSGNet 因无完整官方代码排除。
+汇总/绘图：`scripts/summarize_cross_subject.py`、`scripts/plot_three_curves.py`。
+
+Phase 0–2c（双数据集）全部完成，结果保留只读。**Phase 3（跨 session 修复 / TTA）= paused 不是废弃**：
+`code/tta/` + `4_experiments/*/tta/` + `PHASE3_ROUTE_PLAN.md` 全部保留，工程态仍是
+pretrained-model-ready（WBCIC full A0 complete 4320/4320 max\|Δ\|=0；formal Oracle / full T3A 未跑）。
 
 ## 2. 进度表
 
@@ -30,7 +49,8 @@ WBCIC-SHU 与 SHU 2022 双数据集 Phase 0–2c 均已完成。**Phase 3 已达
 | SHU Phase 2a Multi-source | **done**（ses01+02→03；并入 no_alignment_baseline） | `2_baseline/shu/no_alignment_baseline/` |
 | SHU Phase 2b Alignment | **done**（45000 行全 ok；AI 分析已写） | `2_baseline/shu/alignment_baseline/` |
 | SHU Phase 2c Prototype Drift | **done**（7500 cells 全 ok；AI 分析已写） | `4_experiments/shu/prototype_drift/` |
-| **Phase 3 TTA backend + pretrained readiness** | **engineering ready to receive real pretrained model**（非 full T3A；非 formal Oracle） | 代码 `code/tta/` + `session_tta.py`；契约 `3_online_adaptation/PRETRAINED_MODEL_INTEGRATION_CONTRACT.md`；结果 `4_experiments/{wbci_shu,shu}/tta/`（含 full A0 + SHU smoke） |
+| **Phase 3 TTA backend + pretrained readiness** | **paused（不是废弃）**；工程上 ready to receive real pretrained model（非 full T3A；非 formal Oracle） | 代码 `code/tta/` + `session_tta.py`；契约 `3_online_adaptation/PRETRAINED_MODEL_INTEGRATION_CONTRACT.md`；结果 `4_experiments/{wbci_shu,shu}/tta/`（含 full A0 + SHU smoke） |
+| **E2E 端到端基础模型 × 跨被试（当前主线）** | **WBCIC 3C 论文对齐 LOSO done（2026-08-10）**：5 foundation + ATCNet A/B 全 ok；DSGNet 复现 deferred | `outputs/.../foundation_3c_loso_paper_v1/` + `.../atcnet_3c_loso_paper_recipe_v1/`；锚点 `4_experiments/wbci_shu/foundation_cross_subject/DSGNET_SHUv5_3C_ANCHOR.md` |
 | Phase 4+ Memory/Online/Agent | future | `3_online_adaptation/` |
 
 > **Phase 3 工程验收（2026-07-12）**：mock live path validated；WBCIC full A0 complete；SHU replay smoke passed；tests/tta 41 passed。未接入真实预训练模型。
@@ -62,6 +82,22 @@ python code/run.py --config code/configs/experiments/phase1_baseline.yaml \
 
 汇总也已迁入 `code/`：`python code/run.py --summarize --config code/configs/experiments/<phase>.yaml` 会生成表/图/原始报告，并额外产出按 9 段结构的 canonical `REPORT.md`（`code/summaries/`）。已用 backup 现成 run CSV 验证 Phase 2b：30150 行、表/图/报告齐全，canonical 报告数字与历史一致。
 
+**端到端主线（2026-08-04 新增，已可运行；`--summarize` 尚未支持）**：
+
+```bash
+# 极小 CPU smoke（输出隔离到 *_smoke，不污染 v1）
+python code/run.py --config code/configs/experiments/shu_foundation_cross_subject.yaml \
+    --models s4erp --folds 3 --folds-subset 0 --max-subjects 6 --max-epochs 2 \
+    --batch-size 32 --num-workers 0 --device cpu \
+    --out outputs/experiments/shu/foundation_cross_subject_smoke \
+    --ckpt-dir checkpoints/shu/foundation_cross_subject_smoke
+# GPU 全量（Slurm）；重复执行同一条命令 = 断点续跑
+python code/run.py --config code/configs/experiments/foundation_cross_subject.yaml --device cuda
+```
+
+注意：CPU 上 `s4erp` 单 step 约 10 s（1000 点 × 32ch，ShallowNet 空间卷积是瓶颈），所以
+**CPU 只适合 2 epoch 级别的 smoke，正式 smoke 也要上 GPU 节点**。
+
 ## 4. SHU 数据集就绪度（2026-07-06：Phase 0–2c 全部完成）
 
 > 更新：SHU Phase 0/1/2a/2b/2c 已全部训练 + summarize + AI 分析完成（见 §2 表与 progress 2026-07-06）。下面的"可直接跑"说明保留为复跑/重训参考。
@@ -83,17 +119,21 @@ python code/run.py --config code/configs/experiments/shu_phase2c_prototype_drift
 
 已用 CPU smoke 验证 phase1（within 10 行 + cross 20 对）与 phase2b（EA/RA 32ch 40 行全 ok）端到端跑通。
 
-## 5. 下一步建议（优先级，2026-07-12 — pretrained-model-ready）
+## 5. 下一步建议（优先级，2026-08-04 — 端到端主线）
 
-> 工程验收已完成（A0 + mock live + SHU smoke + 契约）。权威路线仍见
-> `PHASE3_ROUTE_PLAN.md` / `PHASE3_TTA_DESIGN.md` / `PRETRAINED_MODEL_INTEGRATION_CONTRACT.md`。
+> 权威路线 = 根目录 `FOUNDATION_E2E_ROUTE_PLAN.md`；协议讨论 = `4_experiments/CROSS_SUBJECT_PROTOCOL_MEMO.md`；
+> 文献依据 = `inbox/cross_subject_protocol_research.md`。
 
-1. **（当前）等学长预训练模型**：按契约交付物新增 `code/tta/adapters/<name>.py` + config，**不重写** TTA backend。
-2. **接入后**：preflight → live inference smoke →（可选）与 Phase 2c baseline 对照 → minimal T3A。
-3. **Phase 3B Oracle 裁决门**（收益+风险双条件；阈值 provisional）——通过才扩大 T3A。
-4. **禁止提前做**：full T3A sweep / 大规模 ablation / Tent/SHOT（除非裁决后明确需要）。
-5. **FBCNet / SHU 单列**，不并入 WBCIC×{EEGNet,DeepConvNet} 主结论。
-6. （future）safe-T3A / prototype memory / online / EEG foundation models。
+1. **（当前，需用户执行）把协议备忘发学长确认 7 个问题**：LOSO vs 5-fold、是否严格零样本、
+   session 池化与否、是否加 Euclidean Alignment arm、epoch 预算、先跑哪几个模型、SHU 地板效应怎么写。
+2. **确认后**：改两个 config 的 `cross_subject` / `train` 段 → GPU 节点 smoke（1 fold × `s4erp`，
+   实测单 epoch 耗时与显存）→ 定 epoch/batch → 全量（Slurm，可断点续跑）。
+3. **禁止提前做**：在协议确认前把任何一次 full run 的数字当结果写进论文/汇报；两个数据集合并训练；
+   为了省事把 `dualcd_*` 的 `d_model` 改小（会和学长的参数量表对不上）。
+4. **报告口径**：per-subject 表格 + mean ± std over subjects，`best.pt` 与 `last.pt` 两套数字并排。
+   SHU 要同时标注 chance band（51.4–53.7%），近 chance 时 1–2pp 差异按噪声处理。
+5. **Phase 3（paused）**：等端到端 backbone 出来后再回接 Oracle/T3A；`code/tta/` 不动、不重写。
+6. （future）prototype memory / online test-then-update / agent。
 
 ## 6. 冗余与可删除
 

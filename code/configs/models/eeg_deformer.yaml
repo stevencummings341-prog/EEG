@@ -1,0 +1,18 @@
+# EEG-Deformer (Ding et al. 2024) — OFFICIAL authors' PyTorch code, run unmodified.
+# Source: https://github.com/yi-ding-cs/EEG-Deformer (`models/EEGDeformer.py::Deformer`),
+#   vendored and imported directly from
+#   code/models/paper_baselines/_official/EEGDeformer.py
+# Cited as [23] in the DSGNet paper (Table II: SHUv5 Acc 0.6529).
+# Values below are the upstream defaults from the authors' own launcher
+#   main_MWL.py: --kernel-length 51, --T 64, --AT 16, --num-layers 6, --dropout 0.25
+#   models/model_handler.py: depth = num_layers - 2; heads = mlp_dim = dim_head = AT
+# Data dims (n_channels/n_times/n_classes/sfreq) are injected by the experiment layer.
+name: "eeg_deformer"
+
+temporal_kernel: 51
+num_kernel: 64          # = --T
+deformer_depth: 4       # = --num-layers (6) - 2
+heads: 16               # = --AT
+mlp_dim: 16             # = --AT
+dim_head: 16            # = --AT
+deformer_dropout: 0.25

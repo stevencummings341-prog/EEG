@@ -49,15 +49,19 @@ OK_STATUS = "ok"
 # Labels
 # --------------------------------------------------------------------------- #
 def normalize_labels(y: Sequence[int] | np.ndarray) -> np.ndarray:
-    """Map class labels to {0,1} (0=left, 1=right) as int64.
+    """Map class labels to contiguous ``{0,1,...,C-1}`` as int64.
 
-    Accepts:
+    Accepts (2-class, historical WBCIC/SHU 2C):
       * already-{0,1}  -> unchanged
-      * {1,2}          -> subtract 1  (paper/MATLAB convention: 1=left, 2=right)
-      * any other 2 distinct values -> smaller->0, larger->1 (with a clear rule)
+      * {1,2}          -> subtract 1  (paper/MATLAB: 1=left, 2=right)
+      * any other 2 distinct values -> smaller->0, larger->1
 
-    Raises ValueError if there are not exactly 1-2 distinct integer classes, so a
-    silently-wrong label set can never enter training.
+    Accepts (3-class, WBCIC-SHU 3C left/right/foot):
+      * already-{0,1,2} -> unchanged
+      * {1,2,3}         -> subtract 1
+
+    Raises ValueError on empty input or unsupported label sets so a silently-wrong
+    scheme cannot enter training.
     """
     y = np.asarray(y).ravel()
     if y.size == 0:
@@ -69,12 +73,17 @@ def normalize_labels(y: Sequence[int] | np.ndarray) -> np.ndarray:
         return y.astype(np.int64)
     if uset <= {1, 2}:
         return (y.astype(np.int64) - 1)
+    if uset <= {0, 1, 2}:
+        return y.astype(np.int64)
+    if uset <= {1, 2, 3}:
+        return (y.astype(np.int64) - 1)
     if len(uniq) == 2:
         lo, hi = sorted(int(v) for v in uniq.tolist())
         return np.where(y == lo, 0, 1).astype(np.int64)
     raise ValueError(
-        f"normalize_labels expects a binary label set; got {len(uniq)} classes: {uset}. "
-        "This dataset is 2C (left/right) — investigate the npz before training."
+        f"normalize_labels: unsupported label set {uset} "
+        f"({len(uniq)} distinct). Expected binary {{0,1}}/{{1,2}} or 3-class "
+        "{{0,1,2}}/{{1,2,3}} — investigate the npz before training."
     )
 
 

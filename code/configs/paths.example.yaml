@@ -30,6 +30,8 @@ manifests:
   raw_manifest: "manifests/shu_2c_raw_manifest.csv"
   processed_manifest: "/CHANGE/ME/WBCIC_SHU/processed/eog_ecg_clean/processed_manifest.csv"
   shu_processed_manifest: "/CHANGE/ME/SHU/processed/npz_clean/processed_manifest.csv"
+  # WBCIC-SHU 3-class (11 subjects); default under project outputs/
+  wbci_3c_processed_manifest: "outputs/processed/wbci_shu_3c_mat_clean/processed_manifest.csv"
 
 splits:
   dir: "splits"

@@ -86,6 +86,33 @@ def _build_spec(args: argparse.Namespace, train_cfg: Dict):
     )
 
 
+def _build_e2e_spec(args: argparse.Namespace, train_cfg: Dict):
+    """Training recipe for the end-to-end foundation-model track (CLI overrides config)."""
+    from code.training.e2e_trainer import E2ESpec
+
+    return E2ESpec(
+        batch_size=args.batch_size or train_cfg.get("batch_size", 64),
+        lr=(args.lr if args.lr is not None else train_cfg.get("lr")),
+        weight_decay=train_cfg.get("weight_decay", 1e-4),
+        optimizer=train_cfg.get("optimizer", "adamw"),
+        max_epochs=args.max_epochs or train_cfg.get("max_epochs", 100),
+        early_stopping_patience=(args.patience if args.patience is not None
+                                 else train_cfg.get("early_stopping_patience", 25)),
+        monitor=(args.monitor or train_cfg.get("monitor", "macro_f1")),
+        monitor_mode=train_cfg.get("monitor_mode", "max"),
+        grad_clip_norm=train_cfg.get("grad_clip_norm", 4.0),
+        scheduler=train_cfg.get("scheduler", "cosine"),
+        num_workers=(args.num_workers if args.num_workers is not None
+                     else train_cfg.get("num_workers", 2)),
+        val_fraction=(args.val_fraction if args.val_fraction is not None
+                      else train_cfg.get("val_fraction", 0.2)),
+        normalization=train_cfg.get("normalization", "per_sample_zscore"),
+        amp=bool(train_cfg.get("amp", False)),
+        curves=bool(train_cfg.get("curves", False)),
+        train_eval_max_trials=int(train_cfg.get("train_eval_max_trials", 2000)),
+    )
+
+
 def _cuda_info(device):
     import torch
     return {
@@ -536,6 +563,108 @@ def run_phase3_tta(cfg: Dict, cfg_path: Path, args: argparse.Namespace) -> None:
                 summary.get("status"), summary.get("n_result_rows"))
 
 
+# --------------------------------------------------------------------------- #
+# Foundation models — end-to-end cross-subject training (GPU)
+# --------------------------------------------------------------------------- #
+def run_foundation_cross_subject(cfg: Dict, cfg_path: Path, args: argparse.Namespace) -> None:
+    """Train the S4 / DINO-DualCD variants end-to-end, evaluated on held-out subjects.
+
+    One dataset per run (WBCIC-SHU and SHU are never merged: 58ch vs 32ch). Resumable:
+    finished cells are skipped via their ``result.json``, an interrupted cell continues
+    from its ``last.pt``. Only ``best.pt`` + ``last.pt`` are kept per cell.
+    """
+    from code.datasets.session_splits import load_ok_sessions
+    from code.experiments.cross_subject_protocols import (
+        CROSS_SUBJECT_RESULT_COLUMNS, run_cross_subject,
+    )
+    from code.utils.config import save_config
+    from code.utils.io import save_json
+    from code.utils.logging_utils import get_logger
+    from code.utils.paths import load_paths
+
+    logger = get_logger("foundation_cross_subject")
+    t0 = time.time()
+    P = load_paths(_abs(args.paths), require_raw=False)
+    data_cfg = cfg.get("data", {}) or {}
+    train_cfg = cfg.get("train", {}) or {}
+    cs_cfg = cfg.get("cross_subject", {}) or {}
+    out_cfg = cfg.get("output", {}) or {}
+    run_id = cfg.get("run_id", "foundation_cross_subject_v1")
+    dataset = str(data_cfg.get("name") or cfg.get("dataset") or "wbci_shu")
+
+    models = _parse_list(args.models) or cfg.get("models", ["s4erp"])
+    seeds = _parse_int_list(args.seeds) or train_cfg.get("seeds", [0])
+    protocol = (args.split_protocol or cs_cfg.get("protocol", "kfold_subject")).lower()
+    n_folds = args.folds if args.folds is not None else cs_cfg.get("n_folds", 5)
+    folds_subset = _parse_int_list(args.folds_subset)
+    resume = not args.no_resume
+
+    spec = _build_e2e_spec(args, train_cfg)
+    device = _resolve_device(args.device or train_cfg.get("device", "auto"), logger)
+    data_dims = dict(
+        n_channels=data_cfg.get("n_channels", 58), n_times=data_cfg.get("n_times", 1000),
+        n_classes=data_cfg.get("n_classes", 2), sfreq=data_cfg.get("sfreq", 250),
+    )
+
+    out_dir = _abs(args.out) if args.out else _abs(
+        out_cfg.get("output_dir", f"outputs/experiments/{dataset}/{run_id}"))
+    runs_dir = out_dir / "runs"
+    runs_dir.mkdir(parents=True, exist_ok=True)
+    save_config(cfg, out_dir / "resolved_config.yaml")
+    ckpt_root = None
+    if not args.no_save_ckpt:
+        ckpt_root = _abs(args.ckpt_dir or out_cfg.get("checkpoint_dir",
+                                                     f"checkpoints/{dataset}/{run_id}"))
+
+    cuda_info = _cuda_info(device)
+    logger.info("device=%s | cuda=%s", device, cuda_info)
+    records = load_ok_sessions(
+        _resolve_manifest(cfg, P), subjects=_parse_list(args.subjects),
+        sessions=_parse_list(args.sessions),
+        status_filter=tuple(data_cfg.get("status_filter", ["ok"])),
+        max_subjects=args.max_subjects,
+    )
+    logger.info("loaded %d ok sessions / %d subjects | models=%s | seeds=%s | protocol=%s "
+                "folds=%s resume=%s",
+                len(records), len({r.subject for r in records}), models, seeds,
+                protocol, n_folds, resume)
+
+    res = run_cross_subject(
+        records, dataset=dataset, models=models,
+        model_params_all=cfg.get("model_params", {}) or {}, data_dims=data_dims,
+        spec=spec, seeds=seeds, device=device, protocol=protocol, n_folds=n_folds,
+        folds_subset=folds_subset, val_mode=cs_cfg.get("val_mode", "subjects"),
+        n_val_subjects=cs_cfg.get("n_val_subjects"),
+        val_subject_fraction=cs_cfg.get("val_subject_fraction", 0.15),
+        split_seed=cs_cfg.get("split_seed", 0),
+        test_subjects=cs_cfg.get("test_subjects"), val_subjects=cs_cfg.get("val_subjects"),
+        test_fraction=cs_cfg.get("test_fraction", 0.2),
+        train_sessions=cs_cfg.get("train_sessions"),
+        val_sessions=cs_cfg.get("val_sessions"),
+        micro_batch_per_model=train_cfg.get("micro_batch_per_model") or {},
+        normalization=spec.normalization, out_dir=out_dir, ckpt_root=ckpt_root,
+        resume=resume, logger=logger,
+    )
+
+    suffix = f"__{args.tag_suffix}" if args.tag_suffix else ""
+    for model_name in models:
+        rows = [r for r in res["rows"] if r.get("model") == model_name]
+        if rows:
+            _write_rows(rows, runs_dir / f"cross_subject__{model_name}{suffix}.csv",
+                        CROSS_SUBJECT_RESULT_COLUMNS)
+    save_json({"run_id": run_id, "dataset": dataset, "models": list(models),
+               "seeds": list(seeds), "protocol": protocol, "n_folds": len(res["folds"]),
+               "n_subjects": res["n_subjects"], "n_rows": len(res["rows"]),
+               "n_cells_ok": res["n_cells_ok"], "n_cells_failed": res["n_cells_failed"],
+               "failures": res["failures"], "checkpoint_names": res["checkpoint_names"],
+               "resume": resume, "spec": vars(spec), "data_dims": data_dims,
+               "cuda": cuda_info, "elapsed_sec": round(time.time() - t0, 1)},
+              runs_dir / f"meta_cross_subject{suffix}.json")
+    logger.info("ALL DONE in %.1fs | rows=%d ok=%d failed=%d | out=%s",
+                time.time() - t0, len(res["rows"]), res["n_cells_ok"],
+                res["n_cells_failed"], out_dir)
+
+
 PHASE_RUNNERS = {
     "phase0_drift_diagnostic": run_phase0_drift,
     "phase1_baseline": run_phase1_baseline,
@@ -543,4 +672,5 @@ PHASE_RUNNERS = {
     "phase2b_alignment": run_phase2b_alignment,
     "phase2c_prototype_drift": run_phase2c_prototype_drift,
     "phase3_tta": run_phase3_tta,
+    "foundation_cross_subject": run_foundation_cross_subject,
 }

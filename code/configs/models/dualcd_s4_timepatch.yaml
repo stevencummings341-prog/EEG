@@ -1,0 +1,27 @@
+# UnifiedDINODualCD_S4_Timepatch — S4 backbone + temporal-binned pooling + DINO/DualCD.
+# Interpretable variant: every bin is an explicit time window of the trial.
+#
+# bin_boundaries_ms are relative to TRIAL START. Both datasets epoch [0, 4) s after the
+# MI cue at 250 Hz (n_times=1000), so the bins below cover the whole trial with denser
+# resolution early on, where ERD develops. The source package's ERP defaults
+# (0-750 ms) would dump ~90% of patches into the last bin on a 4 s MI trial — do not
+# leave them unset here.
+# feature_dim = n_bins * d_model * 2 (mean+std) = 6 * 128 * 2 = 1536.
+name: "dualcd_s4_timepatch"
+d_model: 128
+n_layers: 4
+state_dim: 8
+d_ff: 256
+dropout: 0.1
+
+bin_boundaries_ms: [0, 500, 1000, 1500, 2000, 3000, 4000]
+use_std: true
+
+lambda_intra: 0.5
+dino_out_dim: 256
+proto_k: 5
+teacher_momentum: 0.996
+warmup_epochs: 5
+
+view_low_band: [8.0, 13.0]
+view_high_band: [13.0, 30.0]

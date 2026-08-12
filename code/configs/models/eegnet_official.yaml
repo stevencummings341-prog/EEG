@@ -1,0 +1,17 @@
+# EEGNet (Lawhern et al. 2018) — OFFICIAL authors' implementation, ported to PyTorch.
+# Source: https://github.com/vlawhern/arl-eegmodels (`EEGModels.py::EEGNet`), vendored at
+#   code/models/paper_baselines/_official/EEGModels_arl_keras.py
+# Cited as [18] in the DSGNet paper (Table II: SHUv5 Acc 0.6492).
+# NOTE: this is NOT `code/configs/models/eegnet.yaml` — that one is this project's own
+#   Phase 0-2c EEGNet. Keep the two apart when comparing with published numbers.
+# All values below are the upstream defaults; do not tune a published reference.
+# Data dims (n_channels/n_times/n_classes/sfreq) are injected by the experiment layer.
+name: "eegnet_official"
+
+dropoutRate: 0.5
+kernLength: 64      # upstream default (docstring suggests sfreq/2, but the paper we compare
+                    # against does not state a value, so the author default is used as-is)
+F1: 8
+D: 2
+F2: 16
+norm_rate: 0.25

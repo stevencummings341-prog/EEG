@@ -18,7 +18,8 @@ status: "active"
 | `AGENTS.md` | 唯一权威灵魂记忆。 |
 | `CLAUDE.md` | 兼容入口，指向 AGENTS.md（供 Claude Code 等原生读取）。 |
 | `README.md` | 人类入口与结构总览。 |
-| `PHASE3_ROUTE_PLAN.md` | Phase 3 路线 v2.1（Oracle 先裁决；学长已批 A0/A1）。 |
+| `FOUNDATION_E2E_ROUTE_PLAN.md` | **当前主线路线（2026-08-04）**：端到端基础模型（5 个 S4/DINO-DualCD）× 跨被试 × 双数据集分开训练。含融合成果映射、运行命令、checkpoint/断点续跑契约、协议默认值与 7 个待学长确认问题、7 条硬约束。 |
+| `PHASE3_ROUTE_PLAN.md` | 上一条主线 Phase 3 路线 v2.1（Oracle 先裁决；学长已批 A0/A1）；**paused，不是废弃**。 |
 | `proposal.md` | 项目提案。 |
 | `progress.md` | 进度日记（PROGRESS 角色，逐条追加）。 |
 | `experiment_log.md` | 实验日志速查。 |
@@ -46,6 +47,8 @@ status: "active"
 | `3_online_adaptation/PRETRAINED_MODEL_INTEGRATION_CONTRACT.md` | **预训练模型接入权威契约**（交付物/能力矩阵/步骤/preflight）。 |
 | `3_online_adaptation/` | **设计文档区**；正式实验结果不放这里。 |
 | `4_experiments/{wbci_shu,shu}/tta/` | **Phase 3 TTA 正式结果区**（smoke / full A0 replay / oracle_diagnostic / method_catalog / reports）。 |
+| `4_experiments/CROSS_SUBJECT_PROTOCOL_MEMO.md` | **发学长的跨被试协议讨论备忘**：进度一句话、4 个文献关键发现（含 EDAPT 对标数字与 SHU 地板效应）、3 个候选方案的算力对比、7 个待拍板问题。status=`pending_advisor_confirmation`。 |
+| `4_experiments/{wbci_shu,shu}/foundation_cross_subject/` | **（未来）端到端主线结果区**；协议确认并跑完后才建 `report/tables/figures`。 |
 | `5_papers/{wbci_shu,shu}/` | 论文材料。 |
 | 每层目录的 `README.md` | 数据集层/实验层/叶子层说明，由 `scripts/scaffold_readmes.py` 生成。 |
 
@@ -53,8 +56,27 @@ status: "active"
 
 | 路径 | 作用 |
 |:---|:---|
-| `code/run.py` | 统一入口：dry-run / 训练 / `--summarize`，进程内调度。 |
-| `code/runners.py` | Phase 0/1/2a/2b/2c/**phase3_tta** 的进程内 runner。 |
+| `code/run.py` | 统一入口：dry-run / 训练 / `--summarize`，进程内调度。端到端主线新增 CLI：`--split-protocol` / `--folds-subset` / `--monitor` / `--no-resume`。 |
+| `code/runners.py` | Phase 0/1/2a/2b/2c/**phase3_tta**/**foundation_cross_subject** 的进程内 runner。 |
+| `code/models/eeg_foundation/` | **端到端主线 5 模型包**（学长 `models_eeg_foundation/` 移植）：`s4_layers.py`（S4 HiPPO+FFT）、`pooling.py`（flatten/attention/temporal-bin）、`encoders.py`（ShallowNet stem + S4/Transformer）、`losses.py`（DINO/iBOT/DKoleo/PrototypeBank/OrthogonalMask/双扰动）、`models.py`（5 变体 + MultiViewGenerator）、`adapter.py`（**新增**：项目契约 + DualCD 训练钩子 + per-trial 归一化）。 |
+| `code/models/eeg_foundation/README.md` | 5 模型对照表、两套「方言」的桥接方式、**移植偏差逐条记录（§4）**、MI 适配（mu/beta 视图、4s 时间分箱）。 |
+| `code/training/e2e_trainer.py` | 端到端训练器：非 CE 损失钩子、**每 cell 只存 `best.pt`/`last.pt`**、断点续跑（optimizer/scheduler/RNG/history + 原子写入 + `run_signature` 配置漂移守卫）、cosine/梯度裁剪/可选 AMP。 |
+| `code/experiments/cross_subject_protocols.py` | 跨被试协议：被试级 `loso`/`kfold_subject`/`holdout`；`val_mode`=`subjects`/`trials`/`sessions`（后者对齐 DSGNet/SHUv5：train ses-01+02、val ses-03）；per-trial 归一化、泄漏断言、`best`+`last` 双评测、`cell_signature`。 |
+| `code/configs/experiments/foundation_cross_subject_wbci_3c.yaml` | WBCIC-SHU **三分类 11 人** LOSO 端到端（`run_id=foundation_3c_loso_paper_v1`，论文对齐 session val）。 |
+| `inbox/papers/dsgnet_jbhi2026_FullText.pdf` | Lou et al. IEEE JBHI 2026（DSGNet）全文 PDF；对标 Acc/F1/Kappa。 |
+| `inbox/papers/dsgnet_jbhi2026_extracted.txt` | 同上 PDF 的纯文本摘录（协议与 Table II）。 |
+| `4_experiments/wbci_shu/foundation_cross_subject/` | 3C 端到端可读区：对标锚点 + README；重结果在 `outputs/.../foundation_3c_loso_paper_v1/`。 |
+| `code/configs/models/{s4erp,dualcd_s4_pos,dualcd_s4_timepatch,dualcd_s4_flatten,dualcd_transformer}.yaml` | 5 个端到端模型结构超参（含 MI 频带视图与 4s 时间分箱）。 |
+| `code/models/atcnet/` | **ATCNet（Altaheri 2023）已发表基线**，对标 DSGNet 论文 Table II。`_official_keras/`=官方仓库 [Altaheri/EEG-ATCNet](https://github.com/Altaheri/EEG-ATCNet) 原样（Keras，不执行，供逐行核对）、`atcnet_torch.py`=官方 `ATCNet_` 的 1:1 PyTorch 移植（BCI-IV-2a 维度参数量 113,732 与官方 README 一致）、`adapter.py`=项目 dict 契约 + 官方 L2 penalty 钩子、`README.md`=出处/保真证据/偏差清单。 |
+| `code/configs/models/atcnet.yaml` | ATCNet 结构超参（**官方 `ATCNet_` 默认值，不调参**）。 |
+| `code/models/paper_baselines/` | **DSGNet 论文 Table II 的已发表 baseline（只用各自作者官方仓库）**。`_official/`=官方源码原样（EEGNet/EEGNeX 的 Keras 仅供核对不执行；`EEGDeformer.py` 是官方 PyTorch，直接执行）、`eegnet_official_torch.py` / `eegnex_official_torch.py`=1:1 移植、`keras_compat.py`=TF same padding / max_norm / glorot 初始化、`adapter.py`=项目 dict 契约、`README.md`=出处/保真证据/偏差/**排除清单及理由**（EEG-Inception、MDGEEG、EEG-DG、DSGNet 无完整官方码）。 |
+| `code/configs/models/{eegnet_official,eegnex,eeg_deformer}.yaml` | 三个 baseline 的结构超参（**全部上游作者默认值**）。 |
+| `code/configs/experiments/paper_baseline_3c_821.yaml` | **7 模型统一对比 run**：WBCIC 3C、8:2:1 跨被试、论文 recipe（Adam 1e-4/batch 128/500ep）+ 早停 patience 100 + 三曲线。 |
+| `scripts/plot_three_curves.py` | 从 `result.json` 的 `history` 画 per-epoch train/val/test 三曲线（per-cell + 跨折均值）。 |
+| `scripts/summarize_cross_subject.py` | 跨被试 run 汇总：`tables/{per_cell,per_model,vs_paper}.csv` + `REPORT_TABLE.md`（内嵌论文 Table II SHUv5 数字作对照）。 |
+| `code/configs/experiments/{foundation_cross_subject,shu_foundation_cross_subject}.yaml` | **端到端主线双数据集配置**（WBCIC 58ch / SHU 32ch，分开跑；协议段标注 pending_advisor_confirmation）。 |
+| `tests/foundation/test_eeg_foundation_contract.py` | 5 模型 × 双通道数的 forward 契约、loss 可反传、teacher EMA/prototype 更新、归一化 fit-free、参数量对齐学长表格（19 passed, CPU）。 |
+| `tests/foundation/test_cross_subject_protocol.py` | 划分互斥/决定性、只写 best+last、完成 cell 跳过、中断 cell 续跑、换了划分/超参后拒绝续跑、**测试被试不进 train/val**、通道不匹配报错（13 passed, CPU）。 |
 | `code/tta/` | **Phase 3 model-agnostic TTA backend**（adapters/feature_sources/methods/oracle/eval/report）。 |
 | `code/tta/README.md` | TTA 包概览 + 契约指针。 |
 | `code/tta/method_catalog.yaml` | 方法候选清单（多数只登记不实现）。 |
@@ -94,10 +116,17 @@ status: "active"
 | `code/datasets/` | 数据集适配器与 split/通道映射。 |
 | `code/models/` | 模型与 registry。 |
 | `code/methods/` | 对齐与适应方法。 |
-| `code/experiments/` | 漂移/baseline/multi-source/alignment 协议 + 指标。 |
-| `code/training/` | 通用 trainer。 |
+| `code/experiments/` | 漂移/baseline/multi-source/alignment/跨被试 协议 + 指标。 |
+| `code/training/` | 通用 trainer（`trainer.py` 冻结）+ 端到端 trainer（`e2e_trainer.py`）。 |
 | `code/preprocessing/` | 预处理逻辑。 |
 | `code/utils/` | config/io/logging/paths/seed。 |
+
+## inbox
+
+| 路径 | 作用 |
+|:---|:---|
+| `inbox/README.md` | inbox 职责与归档规则。 |
+| `inbox/cross_subject_protocol_research.md` | 跨被试（subject-independent）实验协议文献调研：SHU 2022 + WBCIC-SHU 2025 的论文清单、协议细节、可参考准确率区间、数据集陷阱，以及 3 个候选协议方案（LOSO / 5-fold subject-grouped / 固定划分）与算力代价对比。**端到端主线的协议依据**；结论摘要见 `4_experiments/CROSS_SUBJECT_PROTOCOL_MEMO.md`。 |
 
 ## backup
 

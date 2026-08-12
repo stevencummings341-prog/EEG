@@ -17,8 +17,15 @@
 
 set -euo pipefail
 
-# shellcheck disable=SC1091
-source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_common.sh"
+# Slurm may copy this script into the spool dir; BASH_SOURCE then cannot find _common.sh.
+# Prefer the submit directory (project root when launched via `sbatch ... scripts/slurm/...`).
+if [ -n "${SLURM_SUBMIT_DIR:-}" ] && [ -f "${SLURM_SUBMIT_DIR}/scripts/slurm/_common.sh" ]; then
+  # shellcheck disable=SC1091
+  source "${SLURM_SUBMIT_DIR}/scripts/slurm/_common.sh"
+else
+  # shellcheck disable=SC1091
+  source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_common.sh"
+fi
 CONFIG="${1:?config path required (code/configs/experiments/*.yaml)}"
 shift || true
 

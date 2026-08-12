@@ -1,0 +1,95 @@
+experiment:
+  name: "foundation_cross_subject"      # same runner as the WBCIC config
+  source_config: "configs/experiments/shu_foundation_cross_subject.yaml"
+
+# =====================================================================
+# SHU 2022 — end-to-end foundation models, CROSS-SUBJECT evaluation.
+#
+# 25 subjects x 5 sessions, 32ch @ 250 Hz, 2-class left/right MI. Trained SEPARATELY
+# from WBCIC-SHU (different channel count and different difficulty: SHU cross-session
+# sat near chance in Phase 1, so treat weak cross-subject numbers here as expected
+# rather than as a pipeline bug).
+#
+# ⚠ PROTOCOL STATUS: pending_advisor_confirmation — see
+#   `inbox/cross_subject_protocol_research.md` + `4_experiments/CROSS_SUBJECT_PROTOCOL_MEMO.md`.
+#
+# Run:
+#   python code/run.py --dry-run --config code/configs/experiments/shu_foundation_cross_subject.yaml
+#   python code/run.py --config code/configs/experiments/shu_foundation_cross_subject.yaml \
+#       --models s4erp --folds 2 --folds-subset 0 --max-subjects 4 --max-epochs 2 \
+#       --batch-size 8 --device cpu \
+#       --out outputs/experiments/shu/foundation_cross_subject_smoke
+#   python code/run.py --config code/configs/experiments/shu_foundation_cross_subject.yaml --device cuda
+# =====================================================================
+
+run_id: "foundation_cross_subject_v1"
+
+data:
+  name: "shu"
+  manifest: "shu_processed_manifest"
+  status_filter: ["ok"]
+  n_channels: 32
+  n_times: 1000                  # 4 s trial @ 250 Hz (author-provided epochs)
+  n_classes: 2
+  sfreq: 250
+
+models: ["s4erp", "dualcd_s4_pos", "dualcd_s4_timepatch", "dualcd_s4_flatten", "dualcd_transformer"]
+
+cross_subject:
+  protocol: "kfold_subject"      # 25 subjects -> 5 folds of 5 test subjects
+  n_folds: 5
+  split_seed: 0
+  val_mode: "subjects"
+  val_subject_fraction: 0.15     # ~3 of the 20 remaining subjects
+  # LOSO alternative (25 folds, 5x the compute): --split-protocol loso
+
+train:
+  batch_size: 64
+  lr: null
+  weight_decay: 0.0001
+  optimizer: "adamw"
+  scheduler: "cosine"
+  max_epochs: 100
+  early_stopping_patience: 25
+  monitor: "macro_f1"
+  monitor_mode: "max"
+  grad_clip_norm: 4.0
+  normalization: "per_sample_zscore"
+  num_workers: 2
+  amp: false
+  device: "cuda"
+  seeds: [0]
+
+model_params:
+  s4erp: {d_model: 128, n_layers: 4, state_dim: 8, d_ff: 256, dropout: 0.1}
+  dualcd_s4_pos: {d_model: 128, n_layers: 4, state_dim: 8, d_ff: 256, dropout: 0.1,
+                  lambda_intra: 0.5, dino_out_dim: 256, proto_k: 5,
+                  teacher_momentum: 0.996, warmup_epochs: 5,
+                  view_low_band: [8.0, 13.0], view_high_band: [13.0, 30.0]}
+  dualcd_s4_timepatch: {d_model: 128, n_layers: 4, state_dim: 8, d_ff: 256, dropout: 0.1,
+                        lambda_intra: 0.5, dino_out_dim: 256, proto_k: 5,
+                        teacher_momentum: 0.996, warmup_epochs: 5,
+                        view_low_band: [8.0, 13.0], view_high_band: [13.0, 30.0],
+                        bin_boundaries_ms: [0, 500, 1000, 1500, 2000, 3000, 4000],
+                        use_std: true}
+  dualcd_s4_flatten: {d_model: 128, n_layers: 4, state_dim: 8, d_ff: 256, dropout: 0.1,
+                      lambda_intra: 0.5, dino_out_dim: 256, proto_k: 5,
+                      teacher_momentum: 0.996, warmup_epochs: 5,
+                      view_low_band: [8.0, 13.0], view_high_band: [13.0, 30.0]}
+  dualcd_transformer: {d_model: 128, n_layers: 6, n_heads: 8, d_ff: 256, dropout: 0.1,
+                       lambda_intra: 0.5, dino_out_dim: 256, proto_k: 5,
+                       teacher_momentum: 0.996, warmup_epochs: 5,
+                       view_low_band: [8.0, 13.0], view_high_band: [13.0, 30.0]}
+
+eval:
+  metrics: ["accuracy", "balanced_accuracy", "macro_f1", "auc"]
+  calibration_metrics: ["nll", "brier", "ece"]
+  report_scope: "per_test_subject"
+
+checkpoints:
+  keep: ["best", "last"]
+  resume: true
+
+output:
+  output_dir: "outputs/experiments/shu/foundation_cross_subject_v1"
+  checkpoint_dir: "checkpoints/shu/foundation_cross_subject_v1"

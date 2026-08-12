@@ -1,0 +1,9 @@
+# S4ERP — S4 backbone + flatten pooling, plain supervised CE (no DINO/DualCD).
+# Use this variant first: it is the cheapest way to prove the end-to-end pipeline.
+# Data dims (n_channels/n_times/n_classes/sfreq) are injected by the experiment layer.
+name: "s4erp"
+d_model: 128
+n_layers: 4
+state_dim: 8
+d_ff: 256
+dropout: 0.1

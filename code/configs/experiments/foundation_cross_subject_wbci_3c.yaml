@@ -1,0 +1,114 @@
+experiment:
+  name: "foundation_cross_subject"      # same runner; 3C data + LOSO + n_classes=3
+  source_config: "configs/experiments/foundation_cross_subject_wbci_3c.yaml"
+
+# =====================================================================
+# WBCIC-SHU 2025 — THREE-CLASS (11 subjects) — LOSO end-to-end.
+#
+# Paper-aligned split (SHUv5 / WBCIC-SHU 3C write-up):
+#   * Test  = all 3 sessions of the held-out subject (LOSO)
+#   * Train = ses-01 + ses-02 of the remaining subjects
+#   * Val   = ses-03 of the remaining subjects
+#
+# Advisor lock (2026-08-04) + protocol fix (2026-08-07):
+#   * Run the 3C cohort only (11 subjects × 3 sessions; left / right / foot).
+#   * Protocol = LOSO + val_mode=sessions (NOT held-out val subjects).
+#   * Models = 5 foundation variants (+ DSGNet once registered).
+#   * Checkpoints = best.pt + last.pt only; resume supported (e2e_trainer).
+#   * New run_id — do not resume into foundation_3c_loso_v1 (old subject-val).
+#
+# Data: official derivatives .mat converted by scripts/preprocess_wbci_3c.py
+#   -> outputs/processed/wbci_shu_3c_mat_clean/processed_manifest.csv
+#
+# Run (GPU / Slurm; do not train heavy jobs on the login node):
+#   python scripts/preprocess_wbci_3c.py
+#   python code/run.py --dry-run --config code/configs/experiments/foundation_cross_subject_wbci_3c.yaml
+#   # 4-GPU parallel example: one model (or pair) per job — see progress.md
+#   sbatch -J e2e_3c_paper_s4erp -t 48:00:00 --mem=32G scripts/slurm/shu_gpu.sbatch \
+#       code/configs/experiments/foundation_cross_subject_wbci_3c.yaml --models s4erp
+# =====================================================================
+
+run_id: "foundation_3c_loso_paper_v1"
+
+data:
+  name: "wbci_shu_3c"
+  variant: "mat_clean_3c"
+  manifest: "wbci_3c_processed_manifest"
+  status_filter: ["ok"]
+  n_channels: 58
+  n_times: 1000
+  n_classes: 3                         # {0,1,2} <- official {1,2,3}
+  sfreq: 250
+
+models: ["s4erp", "dualcd_s4_pos", "dualcd_s4_timepatch", "dualcd_s4_flatten", "dualcd_transformer",
+         "atcnet"]
+# atcnet (2026-08-09) = published baseline from the DSGNet paper (Table II Acc 0.6834).
+#   Official Altaheri/EEG-ATCNet code ported to PyTorch (code/models/atcnet/), run under
+#   the SAME split protocol + trainer recipe as the five foundation models.
+# DSGNet itself deferred (upstream training code incomplete).
+
+cross_subject:
+  protocol: "loso"               # leave-one-subject-out on the 11 three-class subjects
+  n_folds: 11                    # ignored for loso (one fold per subject)
+  split_seed: 0
+  # Paper alignment: same 10 non-test subjects for train+val; split by session.
+  val_mode: "sessions"
+  train_sessions: ["ses-01", "ses-02"]
+  val_sessions: ["ses-03"]
+
+train:
+  batch_size: 64
+  lr: null
+  weight_decay: 0.0001
+  optimizer: "adamw"
+  scheduler: "cosine"
+  max_epochs: 100
+  early_stopping_patience: 25
+  monitor: "macro_f1"
+  monitor_mode: "max"
+  grad_clip_norm: 4.0
+  normalization: "per_sample_zscore"
+  num_workers: 2
+  amp: false
+  device: "cuda"
+  seeds: [0]
+
+model_params:
+  s4erp: {d_model: 128, n_layers: 4, state_dim: 8, d_ff: 256, dropout: 0.1}
+  dualcd_s4_pos: {d_model: 128, n_layers: 4, state_dim: 8, d_ff: 256, dropout: 0.1,
+                  lambda_intra: 0.5, dino_out_dim: 256, proto_k: 5,
+                  teacher_momentum: 0.996, warmup_epochs: 5,
+                  view_low_band: [8.0, 13.0], view_high_band: [13.0, 30.0]}
+  dualcd_s4_timepatch: {d_model: 128, n_layers: 4, state_dim: 8, d_ff: 256, dropout: 0.1,
+                        lambda_intra: 0.5, dino_out_dim: 256, proto_k: 5,
+                        teacher_momentum: 0.996, warmup_epochs: 5,
+                        view_low_band: [8.0, 13.0], view_high_band: [13.0, 30.0],
+                        bin_boundaries_ms: [0, 500, 1000, 1500, 2000, 3000, 4000],
+                        use_std: true}
+  dualcd_s4_flatten: {d_model: 128, n_layers: 4, state_dim: 8, d_ff: 256, dropout: 0.1,
+                      lambda_intra: 0.5, dino_out_dim: 256, proto_k: 5,
+                      teacher_momentum: 0.996, warmup_epochs: 5,
+                      view_low_band: [8.0, 13.0], view_high_band: [13.0, 30.0]}
+  dualcd_transformer: {d_model: 128, n_layers: 6, n_heads: 8, d_ff: 256, dropout: 0.1,
+                       lambda_intra: 0.5, dino_out_dim: 256, proto_k: 5,
+                       teacher_momentum: 0.996, warmup_epochs: 5,
+                       view_low_band: [8.0, 13.0], view_high_band: [13.0, 30.0]}
+  # ATCNet: official Altaheri/EEG-ATCNet `ATCNet_` defaults only (see
+  # code/configs/models/atcnet.yaml). Not tuned — published reference point, not a candidate.
+  atcnet: {eegn_F1: 16, eegn_D: 2, eegn_kernelSize: 64, eegn_poolSize: 7,
+           eegn_dropout: 0.3, attention: "mha",
+           tcn_depth: 2, tcn_kernelSize: 4, tcn_filters: 32, tcn_dropout: 0.3,
+           n_windows: 5, fuse: "average", use_official_l2: true}
+
+eval:
+  metrics: ["accuracy", "balanced_accuracy", "macro_f1", "auc"]
+  calibration_metrics: ["nll", "brier", "ece"]
+  report_scope: "per_test_subject"
+
+checkpoints:
+  keep: ["best", "last"]
+  resume: true
+
+output:
+  output_dir: "outputs/experiments/wbci_shu/foundation_3c_loso_paper_v1"
+  checkpoint_dir: "checkpoints/wbci_shu/foundation_3c_loso_paper_v1"

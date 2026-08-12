@@ -1,0 +1,21 @@
+# UnifiedDINODualCD_S4_Pos — S4 backbone + attention pooling + DINO/DualCD.
+# Smallest DualCD variant (~2M params); recommended for small-sample MI.
+# feature_dim = d_model (attention pooling collapses the patch axis).
+name: "dualcd_s4_pos"
+d_model: 128
+n_layers: 4
+state_dim: 8
+d_ff: 256
+dropout: 0.1
+
+# DualCD / DINO
+lambda_intra: 0.5          # intra-class perturbation weight (0.3-0.7)
+dino_out_dim: 256
+proto_k: 5                 # prototypes per class in the EMA prototype bank
+teacher_momentum: 0.996
+warmup_epochs: 5           # perturbation-loss warmup
+
+# DINO band-pass student views: mu / beta instead of the source package's ERP
+# defaults (4-12 / 12-30 Hz), because MI ERD/ERS lives in mu+beta.
+view_low_band: [8.0, 13.0]
+view_high_band: [13.0, 30.0]

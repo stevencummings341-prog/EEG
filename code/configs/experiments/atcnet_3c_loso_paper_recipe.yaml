@@ -1,0 +1,96 @@
+experiment:
+  name: "foundation_cross_subject"      # same runner; 3C data + LOSO + n_classes=3
+  source_config: "configs/experiments/atcnet_3c_loso_paper_recipe.yaml"
+
+# =====================================================================
+# ATCNet on WBCIC-SHU THREE-CLASS (11 subjects) — LOSO, **PAPER TRAINING RECIPE**.
+#
+# Purpose: separate "model difference" from "recipe difference" when comparing our
+# foundation models to the DSGNet paper. Two ATCNet arms exist:
+#
+#   arm A (our recipe)   run_id=foundation_3c_loso_paper_v1, models=[atcnet]
+#                        AdamW + cosine, batch 64, <=100 epochs, patience 25.
+#                        -> apples-to-apples with our five foundation models.
+#   arm B (this file)    run_id=atcnet_3c_loso_paper_recipe_v1
+#                        Adam lr=1e-4, batch 128, 500 epochs, no early stop, no clip.
+#                        -> apples-to-apples with the DSGNet paper's own numbers.
+#
+# Paper recipe source: DSGNet (IEEE JBHI 2026, doi:10.1109/jbhi.2026.3689121), §IV:
+#   "trained using the Adam optimizer with a learning rate of 0.0001. For standard
+#    classification experiments, a batch size of 128 and 500 training epochs are used."
+# No LR schedule, weight decay, gradient clipping or early stopping is stated, so all of
+# them are switched off here rather than silently inherited from our recipe.
+#
+# The SPLIT PROTOCOL is identical to foundation_cross_subject_wbci_3c.yaml (and to the
+# paper): LOSO; non-test subjects ses-01+02 train / ses-03 val; test subject all 3 sessions.
+#
+# Run (GPU / Slurm):
+#   python code/run.py --dry-run --config code/configs/experiments/atcnet_3c_loso_paper_recipe.yaml
+#   sbatch -J atcnet_paper_recipe -t 48:00:00 --mem=32G scripts/slurm/shu_gpu.sbatch \
+#       code/configs/experiments/atcnet_3c_loso_paper_recipe.yaml
+# =====================================================================
+
+run_id: "atcnet_3c_loso_paper_recipe_v1"
+
+data:
+  name: "wbci_shu_3c"
+  variant: "mat_clean_3c"
+  manifest: "wbci_3c_processed_manifest"
+  status_filter: ["ok"]
+  n_channels: 58
+  n_times: 1000
+  n_classes: 3                         # {0,1,2} <- official {1,2,3}
+  sfreq: 250
+
+models: ["atcnet"]
+
+cross_subject:
+  protocol: "loso"
+  n_folds: 11                    # ignored for loso (one fold per subject)
+  split_seed: 0
+  val_mode: "sessions"
+  train_sessions: ["ses-01", "ses-02"]
+  val_sessions: ["ses-03"]
+
+train:
+  # ---- paper recipe (do not "improve" these; that is the whole point of this arm) ----
+  optimizer: "adam"
+  lr: 0.0001
+  batch_size: 128
+  max_epochs: 500
+  weight_decay: 0.0               # not stated in the paper
+  scheduler: "none"               # not stated in the paper
+  # Early stopping: the paper does not mention it, but the official ATCNet repo defines
+  # `train_conf['patience'] = 100` for its 500-epoch schedule (main_TrainValTest.py L413;
+  # its EarlyStopping callback is commented out there). 100/500 is also the same 1:5 ratio
+  # as our 25/100 in arm A, so the two arms stop on comparable terms.
+  early_stopping_patience: 100
+  grad_clip_norm: 0.0             # not stated in the paper
+  # ---- kept identical to our other runs so the split stays leakage-free ----
+  monitor: "macro_f1"             # best.pt selection on the val session; last.pt also scored
+  monitor_mode: "max"
+  normalization: "per_sample_zscore"
+  num_workers: 2
+  amp: false
+  device: "cuda"
+  seeds: [0]
+
+model_params:
+  # Official Altaheri/EEG-ATCNet `ATCNet_` defaults; identical to arm A.
+  atcnet: {eegn_F1: 16, eegn_D: 2, eegn_kernelSize: 64, eegn_poolSize: 7,
+           eegn_dropout: 0.3, attention: "mha",
+           tcn_depth: 2, tcn_kernelSize: 4, tcn_filters: 32, tcn_dropout: 0.3,
+           n_windows: 5, fuse: "average", use_official_l2: true}
+
+eval:
+  metrics: ["accuracy", "balanced_accuracy", "macro_f1", "auc"]
+  calibration_metrics: ["nll", "brier", "ece"]
+  report_scope: "per_test_subject"
+
+checkpoints:
+  keep: ["best", "last"]
+  resume: true
+
+output:
+  output_dir: "outputs/experiments/wbci_shu/atcnet_3c_loso_paper_recipe_v1"
+  checkpoint_dir: "checkpoints/wbci_shu/atcnet_3c_loso_paper_recipe_v1"

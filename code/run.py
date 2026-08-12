@@ -128,6 +128,13 @@ def main() -> None:
     parser.add_argument("--tag-suffix", default="", help="appended to run CSV names (phase2b)")
     parser.add_argument("--out", help="override output_dir")
     parser.add_argument("--no-save-ckpt", action="store_true", help="do not write checkpoints")
+    # cross-subject end-to-end track (foundation_cross_subject)
+    parser.add_argument("--split-protocol", choices=["loso", "kfold_subject", "holdout"],
+                        help="cross-subject split scheme (overrides cross_subject.protocol)")
+    parser.add_argument("--folds-subset", help="run only these fold ids, e.g. 0,1")
+    parser.add_argument("--monitor", help="val metric used to pick best.pt (e.g. macro_f1)")
+    parser.add_argument("--no-resume", action="store_true",
+                        help="ignore existing best/last checkpoints and retrain from scratch")
     args = parser.parse_args()
 
     if args.all:

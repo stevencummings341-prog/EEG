@@ -1,0 +1,32 @@
+# ATCNet (Altaheri et al. 2023, IEEE TII) — official implementation, ported to PyTorch.
+# Source: https://github.com/Altaheri/EEG-ATCNet (Keras), vendored verbatim under
+#   code/models/atcnet/_official_keras/ and transcribed in code/models/atcnet/atcnet_torch.py.
+# Every value below is the UPSTREAM DEFAULT of `ATCNet_` (models.py L34-L37). Do not tune:
+# this model is a published reference point for the DSGNet comparison (paper Acc 0.6834),
+# not one of our candidates.
+# Data dims (n_channels/n_times/n_classes/sfreq) are injected by the experiment layer.
+name: "atcnet"
+
+# convolutional (CV) block
+eegn_F1: 16
+eegn_D: 2
+eegn_kernelSize: 64
+eegn_poolSize: 7
+eegn_dropout: 0.3
+
+# attention (AT) block — upstream ATCNet_ uses multi-head self-attention
+attention: "mha"
+
+# temporal convolutional (TC) block
+tcn_depth: 2
+tcn_kernelSize: 4
+tcn_filters: 32
+tcn_dropout: 0.3
+
+# sliding window + fusion
+n_windows: 5
+fuse: "average"
+
+# Keras folds L2 kernel regularizers (conv 0.009 / dense 0.5) into the loss; we reproduce
+# them through the trainer's custom-loss hook. Set false to drop them (NOT upstream).
+use_official_l2: true

@@ -5,19 +5,33 @@ tags:
   - "#modality/eeg"
   - "#method/domain_generalization"
 created: "2026-06-10"
-updated: "2026-06-11"
+updated: "2026-08-04"
 status: "active"
 ---
 
 # EEG-MI Online
 
-> 多数据集运动想象 EEG 跨 session 泛化研究：**WBCIC-SHU 与 SHU 2022 两数据集 Phase 0–2c 均已完成（诊断收官）**；当前进入 Phase 3 跨 session 修复（路线 v2 = Oracle 先裁决）。
+> 多数据集运动想象 EEG 泛化研究。**当前主线（2026-08-04 学长重新定向）= 端到端基础模型 × 跨被试**：
+> 用 5 个 S4 / DINO-DualCD 模型在 WBCIC-SHU 与 SHU 上**分开**做端到端训练 + 跨被试评测。
+> 融合已完成可运行；协议参数待学长确认；正式实验未跑。
 
 ## 0. 当前定位
 
-**两数据集（WBCIC-SHU + SHU 2022）Phase 0/1/2a/2b/2c 全部完成**（WBCIC 4320 cells、SHU 7500 cells 全 ok，AI 分析已写，结果在 `4_experiments/{wbci_shu,shu}/prototype_drift/`）。核心结论：无学习统计对齐不足（均无方法过 +2pp）；跨 session 掉点主机制为 **within-class scatter 膨胀 / Fisher collapse（非 centroid collapse）**，cosine 几何优于 euclidean，FBCNet 几何异常。
+**主线：端到端基础模型 × 跨被试**（路线 = 根目录 `FOUNDATION_E2E_ROUTE_PLAN.md`）。学长交付的
+`models_eeg_foundation/` 5 个模型已融入框架：`code/models/eeg_foundation/` + 可断点续跑训练器
+`code/training/e2e_trainer.py`（每 cell 只存 `best.pt` + `last.pt`）+ 跨被试协议
+`code/experiments/cross_subject_protocols.py` + 双数据集 config，`tests/foundation/` 32 passed。
+**下一步卡在协议确认**：`4_experiments/CROSS_SUBJECT_PROTOCOL_MEMO.md` 里 7 个问题要发学长拍板
+（文献依据 `inbox/cross_subject_protocol_research.md`）。**协议确认前不产出任何被当作结果的数字。**
 
-**当前进入 Phase 3（跨 session 修复，planned）**：路线见根目录 `PHASE3_ROUTE_PLAN.md`（待审批）+ `3_online_adaptation/PHASE3_TTA_DESIGN.md`。因 Phase 2c 主机制是 scatter 膨胀而非 prototype centroid collapse，**先做 Oracle 上限裁决，再决定要不要大规模上 T3A**。下一步：Phase 3A（embedding replay + No-TTA 精确复现 + minimal T3A smoke）→ Phase 3B（Oracle 裁决门）。未运行的内容不写成已完成。
+**已完成（保留只读）**：两数据集 Phase 0/1/2a/2b/2c 全部完成（WBCIC 4320 cells、SHU 7500 cells 全 ok，
+AI 分析已写，结果在 `4_experiments/{wbci_shu,shu}/prototype_drift/`）。核心结论：无学习统计对齐不足
+（均无方法过 +2pp）；跨 session 掉点主机制为 **within-class scatter 膨胀 / Fisher collapse（非 centroid
+collapse）**，cosine 几何优于 euclidean，FBCNet 几何异常。
+
+**Phase 3（跨 session 修复 / TTA）= paused，不是废弃**：`code/tta/`、`4_experiments/*/tta/`、
+`PHASE3_ROUTE_PLAN.md` 全部保留，工程上仍是 pretrained-model-ready（WBCIC full A0 complete）。
+等端到端 backbone 出来后可以把 Oracle/T3A 接上去。未运行的内容不写成已完成。
 
 ## 1. 目录结构
 
@@ -34,6 +48,8 @@ eeg-mi-online/
 ├── scripts/slurm/          # Slurm 提交脚本（GPU 训练 / CPU 汇总）
 ├── inbox/                  # 临时交接材料
 ├── AGENTS.md               # 唯一灵魂记忆（先读）
+├── FOUNDATION_E2E_ROUTE_PLAN.md  # 当前主线路线：端到端基础模型 × 跨被试
+├── PHASE3_ROUTE_PLAN.md    # 上一条主线（跨 session 修复；paused）
 ├── proposal.md             # 项目提案
 ├── progress.md             # 进度日记（PROGRESS 角色）
 ├── experiment_log.md       # 实验日志速查
@@ -58,6 +74,23 @@ python code/run.py --config code/configs/experiments/shu_phase2c_prototype_drift
 ```
 
 SHU 预处理（若需重生成）：`python scripts/preprocess_shu.py`。
+
+**端到端主线（跨被试，当前）**：
+
+```bash
+# 极小 CPU smoke（输出隔离到 *_smoke）
+python code/run.py --config code/configs/experiments/shu_foundation_cross_subject.yaml \
+    --models s4erp --folds 3 --folds-subset 0 --max-subjects 6 --max-epochs 2 \
+    --batch-size 32 --num-workers 0 --device cpu \
+    --out outputs/experiments/shu/foundation_cross_subject_smoke \
+    --ckpt-dir checkpoints/shu/foundation_cross_subject_smoke
+
+# GPU（Slurm）；重复执行同一条命令 = 断点续跑
+sbatch -J e2e_wbcic scripts/slurm/shu_gpu.sbatch \
+    code/configs/experiments/foundation_cross_subject.yaml
+```
+
+CPU 上 `s4erp` 单 epoch 约 12 分钟（1000 点 × 32ch 空间卷积是瓶颈），**正式 smoke 也要上 GPU 节点**。
 
 ## 3. 必读文档
 
